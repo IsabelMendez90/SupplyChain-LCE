@@ -288,7 +288,7 @@ with st.sidebar:
     if st.session_state.get("user_role")=="Other":
         st.text_input("Specify role", value="Other", key="user_role_other")
 
-    st.header("LCE & 5S")
+    st.header("LCE & 5S Priorities")
     st.selectbox("LCE stage", LCE, key="lce_stage")
     st.caption("5S sliders are priorities: 0 = deprioritize, 0.5 = neutral, 1 = strongly prioritize.")
     for s in FIVE_S:
@@ -499,4 +499,5 @@ if user_q:
     with st.chat_message("assistant"): st.markdown(reply)
 
 st.caption("Scores are continuous in [0,3]. 3 = Core/Critical/Essential; 2 = Strategic/Important; 1 = Relevant; 0 = Not emphasized.")
+
 
