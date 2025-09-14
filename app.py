@@ -1,3 +1,5 @@
+# Authors: Dr. J. Isabel Méndez & Dr. Arturo Molina
+
 import os, json, time
 from typing import Dict, List
 import pandas as pd
@@ -414,7 +416,8 @@ def filter_df_by_system(df: pd.DataFrame, sys_type: str, compare_all: bool):
     return df if compare_all else df[[sys_type]]
 
 # -------------------- Main render (never calls LLMs) --------------------
-st.title("Supply-Chain Strategy Agent — LLM Analysis + Fuzzy Matrices")
+st.title("Supply-Chain Strategy Agent")
+st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 
 if "results" in st.session_state:
     res = st.session_state["results"]
@@ -496,3 +499,4 @@ if user_q:
     with st.chat_message("assistant"): st.markdown(reply)
 
 st.caption("Scores are continuous in [0,3]. 3 = Core/Critical/Essential; 2 = Strategic/Important; 1 = Relevant; 0 = Not emphasized.")
+
