@@ -457,7 +457,7 @@ if "results" in st.session_state:
         st.write(res["guidance_single"].get(selected_system, "Guidance not available for this system."))
 
 else:
-    st.info("Configure inputs on the left and click **Analyze** to compute once. Then use the view controls freely—no re-analysis will run.")
+    st.info("Configure inputs on the left and click **Analyze** to compute once. Then use the view controls freely.")
 
 # -------------------- Chat (below; only uses stored results) --------------------
 st.markdown("---")
@@ -499,5 +499,6 @@ if user_q:
     with st.chat_message("assistant"): st.markdown(reply)
 
 st.caption("Scores are continuous in [0,3]. 3 = Core/Critical/Essential; 2 = Strategic/Important; 1 = Relevant; 0 = Not emphasized.")
+
 
 
