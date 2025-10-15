@@ -14,14 +14,14 @@ OPENROUTER_HEADERS = {"HTTP-Referer":"http://localhost:8501","X-Title":"LCE+5S S
 # Hidden models (internal policy)
 ANALYZER_CHAIN = [
     "deepseek/deepseek-r1",
-    "meta-llama/llama-3.1-70b-instruct",
+    "meta-llama/llama-3.3-70b-instruct:free",
     "deepseek/deepseek-r1:free",
-    "meta-llama/llama-3.1-405b",
+    "meta-llama/llama-3.3-70b-instruct:free",
 ]
-NARRATIVE_PRIMARY = "anthropic/claude-3.7-sonnet"
+NARRATIVE_PRIMARY = "openai/gpt-oss-20b:free"
 NARRATIVE_FALLBACK = "meta-llama/llama-3.3-70b-instruct:free"
-CHAT_DEFAULT = "anthropic/claude-3.7-sonnet"
-CHAT_CHOICES = ["anthropic/claude-3.7-sonnet","deepseek/deepseek-r1","meta-llama/llama-3.1-405b-instruct:free"]
+CHAT_DEFAULT = "openai/gpt-oss-20b:free"
+CHAT_CHOICES = ["openai/gpt-oss-20b:free","deepseek/deepseek-chat-v3.1:free","meta-llama/llama-3.3-70b-instruct:free"]
 
 # -------------------- Canonical vocab --------------------
 SYSTEMS = ["Product Transfer","Technology Transfer","Facility Design"]
@@ -499,6 +499,7 @@ if user_q:
     with st.chat_message("assistant"): st.markdown(reply)
 
 st.caption("Scores are continuous in [0,3]. 3 = Core/Critical/Essential; 2 = Strategic/Important; 1 = Relevant; 0 = Not emphasized.")
+
 
 
 
