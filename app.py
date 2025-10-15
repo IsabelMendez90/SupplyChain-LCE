@@ -19,7 +19,7 @@ ANALYZER_CHAIN = [
     "meta-llama/llama-3.1-405b",
 ]
 NARRATIVE_PRIMARY = "anthropic/claude-3.7-sonnet"
-NARRATIVE_FALLBACK = "meta-llama/llama-3.1-405b-instruct:free"
+NARRATIVE_FALLBACK = "meta-llama/llama-3.3-70b-instruct:free"
 CHAT_DEFAULT = "anthropic/claude-3.7-sonnet"
 CHAT_CHOICES = ["anthropic/claude-3.7-sonnet","deepseek/deepseek-r1","meta-llama/llama-3.1-405b-instruct:free"]
 
@@ -499,6 +499,7 @@ if user_q:
     with st.chat_message("assistant"): st.markdown(reply)
 
 st.caption("Scores are continuous in [0,3]. 3 = Core/Critical/Essential; 2 = Strategic/Important; 1 = Relevant; 0 = Not emphasized.")
+
 
 
 
