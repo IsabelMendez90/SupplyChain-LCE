@@ -247,7 +247,6 @@ def make_cross_guidance(ctx: Dict) -> str:
 CHAT_SYSTEM = (
     "You are a helpful supply-chain copilot. Speak in second person. "
     "Answer using ONLY the provided results (pillars, scores, strategies, scenarios). "
-    "If asked for synthetic data, provide it with the full code."
     "If asked for metrics, reference intensities (0–3) and practical measurement examples (e.g., OTIF %, FPY %) without inventing targets."
 )
 def chat_reply(question: str, results_ctx: Dict, history: List[Dict], model: str) -> str:
@@ -500,6 +499,7 @@ if user_q:
     with st.chat_message("assistant"): st.markdown(reply)
 
 st.caption("Scores are continuous in [0,3]. 3 = Core/Critical/Essential; 2 = Strategic/Important; 1 = Relevant; 0 = Not emphasized.")
+
 
 
 
