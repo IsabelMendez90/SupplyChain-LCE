@@ -370,7 +370,7 @@ if "results" in st.session_state:
     # --- Display depending on Compare toggle ---
     def show_matrix(title, df_dict, cmap=None):
         st.markdown(f"### {title}")
-        df = pd.DataFrame(df_dict)
+        df = pd.DataFrame(df_dict).T
         compare_all = st.session_state.get("compare_all", False)
         selected = st.session_state.get("selected_system", "Product Transfer")
     
@@ -508,6 +508,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
