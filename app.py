@@ -350,6 +350,39 @@ if "results" in st.session_state:
     # --- RADAR ---
     radar_plot(res["pillars"])
     st.caption("The radar shows how your strategic focus distributes across Quality, Cost, Volume, Time, Flexibility, and Environment pillars.")
+    
+    # --- NEW CONTEXTUAL INSIGHT ---
+    sel_sys = st.session_state.get("selected_system", "Product Transfer")
+    role = st.session_state.get("user_role", "")
+    industry = st.session_state.get("industry", "")
+    objective = st.session_state.get("objective", "")
+    scenarios = ", ".join(st.session_state.get("preset_scenarios", []))
+    
+    context_payload = {
+        "system_type": sel_sys,
+        "user_role": role,
+        "industry": industry,
+        "objective": objective,
+        "scenarios": scenarios,
+        "pillars": res["pillars"]
+    }
+    
+    try:
+        radar_expl = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[
+                {"role": "system", "content": "You are a senior supply-chain analyst. Explain radar results in a practical and strategic tone, referring to how the role, industry, and objective influence the emphasis on each pillar. Be concise (≤180 words)."},
+                {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+            ],
+            extra_headers=OPENROUTER_HEADERS,
+            temperature=0.35,
+            max_tokens=400
+        ).choices[0].message.content
+        st.markdown("### Strategic Interpretation")
+        st.write(radar_expl)
+    except Exception as e:
+        st.warning(f"Could not generate radar interpretation: {e}")
+
 
     # --- Label conversion helper ---
     def qualitative_label(x):
@@ -401,8 +434,43 @@ if "results" in st.session_state:
 
       
 
+
+      # --- CORE PROCESSES MATRIX ---
     show_matrix("Core Processes × System", res["scored"]["core_processes"])
     st.caption("Core Processes show where your organization’s structural strengths are most evident. High = critical to your supply chain’s maturity level.")
+    
+    context_payload = {
+        "system_type": st.session_state.get("selected_system", "Product Transfer"),
+        "user_role": st.session_state.get("user_role", ""),
+        "industry": st.session_state.get("industry", ""),
+        "objective": st.session_state.get("objective", ""),
+        "scenarios": ", ".join(st.session_state.get("preset_scenarios", [])),
+        "pillars": res["pillars"]
+    }
+    
+    try:
+        role = st.session_state.get("user_role", "")
+        # Tailored prompt
+        prompt = f"You are a senior consultant speaking to a {role}. Explain the Core Processes matrix in ≤150 words. \
+    Relate the observed High/Medium/Low values to the user’s role, their industry, and their objective. \
+    If the role is technical (Design/Process/Manufacturing Engineer), emphasize operational alignment. \
+    If managerial, emphasize strategic implications and decision-making impact."
+        
+        core_expl = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+            ],
+            extra_headers=OPENROUTER_HEADERS,
+            temperature=0.35,
+            max_tokens=400
+        ).choices[0].message.content
+        st.markdown("**Interpretation (Role-Aware):**")
+        st.write(core_expl)
+    except Exception as e:
+        st.warning(f"Could not generate interpretation: {e}")
+
 
     show_matrix("KPIs × System", res["scored"]["kpis"])
     st.caption("KPIs summarize how the system performs on efficiency, productivity, and cost. Medium and High areas indicate current operational leverage.")
@@ -508,6 +576,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
