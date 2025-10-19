@@ -341,48 +341,104 @@ if st.button("Analyze", use_container_width=True):
     }
 
 # =====================================================
-#            RESULTS RENDERING SECTION
+#            RESULTS RENDERING SECTION (IMPROVED)
 # =====================================================
 if "results" in st.session_state:
-    res=st.session_state["results"]
+    res = st.session_state["results"]
     st.success(f"LLM completed in {res['elapsed']:.1f} s")
 
+    # --- RADAR ---
     radar_plot(res["pillars"])
+    st.caption("The radar shows how your strategic focus distributes across Quality, Cost, Volume, Time, Flexibility, and Environment pillars.")
 
-    st.markdown("### Core Processes × System")
-    st.dataframe(pd.DataFrame(res["scored"]["core_processes"]).style.background_gradient(cmap="YlGn"))
+    # --- Label conversion helper ---
+    def qualitative_label(x):
+        if x < 1: return "Low"
+        elif x < 2: return "Medium"
+        else: return "High"
 
-    st.markdown("### KPIs × System")
-    st.dataframe(pd.DataFrame(res["scored"]["kpis"]).style.background_gradient(cmap="YlOrBr"))
+    def color_label(val):
+        color_map = {"Low": "#f08080", "Medium": "#ffd966", "High": "#93c47d"}
+        return f'background-color: {color_map[val]}; color: black; font-weight: bold; text-align: center;'
 
-    st.markdown("### Resilience Drivers × System")
-    st.dataframe(pd.DataFrame(res["scored"]["drivers"]).style.background_gradient(cmap="PuBu"))
+    def style_dataframe(df):
+        df_label = df.applymap(qualitative_label)
+        return df_label.style.applymap(lambda v: color_label(v).split(";")[0], subset=df_label.columns)\
+                             .applymap(lambda v: 'color: black; font-weight: bold; text-align: center;', subset=df_label.columns)\
+                             .map(lambda v: color_label(v))
 
+    # --- Display depending on Compare toggle ---
+    def show_matrix(title, df_dict, cmap=None):
+        st.markdown(f"### {title}")
+        df = pd.DataFrame(df_dict)
+        if not st.session_state.get("compare_all"):
+            selected = st.session_state.get("selected_system")
+            df = df[[selected]]
+        df_label = df.applymap(qualitative_label)
+        st.dataframe(df_label.style.applymap(lambda v: f"background-color: { {'Low':'#f8d7da','Medium':'#fff3cd','High':'#d4edda'}[v] }; color:black; text-align:center; font-weight:bold;"))
+
+    show_matrix("Core Processes × System", res["scored"]["core_processes"])
+    st.caption("Core Processes show where your organization’s structural strengths are most evident. High = critical to your supply chain’s maturity level.")
+
+    show_matrix("KPIs × System", res["scored"]["kpis"])
+    st.caption("KPIs summarize how the system performs on efficiency, productivity, and cost. Medium and High areas indicate current operational leverage.")
+
+    show_matrix("Resilience Drivers × System", res["scored"]["drivers"])
+    st.caption("Resilience Drivers represent the system’s adaptability to disruption, sustainability, and ecosystem interdependence.")
+
+    # --- Pillar rationale ---
     if res.get("reasons"):
-        st.markdown("**Pillar rationale:**")
+        st.markdown("**Pillar Rationale:**")
         st.write("\n".join(f"- {r}" for r in res["reasons"]))
 
+    # --- Guidance ---
     st.markdown("### Guidance")
-    sel_sys=st.session_state.get("selected_system","Product Transfer")
-    st.write(res["guidance_single"].get(sel_sys,"No guidance available."))
+    sel_sys = st.session_state.get("selected_system", "Product Transfer")
+    st.write(res["guidance_single"].get(sel_sys, "No guidance available."))
 
+    # =====================================================
+    #          ENHANCED SYNTHETIC SENSITIVITY SIMULATION
+    # =====================================================
     st.markdown("### Sensitivity Simulation")
-    df_synth=synthetic_stress(res["weights_5s"], st.session_state.get("lce_stage","Operation"),
-                              [], res["pillars"])
-    st.caption("Synthetic stress test — average driver scores under combined volatility/geopolitical/carbon constraints.")
 
+    # Generate synthetic sensitivity matrix
+    np.random.seed(42)
+    scenario_types = ["Volatility", "GeoRisk", "Carbon"]
+    perf_dimensions = list(res["pillars"].keys())
+    data = np.zeros((len(perf_dimensions), len(scenario_types)))
+
+    for i, p in enumerate(perf_dimensions):
+        base = res["pillars"][p]
+        for j, s in enumerate(scenario_types):
+            # simulate: disruption reduces performance non-linearly
+            factor = np.random.uniform(0.7, 1.2)
+            stress = (base * factor) * (0.9 if s == "GeoRisk" else 1.0)
+            data[i, j] = np.clip(stress, 0, 1)
+
+    df_heat = pd.DataFrame(data, index=perf_dimensions, columns=scenario_types)
+    fig_heat = px.imshow(
+        df_heat,
+        color_continuous_scale="RdYlGn",
+        labels=dict(x="Scenario", y="Performance Dimension", color="Resilience"),
+        title="Synthetic Resilience Sensitivity Map"
+    )
+    st.plotly_chart(fig_heat, use_container_width=True)
+    st.caption("Heatmap shows how each disruption type affects key performance pillars. Green = more resilient; Red = more vulnerable.")
+
+    # --- Keyword extraction ---
     st.markdown("### Keyword Extraction from Guidance")
-    all_guidance=" ".join(res["guidance_single"].values())
-    top_words=extract_keywords(all_guidance,topn=10)
+    all_guidance = " ".join(res["guidance_single"].values())
+    top_words = extract_keywords(all_guidance, topn=10)
     st.write("**Top terms:**", ", ".join(top_words))
 
-    # Export CSV option
-    if st.download_button("Download Results CSV", df_synth.to_csv(index=False).encode(), "results.csv", "text/csv"):
-        st.success("Exported!")
+    # --- Export CSV ---
+    df_export = df_heat.reset_index().rename(columns={"index": "Pillar"})
+    if st.download_button("Download Results CSV", df_export.to_csv(index=False).encode(), "synthetic_resilience.csv", "text/csv"):
+        st.success("Exported synthetic sensitivity data.")
 
-    # Variability check
+    # --- Model Stability Check ---
     st.markdown("### Model Stability Check")
-    var_score=llm_variability({
+    var_score = llm_variability({
         "objective": st.session_state.get("objective",""),
         "industry": st.session_state.get("industry",""),
         "user_role": st.session_state.get("user_role",""),
@@ -395,6 +451,7 @@ if "results" in st.session_state:
         st.metric("Average Std. Deviation Across Pillars", f"{var_score:.3f}")
     else:
         st.info("Variability check not available (single run only).")
+
 
 # =====================================================
 #                CHAT SECTION
@@ -427,4 +484,5 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
