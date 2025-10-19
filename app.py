@@ -371,10 +371,12 @@ if "results" in st.session_state:
     def show_matrix(title, df_dict, cmap=None):
         st.markdown(f"### {title}")
         df = pd.DataFrame(df_dict)
-    
         compare_all = st.session_state.get("compare_all", False)
         selected = st.session_state.get("selected_system", "Product Transfer")
-    
+        
+
+        if isinstance(selected, (list, tuple)):
+            selected = selected[0]
     
         if not compare_all:
             if selected in df.columns:
@@ -385,18 +387,13 @@ if "results" in st.session_state:
                     f"Showing all systems instead."
                 )
     
-        # Convert numeric scores to qualitative labels
         df_label = df.applymap(lambda x: "Low" if x < 1 else "Medium" if x < 2 else "High")
-    
-        # Apply color coding
         color_map = {"Low": "#f8d7da", "Medium": "#fff3cd", "High": "#d4edda"}
-        styled = (
-            df_label.style
-            .applymap(lambda v: f"background-color: {color_map[v]}; color:black; text-align:center; font-weight:bold;")
+        styled = df_label.style.applymap(
+            lambda v: f"background-color: {color_map[v]}; color:black; text-align:center; font-weight:bold;"
         )
-    
-
         st.dataframe(styled, use_container_width=True)
+
 
       
 
@@ -507,6 +504,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
