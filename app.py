@@ -372,7 +372,7 @@ if "results" in st.session_state:
         st.markdown(f"### {title}")
         df = pd.DataFrame(df_dict)
         if not st.session_state.get("compare_all"):
-            selected = st.session_state.get("selected_system")
+            selected = st.session_state.get("selected_system", "Product Transfer")
             df = df[[selected]]
         df_label = df.applymap(qualitative_label)
         st.dataframe(df_label.style.applymap(lambda v: f"background-color: { {'Low':'#f8d7da','Medium':'#fff3cd','High':'#d4edda'}[v] }; color:black; text-align:center; font-weight:bold;"))
@@ -484,6 +484,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
