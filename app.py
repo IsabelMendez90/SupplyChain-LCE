@@ -78,46 +78,89 @@ BASE_DRIVERS = {
     "Nearshoring":{"Product Transfer":2,"Technology Transfer":2,"Facility Design":2},
     "Ecosystem Partnerships":{"Product Transfer":3,"Technology Transfer":3,"Facility Design":1},
 }
-
 # =====================================================
-#           SCORING & QUALITATIVE LABELS
+# DYNAMIC MODIFIERS
+# =====================================================
+def stage_modifier(stage:str)->float:
+    """Return intensity multiplier by LCE stage."""
+    mapping={
+        "Ideation":0.8,"Basic Development":0.9,"Advanced Development":1.0,
+        "Launch":1.1,"Operation":1.2,"End-of-Life":1.0
+    }
+    return mapping.get(stage,1.0)
+
+def fiveS_modifier(weights:Dict[str,float],matrix:str)->float:
+    """Weight influence by 5S profile and matrix type."""
+    if matrix=="core_processes": focus=["Social","Smart"]
+    elif matrix=="kpis": focus=["Smart","Safe","Sustainable"]
+    else: focus=["Sustainable","Safe","Social"]
+    return 1+0.4*np.mean([weights.get(s,0.5) for s in focus])-0.2
+
+def dynamic_score(base_map,stage,weights):
+    s_mod=stage_modifier(stage)
+    scored={}
+    for item,vals in base_map.items():
+        scored[item]={}
+        for sys,val in vals.items():
+            f_mod=fiveS_modifier(weights,"drivers")
+            noise=np.random.uniform(0.9,1.05)
+            scored[item][sys]=np.clip(val*s_mod*f_mod*noise,0,3)
+    return scored
+# =====================================================
+# HELPERS
 # =====================================================
 def qualitative_label(v):
-    if v < 1.0: return "Low"
-    elif v < 2.0: return "Medium"
+    if v<1: return "Low"
+    elif v<2: return "Medium"
     return "High"
 
 def normalize_dict(d):
-    s = sum(d.values()) or 1
+    s=sum(d.values()) or 1
     return {k:v/s for k,v in d.items()}
+
+def radar_plot(pillars):
+    df=pd.DataFrame(list(pillars.items()),columns=["Pillar","Weight"])
+    fig=px.line_polar(df,r="Weight",theta="Pillar",line_close=True)
+    fig.update_traces(fill="toself")
+    st.plotly_chart(fig,use_container_width=True)
+
+def sensitivity_scenarios(drivers):
+    scen={"Baseline":1.0,"Volatility":1.2,"Geo-Risk":1.3,
+          "Carbon Constraint":1.1,"Combined Stress":1.5}
+    rows=[{"Scenario":k,"Avg":np.mean([np.mean(list(v.values())) for v in drivers.values()])*f}
+          for k,f in scen.items()]
+    df=pd.DataFrame(rows)
+    fig=px.bar(df,x="Scenario",y="Avg",color="Scenario",
+               title="Resilience under Disruption Scenarios",
+               color_discrete_sequence=px.colors.qualitative.Dark24)
+    st.plotly_chart(fig,use_container_width=True)
+    st.caption("Higher bars = greater adaptive capacity under disruption.")
+
+def extract_keywords(text,topn=8):
+    text=re.sub(r"[^A-Za-z\s]","",text)
+    vec=CountVectorizer(stop_words="english")
+    X=vec.fit_transform([text.lower()])
+    freqs=zip(vec.get_feature_names_out(),X.toarray().flatten())
+    return [w for w,_ in sorted(freqs,key=lambda x:-x[1])[:topn]]
 
 # =====================================================
 #           LLM INTERFACES
 # =====================================================
-def analyze_to_pillars(payload: Dict) -> Dict:
-    msgs = [
-        {"role":"system","content":"You are a Supply Chain Director. Output ONLY JSON."},
-        {"role":"user","content":json.dumps(payload, ensure_ascii=False)}
-    ]
-    r = client.chat.completions.create(
-        model=LLM_MODEL, messages=msgs,
-        extra_headers=OPENROUTER_HEADERS,
-        response_format={"type":"json_object"},
-        temperature=0.2, max_tokens=700
-    )
+def analyze_to_pillars(payload:Dict)->Dict:
+    msgs=[{"role":"system","content":"You are a Supply-Chain Director. Output ONLY JSON."},
+          {"role":"user","content":json.dumps(payload,ensure_ascii=False)}]
+    r=client.chat.completions.create(model=LLM_MODEL,messages=msgs,
+        extra_headers=OPENROUTER_HEADERS,response_format={"type":"json_object"},
+        temperature=0.2,max_tokens=700)
     return json.loads(r.choices[0].message.content)
 
-def make_single_guidance(ctx: Dict) -> str:
-    msgs=[
-        {"role":"system","content":"You are a senior supply-chain advisor. Speak directly to the user in ≤160 words."},
-        {"role":"user","content":json.dumps(ctx, ensure_ascii=False)}
-    ]
-    r = client.chat.completions.create(
-        model=LLM_MODEL, messages=msgs,
-        extra_headers=OPENROUTER_HEADERS,
-        temperature=0.3, max_tokens=700
-    )
+def make_single_guidance(ctx:Dict)->str:
+    msgs=[{"role":"system","content":"You are a senior supply-chain advisor. ≤160 words."},
+          {"role":"user","content":json.dumps(ctx,ensure_ascii=False)}]
+    r=client.chat.completions.create(model=LLM_MODEL,messages=msgs,
+        extra_headers=OPENROUTER_HEADERS,temperature=0.3,max_tokens=700)
     return r.choices[0].message.content
+
 
 # =====================================================
 #           VISUAL FUNCTIONS
@@ -158,15 +201,16 @@ def extract_keywords(text, topn=8):
 #           SIDEBAR CONFIGURATION
 # =====================================================
 with st.sidebar:
-    st.header("Context Configuration")
-    system = st.selectbox("Manufacturing System", SYSTEMS)
-    stage = st.selectbox("LCE Stage", LCE)
-    industry = st.selectbox("Industry", ["Automotive","Electronics","Medical Devices","Consumer Goods","Other"])
-    objective = st.text_input("Objective", "Stabilize outsourced supply performance.")
-    role = st.selectbox("Your Role", ["Engineer","Analyst","Manager","Decision Maker"])
+    st.header("Configuration")
+    system=st.selectbox("Manufacturing System",SYSTEMS)
+    stage=st.selectbox("LCE Stage",LCE)
+    industry=st.selectbox("Industry",["Automotive","Electronics","Medical Devices","Consumer Goods","Other"])
+    objective=st.text_input("Objective","Stabilize outsourced supply performance.")
+    role=st.selectbox("Your Role",["Engineer","Analyst","Manager","Decision Maker"])
     st.header("5S Priorities")
-    weights_5s = {s: st.slider(s, 0.0, 1.0, 0.5, 0.05) for s in FIVE_S}
-    compare_all = st.toggle("Compare all systems", value=False)
+    weights_5s={s:st.slider(s,0.0,1.0,0.5,0.05) for s in FIVE_S}
+    compare_all=st.toggle("Compare all systems",value=False)
+
 
 # =====================================================
 #              MAIN EXECUTION
@@ -174,53 +218,48 @@ with st.sidebar:
 st.title("Supply-Chain Strategy Agent (LCE + 5S)")
 st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 
-if st.button("Analyze", use_container_width=True):
-    payload = {
-        "objective": objective,
-        "industry": industry,
-        "user_role": role,
-        "system_type": system,
-        "lce_stage": stage,
-        "weights_5s": weights_5s
-    }
-
-    with st.spinner("Analyzing through LLM…"):
-        t0 = time.time()
+if st.button("Analyze",use_container_width=True):
+    payload={"objective":objective,"industry":industry,"user_role":role,
+             "system_type":system,"lce_stage":stage,"weights_5s":weights_5s}
+    with st.spinner("Analyzing through LLM …"):
+        t0=time.time()
         try:
-            analysis = analyze_to_pillars(payload)
-            pillars = normalize_dict(analysis.get("pillars", {p:1/6 for p in PILLARS}))
-            reasons = analysis.get("reasons", [])
+            analysis=analyze_to_pillars(payload)
+            pillars=normalize_dict(analysis.get("pillars",{p:1/6 for p in PILLARS}))
         except Exception:
-            pillars = {p:1/6 for p in PILLARS}
-            reasons = ["Default equal weighting applied."]
-        elapsed = time.time()-t0
-
-    # deterministic simulated scoring
-    scored = {
-        "core_processes": BASE_CORE,
-        "kpis": BASE_KPIS,
-        "drivers": BASE_DRIVERS
+            pillars={p:1/6 for p in PILLARS}
+        elapsed=time.time()-t0
+    # --- dynamic scoring
+    scored={
+        "core_processes":dynamic_score(BASE_CORE,stage,weights_5s),
+        "kpis":dynamic_score(BASE_KPIS,stage,weights_5s),
+        "drivers":dynamic_score(BASE_DRIVERS,stage,weights_5s)
     }
-    guidance = make_single_guidance(payload)
-
-    st.session_state["results"] = {
-        "pillars": pillars,
-        "scored": scored,
-        "guidance": guidance,
-        "elapsed": elapsed
-    }
+    guidance=make_single_guidance(payload)
+    st.session_state["results"]={"pillars":pillars,"scored":scored,
+                                 "guidance":guidance,"elapsed":elapsed}
 
 # =====================================================
 #           DISPLAY RESULTS
 # =====================================================
 if "results" in st.session_state:
-    res = st.session_state["results"]
-    st.success(f"LLM completed in {res['elapsed']:.1f} s")
+    res=st.session_state["results"]
+    st.success(f"LLM completed in {res['elapsed']:.1f}s")
 
-    # --- Pillars
     st.subheader("Pillar Distribution")
     radar_plot(res["pillars"])
-    st.caption("The radar chart illustrates the relative strategic weight of each operational pillar.")
+    st.caption("Radar chart shows relative strategic weights of pillars.")
+
+    for label,base in [("Core Processes","core_processes"),
+                       ("KPIs","kpis"),
+                       ("Resilience Drivers","drivers")]:
+        st.subheader(f"{label} × System")
+        df=pd.DataFrame(res["scored"][base])
+        if not compare_all:
+            df=df[[system]]
+        dfq=df.applymap(qualitative_label)
+        st.dataframe(dfq)
+        st.markdown("_High = Strategic / Medium = Supportive / Low = Peripheral_")
 
     # --- Core Processes
     st.subheader("Core Processes × System")
@@ -295,41 +334,26 @@ if "results" in st.session_state:
 st.markdown("---")
 st.subheader("Interactive Advisor")
 
-if "chat" not in st.session_state:
-    st.session_state["chat"] = []
+if "chat" not in st.session_state: st.session_state["chat"]=[]
 
-for msg in st.session_state["chat"]:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+for m in st.session_state["chat"]:
+    with st.chat_message(m["role"]): st.markdown(m["content"])
 
-user_input = st.chat_input("Ask the Strategy Agent about trade-offs, improvements, or next steps…")
-
-if user_input:
-    st.session_state["chat"].append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.markdown(user_input)
-
+q=st.chat_input("Ask about trade-offs or improvements …")
+if q:
+    st.session_state["chat"].append({"role":"user","content":q})
+    with st.chat_message("user"): st.markdown(q)
     if "results" not in st.session_state:
-        reply = "Please run **Analyze** first to generate context."
+        reply="Please run **Analyze** first."
     else:
-        ctx = {
-            "pillars": res["pillars"],
-            "weights_5s": res["scored"],
-            "guidance": res["guidance"]
-        }
-        r = client.chat.completions.create(
+        ctx={"pillars":res["pillars"],"weights_5s":weights_5s,"guidance":res["guidance"]}
+        r=client.chat.completions.create(
             model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": "You are a supply-chain strategy expert offering concise, evidence-based advice."},
-                {"role": "user", "content": json.dumps(ctx, ensure_ascii=False)},
-                {"role": "user", "content": user_input},
-            ],
-            extra_headers=OPENROUTER_HEADERS,
-            temperature=0.4,
-            max_tokens=600,
-        )
-        reply = r.choices[0].message.content
+            messages=[{"role":"system","content":"You are a supply-chain advisor using LCE + 5S logic."},
+                      {"role":"user","content":json.dumps(ctx,ensure_ascii=False)},
+                      {"role":"user","content":q}],
+            extra_headers=OPENROUTER_HEADERS,temperature=0.4,max_tokens=600)
+        reply=r.choices[0].message.content
+    st.session_state["chat"].append({"role":"assistant","content":reply})
+    with st.chat_message("assistant"): st.markdown(reply)
 
-    st.session_state["chat"].append({"role": "assistant", "content": reply})
-    with st.chat_message("assistant"):
-        st.markdown(reply)
