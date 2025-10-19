@@ -371,11 +371,32 @@ if "results" in st.session_state:
     def show_matrix(title, df_dict, cmap=None):
         st.markdown(f"### {title}")
         df = pd.DataFrame(df_dict)
+    
+        # Debug info (optional): uncomment next line if you want to verify what columns exist
+        # st.write("Columns in matrix:", df.columns.tolist())
+    
         if not st.session_state.get("compare_all"):
-            selected = st.session_state.get("selected_system", "Product Transfer")
-            df = df[[selected]]
+            selected = st.session_state.get("selected_system")
+    
+            # ✅ Safety check: make sure the selected system column actually exists
+            if selected not in df.columns:
+                st.warning(f"⚠️ The selected system '{selected}' is not available in this matrix. "
+                           f"Showing all systems instead.")
+            else:
+                df = df[[selected]]
+    
+        # Convert numeric scores to qualitative labels
         df_label = df.applymap(qualitative_label)
-        st.dataframe(df_label.style.applymap(lambda v: f"background-color: { {'Low':'#f8d7da','Medium':'#fff3cd','High':'#d4edda'}[v] }; color:black; text-align:center; font-weight:bold;"))
+    
+        # Color-code cells
+        st.dataframe(
+            df_label.style.applymap(
+                lambda v: f"background-color: { {'Low':'#f8d7da','Medium':'#fff3cd','High':'#d4edda'}[v] }; "
+                          f"color:black; text-align:center; font-weight:bold;"
+            )
+        )
+
+      
 
     show_matrix("Core Processes × System", res["scored"]["core_processes"])
     st.caption("Core Processes show where your organization’s structural strengths are most evident. High = critical to your supply chain’s maturity level.")
@@ -484,6 +505,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
