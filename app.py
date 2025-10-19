@@ -372,29 +372,31 @@ if "results" in st.session_state:
         st.markdown(f"### {title}")
         df = pd.DataFrame(df_dict)
     
-        # Debug info (optional): uncomment next line if you want to verify what columns exist
-        # st.write("Columns in matrix:", df.columns.tolist())
+        compare_all = st.session_state.get("compare_all", False)
+        selected = st.session_state.get("selected_system", "Product Transfer")
     
-        if not st.session_state.get("compare_all"):
-            selected = st.session_state.get("selected_system")
     
-            # ✅ Safety check: make sure the selected system column actually exists
-            if selected not in df.columns:
-                st.warning(f"⚠️ The selected system '{selected}' is not available in this matrix. "
-                           f"Showing all systems instead.")
-            else:
+        if not compare_all:
+            if selected in df.columns:
                 df = df[[selected]]
+            else:
+                st.warning(
+                    f"⚠️ The selected system '{selected}' is not available in this matrix. "
+                    f"Showing all systems instead."
+                )
     
         # Convert numeric scores to qualitative labels
-        df_label = df.applymap(qualitative_label)
+        df_label = df.applymap(lambda x: "Low" if x < 1 else "Medium" if x < 2 else "High")
     
-        # Color-code cells
-        st.dataframe(
-            df_label.style.applymap(
-                lambda v: f"background-color: { {'Low':'#f8d7da','Medium':'#fff3cd','High':'#d4edda'}[v] }; "
-                          f"color:black; text-align:center; font-weight:bold;"
-            )
+        # Apply color coding
+        color_map = {"Low": "#f8d7da", "Medium": "#fff3cd", "High": "#d4edda"}
+        styled = (
+            df_label.style
+            .applymap(lambda v: f"background-color: {color_map[v]}; color:black; text-align:center; font-weight:bold;")
         )
+    
+
+        st.dataframe(styled, use_container_width=True)
 
       
 
@@ -505,6 +507,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
