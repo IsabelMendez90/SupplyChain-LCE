@@ -2,3 +2,6 @@ streamlit
 openai
 pandas
 xlsxwriter
+numpy
+plotly
+scikit-learn
