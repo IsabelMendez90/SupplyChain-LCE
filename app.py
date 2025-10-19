@@ -96,16 +96,17 @@ def fiveS_modifier(weights:Dict[str,float],matrix:str)->float:
     else: focus=["Sustainable","Safe","Social"]
     return 1+0.4*np.mean([weights.get(s,0.5) for s in focus])-0.2
 
-def dynamic_score(base_map,stage,weights):
-    s_mod=stage_modifier(stage)
-    scored={}
-    for item,vals in base_map.items():
-        scored[item]={}
-        for sys,val in vals.items():
-            f_mod=fiveS_modifier(weights,"drivers")
-            noise=np.random.uniform(0.9,1.05)
-            scored[item][sys]=np.clip(val*s_mod*f_mod*noise,0,3)
+def dynamic_score(base_map, stage, weights):
+    s_mod = stage_modifier(stage)
+    scored = {}
+    for item, vals in base_map.items():
+        scored[item] = {}
+        for sys, val in vals.items():
+            f_mod = fiveS_modifier(weights, "drivers")
+            noise = np.random.uniform(0.9, 1.05)
+            scored[item][sys] = np.clip(val * s_mod * f_mod * noise, 0, 3)
     return scored
+
 # =====================================================
 # HELPERS
 # =====================================================
@@ -261,6 +262,8 @@ if "results" in st.session_state:
         df = pd.DataFrame(res["scored"][key])
         if not compare_all:
             df = df[[system]]
+        elif not compare_all and system not in df.columns:
+            st.warning(f"⚠️ System '{system}' not found in results; showing all systems instead.")
         dfq = df.applymap(qualitative_label)
         st.dataframe(dfq, use_container_width=True)
 
@@ -345,5 +348,6 @@ if q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
