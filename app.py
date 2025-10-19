@@ -373,20 +373,24 @@ if "results" in st.session_state:
         df = pd.DataFrame(df_dict)
         compare_all = st.session_state.get("compare_all", False)
         selected = st.session_state.get("selected_system", "Product Transfer")
-        
-
-        if isinstance(selected, (list, tuple)):
+    
+        # 🔧 Normalize type — handle tuple or list cases safely
+        if isinstance(selected, (tuple, list)):
             selected = selected[0]
+        if isinstance(selected, dict):  # rare Streamlit bug with widgets
+            selected = next(iter(selected.values()))
+    
+        # 🔍 Optional debug check
+        # st.write("Selected:", repr(selected))
+        # st.write("Columns:", df.columns.tolist())
     
         if not compare_all:
             if selected in df.columns:
                 df = df[[selected]]
             else:
-                st.warning(
-                    f"⚠️ The selected system '{selected}' is not available in this matrix. "
+                st.warning(f"⚠️ The selected system '{selected}' is not available in this matrix. "
                     f"Showing all systems instead."
                 )
-    
         df_label = df.applymap(lambda x: "Low" if x < 1 else "Medium" if x < 2 else "High")
         color_map = {"Low": "#f8d7da", "Medium": "#fff3cd", "High": "#d4edda"}
         styled = df_label.style.applymap(
@@ -504,6 +508,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
