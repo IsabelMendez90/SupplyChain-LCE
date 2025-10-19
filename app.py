@@ -240,74 +240,62 @@ if st.button("Analyze",use_container_width=True):
                                  "guidance":guidance,"elapsed":elapsed}
 
 # =====================================================
-#           DISPLAY RESULTS
+#           DISPLAY RESULTS (CLEAN + FIXED)
 # =====================================================
 if "results" in st.session_state:
-    res=st.session_state["results"]
+    res = st.session_state["results"]
     st.success(f"LLM completed in {res['elapsed']:.1f}s")
 
+    # --- Pillars
     st.subheader("Pillar Distribution")
     radar_plot(res["pillars"])
-    st.caption("Radar chart shows relative strategic weights of pillars.")
+    st.caption("Radar chart shows relative strategic weights of pillars according to the LCE + 5S framework.")
 
-    for label,base in [("Core Processes","core_processes"),
-                       ("KPIs","kpis"),
-                       ("Resilience Drivers","drivers")]:
+    # --- Core Matrices
+    for label, key in [
+        ("Core Processes", "core_processes"),
+        ("KPIs", "kpis"),
+        ("Resilience Drivers", "drivers")
+    ]:
         st.subheader(f"{label} × System")
-        df=pd.DataFrame(res["scored"][base])
+        df = pd.DataFrame(res["scored"][key])
         if not compare_all:
-            df=df[[system]]
-        dfq=df.applymap(qualitative_label)
-        st.dataframe(dfq)
-        st.markdown("_High = Strategic / Medium = Supportive / Low = Peripheral_")
+            df = df[[system]]
+        dfq = df.applymap(qualitative_label)
+        st.dataframe(dfq, use_container_width=True)
 
-    # --- Core Processes
-    st.subheader("Core Processes × System")
-    df_core = pd.DataFrame(res["scored"]["core_processes"])
-    if not compare_all:
-        df_core = df_core[[system]]
-    dfq_core = df_core.applymap(qualitative_label)
-    st.dataframe(dfq_core)
-    st.markdown("_High = Core Process / Medium = Support Process / Low = Peripheral Process_")
+        # Contextual captions per matrix
+        if key == "core_processes":
+            st.markdown("_High = Core Process / Medium = Support Process / Low = Peripheral Process_")
+            df_core = dfq.copy()
+        elif key == "kpis":
+            st.markdown("_High = Critical Performance Metric / Medium = Relevant / Low = Minor Indicator_")
+            df_kpi = dfq.copy()
+        else:
+            st.markdown("_High = Strategic Resilience Factor / Medium = Supportive / Low = Peripheral_")
+            df_drv = dfq.copy()
 
-    # --- KPIs
-    st.subheader("KPIs × System")
-    df_kpi = pd.DataFrame(res["scored"]["kpis"])
-    if not compare_all:
-        df_kpi = df_kpi[[system]]
-    dfq_kpi = df_kpi.applymap(qualitative_label)
-    st.dataframe(dfq_kpi)
-    st.markdown("_High = Critical Performance Metric / Medium = Relevant / Low = Minor Indicator_")
-
-    # --- Drivers
-    st.subheader("Resilience Drivers × System")
-    df_drv = pd.DataFrame(res["scored"]["drivers"])
-    if not compare_all:
-        df_drv = df_drv[[system]]
-    dfq_drv = df_drv.applymap(qualitative_label)
-    st.dataframe(dfq_drv)
-    st.markdown("_High = Strategic Resilience Factor / Medium = Supportive / Low = Peripheral_")
-
-    # --- Guidance
+    # --- LLM Guidance
     st.subheader("LLM Guidance Summary")
     st.write(res["guidance"])
 
-    # --- Sensitivity
+    # --- Sensitivity Analysis
     st.subheader("Sensitivity Simulation")
     sensitivity_scenarios(res["scored"]["drivers"])
 
-    # --- Strategic Emphasis
+    # --- Strategic Emphasis Summary
     st.subheader("Strategic Emphasis Summary")
     top = extract_keywords(res["guidance"])
     st.markdown(" | ".join([f"🟢 **{t}**" for t in top]))
-    st.caption("Most emphasized strategic concepts in LLM guidance, reflecting dominant themes from the framework section.")
-    # --- Export option
+    st.caption("Most emphasized strategic concepts in the LLM guidance, aligned with dominant themes from the framework section.")
+
+    # --- Export Option
     st.markdown("### Export Results")
     export_df = pd.concat(
         {
-            "Core Processes": dfq_core,
-            "KPIs": dfq_kpi,
-            "Resilience Drivers": dfq_drv
+            "Core Processes": df_core,
+            "KPIs": df_kpi,
+            "Resilience Drivers": df_drv
         },
         axis=1
     )
@@ -319,14 +307,15 @@ if "results" in st.session_state:
         mime="text/csv",
     )
 
-    # --- Notes for interpretation
+    # --- Analytical Notes
     st.markdown("### Analytical Interpretation Notes")
     st.info(
         "High scores correspond to *core or strategic* importance under the current LCE stage "
-        "and 5S weighting. Medium reflects supportive processes that contribute to performance "
-        "stability but are not key differentiators. Low indicates limited short-term impact or "
+        "and 5S weighting. Medium reflects supportive processes contributing to performance "
+        "stability but not primary differentiators. Low indicates limited short-term impact or "
         "context-specific functions."
     )
+
 
 # =====================================================
 #                CHAT EXTENSION
@@ -356,4 +345,5 @@ if q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
