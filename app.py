@@ -20,7 +20,7 @@ client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=st.secrets["OPE
 OPENROUTER_HEADERS = {"HTTP-Referer":"http://localhost:8501","X-Title":"LCE+5S Supply-Chain Agent"}
 
 # --- Single Unified Model for ALL tasks ---
-LLM_MODEL = "openai/gpt-oss-20b:free"
+LLM_MODEL = "deepseek/deepseek-chat-v3.1:free"
 
 # =====================================================
 #                CANONICAL VOCAB
@@ -484,5 +484,6 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
