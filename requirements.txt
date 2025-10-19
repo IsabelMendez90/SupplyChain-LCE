@@ -5,3 +5,4 @@ xlsxwriter
 numpy
 plotly
 scikit-learn
+matplotlib
