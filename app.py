@@ -340,6 +340,7 @@ if st.button("Analyze", use_container_width=True):
         "reasons":reasons,"guidance_single":guidance_single,"elapsed":elapsed
     }
 
+
 # =====================================================
 #            RESULTS RENDERING SECTION (IMPROVED)
 # =====================================================
@@ -349,269 +350,251 @@ if "results" in st.session_state:
 
     # --- RADAR ---
     radar_plot(res["pillars"])
-    st.caption("The radar shows how your strategic focus distributes across Quality, Cost, Volume, Time, Flexibility, and Environment pillars.")
-    
-    # --- NEW CONTEXTUAL INSIGHT ---
+    st.info("""
+    **About this Radar:**  
+    This chart shows proportional emphasis (summing to 100%) among six performance pillars.
+    It is not time-based: it visualizes how the AI allocates your strategic focus
+    across Quality, Cost, Volume, Time, Flexibility, and Environment
+    based on your role, industry, and scenarios.
+    """)
+
+    # --- Context data ---
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     role = st.session_state.get("user_role", "")
     industry = st.session_state.get("industry", "")
     objective = st.session_state.get("objective", "")
     scenarios = ", ".join(st.session_state.get("preset_scenarios", []))
-    
+
     context_payload = {
         "system_type": sel_sys,
         "user_role": role,
         "industry": industry,
         "objective": objective,
         "scenarios": scenarios,
-        "pillars": res["pillars"]
+        "pillars": res["pillars"],
     }
-    
-    try:
-        radar_expl = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": "You are a senior supply-chain analyst. Explain radar results in a practical and strategic tone, referring to how the role, industry, and objective influence the emphasis on each pillar. Be concise (≤180 words)."},
-                {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
-            ],
-            extra_headers=OPENROUTER_HEADERS,
-            temperature=0.35,
-            max_tokens=400
-        ).choices[0].message.content
+
+    # --- Radar interpretation (cached) ---
+    if "llm_explanations" not in st.session_state:
+        st.session_state["llm_explanations"] = {}
+
+    def clean_numbers(text: str) -> str:
+        """Remove (3.0)-style numeric parenthesis."""
+        return re.sub(r"\s*\(\d+(\.\d+)?\)", "", text)
+
+    if "radar" not in st.session_state["llm_explanations"]:
+        try:
+            radar_expl = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[
+                    {"role": "system",
+                     "content": "You are a senior supply-chain analyst. Explain radar results in a practical and strategic tone, "
+                                "referring to how the role, industry, and objective influence emphasis on each pillar. "
+                                "Be concise (≤180 words)."},
+                    {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+                ],
+                extra_headers=OPENROUTER_HEADERS,
+                temperature=0.35,
+                max_tokens=400
+            ).choices[0].message.content
+            st.session_state["llm_explanations"]["radar"] = radar_expl
+        except Exception as e:
+            st.warning(f"Could not generate radar interpretation: {e}")
+            radar_expl = ""
+    else:
+        radar_expl = st.session_state["llm_explanations"]["radar"]
+
+    if radar_expl:
         st.markdown("### Strategic Interpretation")
-        st.write(radar_expl)
-    except Exception as e:
-        st.warning(f"Could not generate radar interpretation: {e}")
+        st.write(clean_numbers(radar_expl))
 
-
-    # --- Label conversion helper ---
-    def qualitative_label(x):
-        if x < 1: return "Low"
-        elif x < 2: return "Medium"
-        else: return "High"
-
-    def color_label(val):
-        color_map = {"Low": "#f08080", "Medium": "#ffd966", "High": "#93c47d"}
-        return f'background-color: {color_map[val]}; color: black; font-weight: bold; text-align: center;'
-
-    def style_dataframe(df):
-        df_label = df.applymap(qualitative_label)
-        return df_label.style.applymap(lambda v: color_label(v).split(";")[0], subset=df_label.columns)\
-                             .applymap(lambda v: 'color: black; font-weight: bold; text-align: center;', subset=df_label.columns)\
-                             .map(lambda v: color_label(v))
-
-    # --- Display depending on Compare toggle ---
-    def show_matrix(title, df_dict, cmap=None):
+    # --- Helper for labels ---
+    def show_matrix(title, df_dict):
         st.markdown(f"### {title}")
         df = pd.DataFrame(df_dict).T
         compare_all = st.session_state.get("compare_all", False)
         selected = st.session_state.get("selected_system", "Product Transfer")
-    
-        # 🔧 Normalize type — handle tuple or list cases safely
-        if isinstance(selected, (tuple, list)):
-            selected = selected[0]
-        if isinstance(selected, dict):  # rare Streamlit bug with widgets
-            selected = next(iter(selected.values()))
-    
-        # 🔍 Optional debug check
-        # st.write("Selected:", repr(selected))
-        # st.write("Columns:", df.columns.tolist())
-    
+        if isinstance(selected, (tuple, list)): selected = selected[0]
+        if isinstance(selected, dict): selected = next(iter(selected.values()))
         if not compare_all:
             if selected in df.columns:
                 df = df[[selected]]
             else:
-                st.warning(f"⚠️ The selected system '{selected}' is not available in this matrix. "
-                    f"Showing all systems instead."
-                )
+                st.warning(f"⚠️ The selected system '{selected}' is not available; showing all instead.")
         df_label = df.applymap(lambda x: "Low" if x < 1 else "Medium" if x < 2 else "High")
         color_map = {"Low": "#f8d7da", "Medium": "#fff3cd", "High": "#d4edda"}
         styled = df_label.style.applymap(
             lambda v: f"background-color: {color_map[v]}; color:black; text-align:center; font-weight:bold;"
         )
         st.dataframe(styled, use_container_width=True)
+        return df_label
 
+    # =====================================================
+    #  CORE PROCESSES
+    # =====================================================
+    df_core = show_matrix("Core Processes × System", res["scored"]["core_processes"])
+    st.caption("Core Processes show where structural strengths are most evident. High = critical to maturity level.")
 
-      
-
-
-    # --- CORE PROCESSES MATRIX ---
-    show_matrix("Core Processes × System", res["scored"]["core_processes"])
-    st.caption("Core Processes show where your organization’s structural strengths are most evident. High = critical to your supply chain’s maturity level.")
-    
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
-    
-    context_payload = {
-        "system_type": sel_sys,
-        "user_role": st.session_state.get("user_role", ""),
-        "industry": st.session_state.get("industry", ""),
-        "objective": st.session_state.get("objective", ""),
-        "scenarios": ", ".join(st.session_state.get("preset_scenarios", [])),
-        "core_process_scores": core_scores
-    }
-    
-    prompt = f"""
-    You are a senior supply-chain consultant addressing a {context_payload['user_role']} in the {context_payload['industry']} industry.
-    Interpret the 'Core Processes × System' matrix for {context_payload['system_type']}.
-    Use the provided scores (0–3 scale; Low<1, Medium<2, High≥2) to identify which processes are most and least critical.
-    Explain why at least two High-scoring processes (e.g., CRM, Co-Engineering, SRM, Order Fulfillment) are vital given the user's objective:
-    "{context_payload['objective']}".
-    Also mention one or two Medium/Low ones and what may limit them.
-    Avoid radar repetition; focus on operational or strategic logic relevant to the role.
-    Keep it concise (≤170 words).
+    context_payload.update({"core_process_scores": core_scores})
+
+    prompt_core = f"""
+    You are a senior supply-chain consultant addressing a {role} in the {industry} industry.
+    Interpret the 'Core Processes × System' matrix for {sel_sys}.
+    Use the qualitative scores (Low, Medium, High) to identify which processes are most and least critical.
+    Explain why at least two High processes (e.g., CRM, Co-Engineering, SRM, Order Fulfillment) are vital for "{objective}".
+    Mention one or two Medium/Low ones and what limits them.
+    Avoid numeric mentions and radar repetition. ≤170 words.
     """
-    
-    try:
-        core_expl = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
-            ],
-            extra_headers=OPENROUTER_HEADERS,
-            temperature=0.35,
-            max_tokens=400
-        ).choices[0].message.content
-        st.markdown("**Interpretation:**")
-        st.write(core_expl)
-    except Exception as e:
-        st.warning(f"Could not generate interpretation: {e}")
 
-
-    
-    show_matrix("KPIs × System", res["scored"]["kpis"])
-    st.caption("KPIs summarize how the system performs on efficiency, productivity, and cost. Medium and High areas indicate current operational leverage.")
-    
-    kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
-    context_payload["kpi_scores"] = kpi_scores
-    
-    prompt = f"""
-    You are a performance analyst speaking to a {context_payload['user_role']} in the {context_payload['industry']} sector.
-    Interpret the KPI results for {context_payload['system_type']} using these 0–3 scores.
-    Discuss which KPIs score High and why they reflect efficiency or reliability for the user's stated objective:
-    "{context_payload['objective']}".
-    Mention one or two weaker or Medium ones, explaining potential trade-offs.
-    Relate observations to the user's professional focus (engineers → technical metrics, managers → ROI & optimization).
-    Stay practical and within 160 words.
-    """
-    
-    try:
-        kpi_expl = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
-            ],
-            extra_headers=OPENROUTER_HEADERS,
-            temperature=0.35,
-            max_tokens=400
-        ).choices[0].message.content
-        st.markdown("**Interpretation:**")
-        st.write(kpi_expl)
-    except Exception as e:
-        st.warning(f"Could not generate interpretation: {e}")
-
-
-    show_matrix("Resilience Drivers × System", res["scored"]["drivers"])
-    st.caption("Resilience Drivers represent the system’s adaptability to disruption, sustainability, and ecosystem interdependence.")
-    
-    driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
-    context_payload["driver_scores"] = driver_scores
-    
-    prompt = f"""
-    You are a resilience strategist advising a {context_payload['user_role']} working in the {context_payload['industry']} industry.
-    Interpret the 'Resilience Drivers × System' matrix for {context_payload['system_type']}.
-    Use the 0–3 scores to explain which drivers are strongest (High) and why they matter under the user’s current scenarios:
-    {context_payload['scenarios']}.
-    Discuss one or two that are Medium/Low and what risks or improvements they signal.
-    If the role is Sustainability Manager / Safety Supervisor, highlight ESG or risk; if Supply Chain Analyst / Manager, emphasize stability and responsiveness.
-    Limit to ≤ 170 words.
-    """
-    
-    try:
-        driver_expl = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
-            ],
-            extra_headers=OPENROUTER_HEADERS,
-            temperature=0.35,
-            max_tokens=400
-        ).choices[0].message.content
-        st.markdown("**Interpretation:**")
-        st.write(driver_expl)
-    except Exception as e:
-        st.warning(f"Could not generate interpretation: {e}")
-
-
-  
-    # --- Pillar rationale ---
-    if res.get("reasons"):
-        st.markdown("**Pillar Rationale:**")
-        st.write("\n".join(f"- {r}" for r in res["reasons"]))
-
-    # --- Guidance ---
-    st.markdown("### Guidance")
-    sel_sys = st.session_state.get("selected_system", "Product Transfer")
-    st.write(res["guidance_single"].get(sel_sys, "No guidance available."))
-
-    # =====================================================
-    #          ENHANCED SYNTHETIC SENSITIVITY SIMULATION
-    # =====================================================
-    st.markdown("### Sensitivity Simulation")
-
-    # Generate synthetic sensitivity matrix
-    np.random.seed(42)
-    scenario_types = ["Volatility", "GeoRisk", "Carbon"]
-    perf_dimensions = list(res["pillars"].keys())
-    data = np.zeros((len(perf_dimensions), len(scenario_types)))
-
-    for i, p in enumerate(perf_dimensions):
-        base = res["pillars"][p]
-        for j, s in enumerate(scenario_types):
-            # simulate: disruption reduces performance non-linearly
-            factor = np.random.uniform(0.7, 1.2)
-            stress = (base * factor) * (0.9 if s == "GeoRisk" else 1.0)
-            data[i, j] = np.clip(stress, 0, 1)
-
-    df_heat = pd.DataFrame(data, index=perf_dimensions, columns=scenario_types)
-    fig_heat = px.imshow(
-        df_heat,
-        color_continuous_scale="RdYlGn",
-        labels=dict(x="Scenario", y="Performance Dimension", color="Resilience"),
-        title="Synthetic Resilience Sensitivity Map"
-    )
-    st.plotly_chart(fig_heat, use_container_width=True)
-    st.caption("Heatmap shows how each disruption type affects key performance pillars. Green = more resilient; Red = more vulnerable.")
-
-    # --- Keyword extraction ---
-    st.markdown("### Keyword Extraction from Guidance")
-    all_guidance = " ".join(res["guidance_single"].values())
-    top_words = extract_keywords(all_guidance, topn=10)
-    st.write("**Top terms:**", ", ".join(top_words))
-
-    # --- Export CSV ---
-    df_export = df_heat.reset_index().rename(columns={"index": "Pillar"})
-    if st.download_button("Download Results CSV", df_export.to_csv(index=False).encode(), "synthetic_resilience.csv", "text/csv"):
-        st.success("Exported synthetic sensitivity data.")
-
-    # --- Model Stability Check ---
-    st.markdown("### Model Stability Check")
-    var_score = llm_variability({
-        "objective": st.session_state.get("objective",""),
-        "industry": st.session_state.get("industry",""),
-        "user_role": st.session_state.get("user_role",""),
-        "system_type": st.session_state.get("selected_system","Product Transfer"),
-        "lce_stage": st.session_state.get("lce_stage","Operation"),
-        "weights_5s": res["weights_5s"],
-        "scenarios": {"preset":[], "custom":[]}
-    })
-    if var_score:
-        st.metric("Average Std. Deviation Across Pillars", f"{var_score:.3f}")
+    if "core" not in st.session_state["llm_explanations"]:
+        try:
+            core_expl = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[
+                    {"role": "system", "content": prompt_core},
+                    {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+                ],
+                extra_headers=OPENROUTER_HEADERS,
+                temperature=0.35,
+                max_tokens=400
+            ).choices[0].message.content
+            st.session_state["llm_explanations"]["core"] = core_expl
+        except Exception as e:
+            st.warning(f"Core analysis failed: {e}")
+            core_expl = ""
     else:
-        st.info("Variability check not available (single run only).")
+        core_expl = st.session_state["llm_explanations"]["core"]
+
+    if core_expl:
+        st.markdown("**Interpretation:**")
+        st.write(clean_numbers(core_expl))
+
+    # =====================================================
+    #  KPIs
+    # =====================================================
+    df_kpi = show_matrix("KPIs × System", res["scored"]["kpis"])
+    st.caption("KPIs summarize efficiency, productivity, and cost. Medium/High = operational leverage.")
+
+    kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
+    context_payload.update({"kpi_scores": kpi_scores})
+
+    prompt_kpi = f"""
+    You are a performance analyst speaking to a {role} in the {industry} sector.
+    Interpret KPI results for {sel_sys} using qualitative levels (Low/Medium/High).
+    Discuss which KPIs are High and why they indicate efficiency or reliability for "{objective}".
+    Mention one or two Medium/Low ones explaining trade-offs.
+    Focus on insights relevant to the user's professional focus (engineers→technical; managers→ROI). ≤160 words.
+    """
+
+    if "kpi" not in st.session_state["llm_explanations"]:
+        try:
+            kpi_expl = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[
+                    {"role": "system", "content": prompt_kpi},
+                    {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+                ],
+                extra_headers=OPENROUTER_HEADERS,
+                temperature=0.35,
+                max_tokens=400
+            ).choices[0].message.content
+            st.session_state["llm_explanations"]["kpi"] = kpi_expl
+        except Exception as e:
+            st.warning(f"KPI analysis failed: {e}")
+            kpi_expl = ""
+    else:
+        kpi_expl = st.session_state["llm_explanations"]["kpi"]
+
+    if kpi_expl:
+        st.markdown("**Interpretation:**")
+        st.write(clean_numbers(kpi_expl))
+
+    # =====================================================
+    #  RESILIENCE DRIVERS
+    # =====================================================
+    df_drv = show_matrix("Resilience Drivers × System", res["scored"]["drivers"])
+    st.caption("Resilience Drivers represent adaptability to disruption, sustainability, and ecosystem interdependence.")
+
+    driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
+    context_payload.update({"driver_scores": driver_scores})
+
+    prompt_drv = f"""
+    You are a resilience strategist advising a {role} in the {industry} industry.
+    Interpret the 'Resilience Drivers × System' matrix for {sel_sys}.
+    Use qualitative levels only (Low/Medium/High).
+    Identify strongest drivers and explain their relevance under {scenarios}.
+    Discuss one or two Medium/Low areas and what risks or improvements they signal.
+    Tailor emphasis to role (Sustainability→ESG, Manager→stability). ≤170 words.
+    """
+
+    if "driver" not in st.session_state["llm_explanations"]:
+        try:
+            driver_expl = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[
+                    {"role": "system", "content": prompt_drv},
+                    {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+                ],
+                extra_headers=OPENROUTER_HEADERS,
+                temperature=0.35,
+                max_tokens=400
+            ).choices[0].message.content
+            st.session_state["llm_explanations"]["driver"] = driver_expl
+        except Exception as e:
+            st.warning(f"Driver analysis failed: {e}")
+            driver_expl = ""
+    else:
+        driver_expl = st.session_state["llm_explanations"]["driver"]
+
+    if driver_expl:
+        st.markdown("**Interpretation:**")
+        st.write(clean_numbers(driver_expl))
+
+    # =====================================================
+    #  COMPARATIVE INTERPRETATION (when toggle active)
+    # =====================================================
+    if st.session_state.get("compare_all", False):
+        if "compare" not in st.session_state["llm_explanations"]:
+            try:
+                compare_payload = {
+                    "selected_system": sel_sys,
+                    "objective": objective,
+                    "role": role,
+                    "industry": industry,
+                    "scenarios": scenarios,
+                    "core": res["scored"]["core_processes"],
+                    "kpis": res["scored"]["kpis"],
+                    "drivers": res["scored"]["drivers"],
+                }
+                compare_prompt = f"""
+                You are an expert supply-chain strategist. The user focuses on {sel_sys} with objective "{objective}" in {industry}.
+                Compare this system against Technology Transfer and Facility Design across Core Processes, KPIs, and Drivers.
+                Highlight how strengths and weaknesses differ, and how they align with {role}'s perspective and {scenarios}.
+                Conclude with one practical insight on when a hybrid or complementary strategy could be beneficial.
+                Do not include numeric values or parentheses. ≤180 words.
+                """
+                compare_expl = client.chat.completions.create(
+                    model=LLM_MODEL,
+                    messages=[
+                        {"role": "system", "content": compare_prompt},
+                        {"role": "user", "content": json.dumps(compare_payload, ensure_ascii=False)},
+                    ],
+                    extra_headers=OPENROUTER_HEADERS,
+                    temperature=0.35,
+                    max_tokens=450
+                ).choices[0].message.content
+                st.session_state["llm_explanations"]["compare"] = compare_expl
+            except Exception as e:
+                st.warning(f"Comparative explanation failed: {e}")
+                compare_expl = ""
+        else:
+            compare_expl = st.session_state["llm_explanations"]["compare"]
+
+        if compare_expl:
+            st.markdown("### Comparative Interpretation")
+            st.write(clean_numbers(compare_expl))
 
 
 # =====================================================
@@ -645,6 +628,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
