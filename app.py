@@ -573,25 +573,36 @@ if "results" in st.session_state:
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     st.write(res["guidance_single"].get(sel_sys, "No guidance available."))
 
+
     # =====================================================
     #          ENHANCED SYNTHETIC SENSITIVITY SIMULATION
     # =====================================================
     st.markdown("### Sensitivity Simulation")
-
-    # Generate synthetic sensitivity matrix
+    
+    st.info("""
+    **About Synthetic Data:**  
+    This section generates *synthetic stress-test data* to explore how each
+    performance pillar (Quality, Cost, Volume, Time, Flexibility, Environment)
+    responds to disruption scenarios — **Volatility**, **Geopolitical Risk**, and **Carbon Constraints**.
+    The data is not real but statistically simulated to reflect plausible stress patterns
+    under changing conditions. It helps visualize **resilience** tendencies of your system
+    given your role, objective, and 5S priorities.
+    """)
+    
+    # Generate synthetic stress data
     np.random.seed(42)
     scenario_types = ["Volatility", "GeoRisk", "Carbon"]
     perf_dimensions = list(res["pillars"].keys())
     data = np.zeros((len(perf_dimensions), len(scenario_types)))
-
+    
     for i, p in enumerate(perf_dimensions):
         base = res["pillars"][p]
         for j, s in enumerate(scenario_types):
-            # simulate: disruption reduces performance non-linearly
+            # simulate non-linear stress response
             factor = np.random.uniform(0.7, 1.2)
             stress = (base * factor) * (0.9 if s == "GeoRisk" else 1.0)
             data[i, j] = np.clip(stress, 0, 1)
-
+    
     df_heat = pd.DataFrame(data, index=perf_dimensions, columns=scenario_types)
     fig_heat = px.imshow(
         df_heat,
@@ -600,7 +611,49 @@ if "results" in st.session_state:
         title="Synthetic Resilience Sensitivity Map"
     )
     st.plotly_chart(fig_heat, use_container_width=True)
-    st.caption("Heatmap shows how each disruption type affects key performance pillars. Green = more resilient; Red = more vulnerable.")
+    st.caption("Heatmap shows how disruption types affect performance pillars. Green = resilient; Red = vulnerable.")
+    
+    # --- Context for explanation ---
+    context_payload.update({
+        "synthetic_heatmap": df_heat.to_dict(),
+        "scenarios_list": scenario_types
+    })
+    
+    prompt_synth = f"""
+    You are a senior supply-chain strategist addressing a {role} in the {industry} industry.
+    Interpret the *synthetic sensitivity heatmap* generated for the {sel_sys} system.
+    Explain what synthetic stress-testing means — that it uses simulated data to explore
+    how each pillar reacts to {scenario_types}.
+    Identify which performance dimensions appear more resilient or more vulnerable.
+    Relate your insights to the user's objective: "{objective}" and the selected scenarios: {scenarios}.
+    End with one actionable insight that helps this role anticipate or mitigate risk.
+    Avoid numeric mentions and parenthetical notation. ≤180 words.
+    """
+    
+    if "synthetic" not in st.session_state["llm_explanations"]:
+        try:
+            synth_expl = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[
+                    {"role": "system", "content": prompt_synth},
+                    {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+                ],
+                extra_headers=OPENROUTER_HEADERS,
+                temperature=0.35,
+                max_tokens=400
+            ).choices[0].message.content
+            st.session_state["llm_explanations"]["synthetic"] = synth_expl
+        except Exception as e:
+            st.warning(f"Synthetic explanation failed: {e}")
+            synth_expl = ""
+    else:
+        synth_expl = st.session_state["llm_explanations"]["synthetic"]
+    
+    if synth_expl:
+        st.markdown("**Synthetic Data Interpretation:**")
+        st.write(clean_numbers(synth_expl))
+
+
 
     # --- Keyword extraction ---
     st.markdown("### Keyword Extraction from Guidance")
@@ -706,6 +759,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
