@@ -435,27 +435,34 @@ if "results" in st.session_state:
       
 
 
-      # --- CORE PROCESSES MATRIX ---
+    # --- CORE PROCESSES MATRIX ---
     show_matrix("Core Processes × System", res["scored"]["core_processes"])
     st.caption("Core Processes show where your organization’s structural strengths are most evident. High = critical to your supply chain’s maturity level.")
     
+    sel_sys = st.session_state.get("selected_system", "Product Transfer")
+    core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
+    
     context_payload = {
-        "system_type": st.session_state.get("selected_system", "Product Transfer"),
+        "system_type": sel_sys,
         "user_role": st.session_state.get("user_role", ""),
         "industry": st.session_state.get("industry", ""),
         "objective": st.session_state.get("objective", ""),
         "scenarios": ", ".join(st.session_state.get("preset_scenarios", [])),
-        "pillars": res["pillars"]
+        "core_process_scores": core_scores
     }
     
+    prompt = f"""
+    You are a senior supply-chain consultant addressing a {context_payload['user_role']} in the {context_payload['industry']} industry.
+    Interpret the 'Core Processes × System' matrix for {context_payload['system_type']}.
+    Use the provided scores (0–3 scale; Low<1, Medium<2, High≥2) to identify which processes are most and least critical.
+    Explain why at least two High-scoring processes (e.g., CRM, Co-Engineering, SRM, Order Fulfillment) are vital given the user's objective:
+    "{context_payload['objective']}".
+    Also mention one or two Medium/Low ones and what may limit them.
+    Avoid radar repetition; focus on operational or strategic logic relevant to the role.
+    Keep it concise (≤170 words).
+    """
+    
     try:
-        role = st.session_state.get("user_role", "")
-        # Tailored prompt
-        prompt = f"You are a senior consultant speaking to a {role}. Explain the Core Processes matrix in ≤150 words. \
-    Relate the observed High/Medium/Low values to the user’s role, their industry, and their objective. \
-    If the role is technical (Design/Process/Manufacturing Engineer), emphasize operational alignment. \
-    If managerial, emphasize strategic implications and decision-making impact."
-        
         core_expl = client.chat.completions.create(
             model=LLM_MODEL,
             messages=[
@@ -472,16 +479,24 @@ if "results" in st.session_state:
         st.warning(f"Could not generate interpretation: {e}")
 
 
+    
     show_matrix("KPIs × System", res["scored"]["kpis"])
     st.caption("KPIs summarize how the system performs on efficiency, productivity, and cost. Medium and High areas indicate current operational leverage.")
     
+    kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
+    context_payload["kpi_scores"] = kpi_scores
+    
+    prompt = f"""
+    You are a performance analyst speaking to a {context_payload['user_role']} in the {context_payload['industry']} sector.
+    Interpret the KPI results for {context_payload['system_type']} using these 0–3 scores.
+    Discuss which KPIs score High and why they reflect efficiency or reliability for the user's stated objective:
+    "{context_payload['objective']}".
+    Mention one or two weaker or Medium ones, explaining potential trade-offs.
+    Relate observations to the user's professional focus (engineers → technical metrics, managers → ROI & optimization).
+    Stay practical and within 160 words.
+    """
+    
     try:
-        role = st.session_state.get("user_role", "")
-        prompt = f"You are a performance analyst addressing a {role}. Explain in ≤150 words what the KPI matrix suggests. \
-    Discuss how efficiency, cost, and productivity trade-offs relate to the role’s perspective and the user's objective. \
-    If the role is engineering-oriented, mention process metrics or technical outcomes. \
-    If managerial, highlight optimization and ROI."
-        
         kpi_expl = client.chat.completions.create(
             model=LLM_MODEL,
             messages=[
@@ -497,16 +512,24 @@ if "results" in st.session_state:
     except Exception as e:
         st.warning(f"Could not generate interpretation: {e}")
 
+
     show_matrix("Resilience Drivers × System", res["scored"]["drivers"])
     st.caption("Resilience Drivers represent the system’s adaptability to disruption, sustainability, and ecosystem interdependence.")
     
+    driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
+    context_payload["driver_scores"] = driver_scores
+    
+    prompt = f"""
+    You are a resilience strategist advising a {context_payload['user_role']} working in the {context_payload['industry']} industry.
+    Interpret the 'Resilience Drivers × System' matrix for {context_payload['system_type']}.
+    Use the 0–3 scores to explain which drivers are strongest (High) and why they matter under the user’s current scenarios:
+    {context_payload['scenarios']}.
+    Discuss one or two that are Medium/Low and what risks or improvements they signal.
+    If the role is Sustainability Manager / Safety Supervisor, highlight ESG or risk; if Supply Chain Analyst / Manager, emphasize stability and responsiveness.
+    Limit to ≤ 170 words.
+    """
+    
     try:
-        role = st.session_state.get("user_role", "")
-        prompt = f"You are a resilience strategist explaining the Drivers matrix to a {role}. \
-    Describe in ≤150 words how the High/Medium/Low areas connect to the user's industry and preset scenarios (volatility, carbon, geopolitical risk). \
-    If the role is Sustainability Manager or Safety Supervisor, stress environmental and risk aspects. \
-    If Supply Chain Analyst or Manager, stress network stability and long-term resilience planning."
-        
         driver_expl = client.chat.completions.create(
             model=LLM_MODEL,
             messages=[
@@ -521,6 +544,7 @@ if "results" in st.session_state:
         st.write(driver_expl)
     except Exception as e:
         st.warning(f"Could not generate interpretation: {e}")
+
 
   
     # --- Pillar rationale ---
@@ -621,6 +645,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
