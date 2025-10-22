@@ -352,9 +352,9 @@ if "results" in st.session_state:
     radar_plot(res["pillars"])
     st.info("""
     **About this Radar:**  
-    This chart shows proportional emphasis (summing to 100%) among six performance pillars.
-    It is not time-based: it visualizes how the AI allocates your strategic focus
-    across Quality, Cost, Volume, Time, Flexibility, and Environment
+    This chart shows proportional emphasis (summing to 100%).
+    It visualizes how the LLM Agent allocates your strategic focus
+    across the pillars Quality, Cost, Volume, Time, Flexibility, and Environment
     based on your role, industry, and scenarios.
     """)
 
@@ -628,6 +628,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
