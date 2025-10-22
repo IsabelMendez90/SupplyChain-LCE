@@ -562,6 +562,74 @@ if "results" in st.session_state:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(driver_expl))
 
+    
+    # --- Pillar rationale ---
+    if res.get("reasons"):
+        st.markdown("**Pillar Rationale:**")
+        st.write("\n".join(f"- {r}" for r in res["reasons"]))
+
+    # --- Guidance ---
+    st.markdown("### Guidance")
+    sel_sys = st.session_state.get("selected_system", "Product Transfer")
+    st.write(res["guidance_single"].get(sel_sys, "No guidance available."))
+
+    # =====================================================
+    #          ENHANCED SYNTHETIC SENSITIVITY SIMULATION
+    # =====================================================
+    st.markdown("### Sensitivity Simulation")
+
+    # Generate synthetic sensitivity matrix
+    np.random.seed(42)
+    scenario_types = ["Volatility", "GeoRisk", "Carbon"]
+    perf_dimensions = list(res["pillars"].keys())
+    data = np.zeros((len(perf_dimensions), len(scenario_types)))
+
+    for i, p in enumerate(perf_dimensions):
+        base = res["pillars"][p]
+        for j, s in enumerate(scenario_types):
+            # simulate: disruption reduces performance non-linearly
+            factor = np.random.uniform(0.7, 1.2)
+            stress = (base * factor) * (0.9 if s == "GeoRisk" else 1.0)
+            data[i, j] = np.clip(stress, 0, 1)
+
+    df_heat = pd.DataFrame(data, index=perf_dimensions, columns=scenario_types)
+    fig_heat = px.imshow(
+        df_heat,
+        color_continuous_scale="RdYlGn",
+        labels=dict(x="Scenario", y="Performance Dimension", color="Resilience"),
+        title="Synthetic Resilience Sensitivity Map"
+    )
+    st.plotly_chart(fig_heat, use_container_width=True)
+    st.caption("Heatmap shows how each disruption type affects key performance pillars. Green = more resilient; Red = more vulnerable.")
+
+    # --- Keyword extraction ---
+    st.markdown("### Keyword Extraction from Guidance")
+    all_guidance = " ".join(res["guidance_single"].values())
+    top_words = extract_keywords(all_guidance, topn=10)
+    st.write("**Top terms:**", ", ".join(top_words))
+
+    # --- Export CSV ---
+    df_export = df_heat.reset_index().rename(columns={"index": "Pillar"})
+    if st.download_button("Download Results CSV", df_export.to_csv(index=False).encode(), "synthetic_resilience.csv", "text/csv"):
+        st.success("Exported synthetic sensitivity data.")
+
+    # --- Model Stability Check ---
+    st.markdown("### Model Stability Check")
+    var_score = llm_variability({
+        "objective": st.session_state.get("objective",""),
+        "industry": st.session_state.get("industry",""),
+        "user_role": st.session_state.get("user_role",""),
+        "system_type": st.session_state.get("selected_system","Product Transfer"),
+        "lce_stage": st.session_state.get("lce_stage","Operation"),
+        "weights_5s": res["weights_5s"],
+        "scenarios": {"preset":[], "custom":[]}
+    })
+    if var_score:
+        st.metric("Average Std. Deviation Across Pillars", f"{var_score:.3f}")
+    else:
+        st.info("Variability check not available (single run only).")
+
+
     # =====================================================
     #  COMPARATIVE INTERPRETATION (when toggle active)
     # =====================================================
@@ -638,6 +706,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
