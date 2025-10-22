@@ -495,7 +495,7 @@ if "results" in st.session_state:
         st.markdown("**Interpretation:**")
         st.write(kpi_expl)
     except Exception as e:
-        st.warning(f"Could not generate interpretation: {e}")x
+        st.warning(f"Could not generate interpretation: {e}")
 
     show_matrix("Resilience Drivers × System", res["scored"]["drivers"])
     st.caption("Resilience Drivers represent the system’s adaptability to disruption, sustainability, and ecosystem interdependence.")
@@ -621,6 +621,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
