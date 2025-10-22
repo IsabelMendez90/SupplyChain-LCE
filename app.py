@@ -466,7 +466,7 @@ if "results" in st.session_state:
             temperature=0.35,
             max_tokens=400
         ).choices[0].message.content
-        st.markdown("**Interpretation (Role-Aware):**")
+        st.markdown("**Interpretation:**")
         st.write(core_expl)
     except Exception as e:
         st.warning(f"Could not generate interpretation: {e}")
@@ -474,10 +474,55 @@ if "results" in st.session_state:
 
     show_matrix("KPIs × System", res["scored"]["kpis"])
     st.caption("KPIs summarize how the system performs on efficiency, productivity, and cost. Medium and High areas indicate current operational leverage.")
+    
+    try:
+        role = st.session_state.get("user_role", "")
+        prompt = f"You are a performance analyst addressing a {role}. Explain in ≤150 words what the KPI matrix suggests. \
+    Discuss how efficiency, cost, and productivity trade-offs relate to the role’s perspective and the user's objective. \
+    If the role is engineering-oriented, mention process metrics or technical outcomes. \
+    If managerial, highlight optimization and ROI."
+        
+        kpi_expl = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+            ],
+            extra_headers=OPENROUTER_HEADERS,
+            temperature=0.35,
+            max_tokens=400
+        ).choices[0].message.content
+        st.markdown("**Interpretation:**")
+        st.write(kpi_expl)
+    except Exception as e:
+        st.warning(f"Could not generate interpretation: {e}")x
 
     show_matrix("Resilience Drivers × System", res["scored"]["drivers"])
     st.caption("Resilience Drivers represent the system’s adaptability to disruption, sustainability, and ecosystem interdependence.")
+    
+    try:
+        role = st.session_state.get("user_role", "")
+        prompt = f"You are a resilience strategist explaining the Drivers matrix to a {role}. \
+    Describe in ≤150 words how the High/Medium/Low areas connect to the user's industry and preset scenarios (volatility, carbon, geopolitical risk). \
+    If the role is Sustainability Manager or Safety Supervisor, stress environmental and risk aspects. \
+    If Supply Chain Analyst or Manager, stress network stability and long-term resilience planning."
+        
+        driver_expl = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+            ],
+            extra_headers=OPENROUTER_HEADERS,
+            temperature=0.35,
+            max_tokens=400
+        ).choices[0].message.content
+        st.markdown("**Interpretation:**")
+        st.write(driver_expl)
+    except Exception as e:
+        st.warning(f"Could not generate interpretation: {e}")
 
+  
     # --- Pillar rationale ---
     if res.get("reasons"):
         st.markdown("**Pillar Rationale:**")
@@ -576,6 +621,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
