@@ -355,7 +355,7 @@ if "results" in st.session_state:
     This chart shows proportional emphasis (summing to 100%).
     It visualizes how the LLM Agent allocates your strategic focus
     across the pillars Quality, Cost, Volume, Time, Flexibility, and Environment
-    based on your role, industry, and scenarios.
+    based on your role, industry, and selected scenarios.
     """)
 
     # --- Context data ---
@@ -374,7 +374,9 @@ if "results" in st.session_state:
         "pillars": res["pillars"],
     }
 
-    # --- Radar interpretation (cached) ---
+    # =====================================================
+    #   RADAR INTERPRETATION (improved contextual prompt)
+    # =====================================================
     if "llm_explanations" not in st.session_state:
         st.session_state["llm_explanations"] = {}
 
@@ -382,15 +384,23 @@ if "results" in st.session_state:
         """Remove (3.0)-style numeric parenthesis."""
         return re.sub(r"\s*\(\d+(\.\d+)?\)", "", text)
 
+    prompt_radar = f"""
+    You are a senior supply-chain consultant addressing a {role} in the {industry} industry.
+    Interpret the radar chart representing the pillar distribution for the {sel_sys} system.
+    Each axis (Quality, Cost, Volume, Time, Flexibility, Environment) reflects proportional emphasis that sums to 100%.
+    Explain which two or three pillars show the strongest strategic weight and why they align with the user's stated objective:
+    "{objective}".
+    Also mention which dimensions are comparatively weaker and how that could affect balance, risk, or sustainability under {scenarios}.
+    Avoid numeric details or parenthetical notation.
+    Speak in a professional but concise tone (≤180 words).
+    """
+
     if "radar" not in st.session_state["llm_explanations"]:
         try:
             radar_expl = client.chat.completions.create(
                 model=LLM_MODEL,
                 messages=[
-                    {"role": "system",
-                     "content": "You are a senior supply-chain analyst. Explain radar results in a practical and strategic tone, "
-                                "referring to how the role, industry, and objective influence emphasis on each pillar. "
-                                "Be concise (≤180 words)."},
+                    {"role": "system", "content": prompt_radar},
                     {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
                 ],
                 extra_headers=OPENROUTER_HEADERS,
@@ -628,6 +638,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
