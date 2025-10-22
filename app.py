@@ -486,27 +486,31 @@ if "results" in st.session_state:
         st.write(clean_numbers(core_expl))
 
     # =====================================================
-    #  KPIs
+    #  KPIs (Improved Prescriptive Logic)
     # =====================================================
     df_kpi = show_matrix("KPIs × System", res["scored"]["kpis"])
-    st.caption("KPIs summarize efficiency, productivity, and cost. Medium/High = operational leverage.")
-
+    st.caption("KPIs summarize efficiency, productivity, and cost. High = leverage points; Low = development priorities.")
+    
+    sel_sys = st.session_state.get("selected_system", "Product Transfer")
     kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
     context_payload.update({"kpi_scores": kpi_scores})
-
+    
+    # Detect which KPIs are High vs Low
+    kpi_levels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
+    high_kpis = [k for k, lvl in kpi_levels.items() if lvl == "High"]
+    low_kpis = [k for k, lvl in kpi_levels.items() if lvl == "Low"]
+    
     prompt_kpi = f"""
     You are a performance strategist advising a {role} in the {industry} sector.
-    Interpret the 'KPIs × System' matrix for {sel_sys}.
-    Do not assume the system already performs well—see High, Medium, and Low as *areas to strengthen or sustain*.
-    Identify which KPIs should receive greater attention to advance "{objective}" under {scenarios}.
-    Explain why at least two KPIs (e.g., Supplier on-time delivery, Assembly cost per unit, Logistics lead time)
-    represent key levers for improvement, and how Medium/Low ones could evolve
-    to close performance gaps or enhance resilience.
-    End with an actionable suggestion on where this role should direct resources or analysis efforts.
-    ≤170 words, forward-looking tone.
+    Focus strictly on the *High* KPIs detected: {', '.join(high_kpis) or 'none'}.
+    These represent the strongest potential levers to advance the objective "{objective}" under {scenarios}.
+    Explain why these KPIs matter strategically in the context of {sel_sys}, linking them to efficiency, sustainability, or cost leverage.
+    If there are Low ones ({', '.join(low_kpis) or 'none'}), briefly indicate how improving them would complement the High KPIs.
+    Avoid repeating the words "Low" or "Medium" in the output — instead, use phrases like *"needs reinforcement"* or *"requires further development"*.
+    Do not fabricate categories not present in the matrix.
+    Keep the tone prescriptive and role-oriented (≤170 words).
     """
-
-
+    
     if "kpi" not in st.session_state["llm_explanations"]:
         try:
             kpi_expl = client.chat.completions.create(
@@ -525,10 +529,11 @@ if "results" in st.session_state:
             kpi_expl = ""
     else:
         kpi_expl = st.session_state["llm_explanations"]["kpi"]
-
+    
     if kpi_expl:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(kpi_expl))
+    
 
     # =====================================================
     #  RESILIENCE DRIVERS
@@ -774,6 +779,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
