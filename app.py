@@ -602,6 +602,13 @@ if "results" in st.session_state:
     """)
 
     
+    # --- Retrieve custom scenario tags safely ---
+    custom = st.session_state.get("custom_tags_text", "")
+    if isinstance(custom, str):
+        custom = [t.strip() for t in custom.split(",") if t.strip()]
+    elif not isinstance(custom, list):
+        custom = []
+    
     # Generate synthetic stress data
     # =====================================================
     #  DYNAMIC + CONTEXTUAL SYNTHETIC STRESS SIMULATION
@@ -858,6 +865,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
