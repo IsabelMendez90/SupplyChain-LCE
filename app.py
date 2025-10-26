@@ -185,7 +185,10 @@ with st.sidebar:
     for s in FIVE_S:
         st.slider(s, 0.0, 1.0, 0.5, 0.05, key=f"s5_{s}")
     st.toggle("Compare all systems (view)", value=False, key="compare_all")
-
+    if st.button("🔄 Reset App"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.experimental_rerun()
 # =====================================================
 #                MAIN APP LOGIC
 # =====================================================
@@ -193,10 +196,6 @@ st.title("Supply-Chain Strategy Agent")
 st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 
 analyze_clicked = st.button("Analyze", use_container_width=True)
-if st.button("🔄 Reset App"):
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.experimental_rerun()
 
 if analyze_clicked or "results" not in st.session_state:
     role_val = st.session_state.get("user_role_other") if st.session_state.get("user_role")=="Other" else st.session_state.get("user_role")
@@ -472,5 +471,6 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
