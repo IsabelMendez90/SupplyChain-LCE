@@ -171,7 +171,7 @@ with st.sidebar:
     if st.button("🔄 Reset App"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
-        st.experimental_rerun()
+        st.rerun()
     preset_name = st.selectbox("Preset", list(PRESETS.keys()), key="preset")
     preset = PRESETS[preset_name]
     st.radio("Manufacturing system (view)", SYSTEMS,
@@ -471,6 +471,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
