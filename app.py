@@ -520,37 +520,50 @@ if "results" in st.session_state:
         st.write(clean_numbers(driver_expl))
     else:
         st.warning("⚠️ Driver interpretation returned no content.")
-
-
-
     
     # =====================================================
-    #  COMPARATIVE INTERPRETATION (when toggle active)
+    #  COMPARATIVE INTERPRETATION (dynamic others)
     # =====================================================
     if st.session_state.get("compare_all", False):
-        compare_payload = compact_dict({
-            "selected_system": sel_sys,
-            "objective": objective,
-            "role": role,
-            "industry": industry,
-            "core": res["scored"]["core_processes"],
-            "kpis": res["scored"]["kpis"],
-            "drivers": res["scored"]["drivers"],
-        })
+        sel_sys = st.session_state.get("selected_system", "Product Transfer")
+        objective = st.session_state.get("objective", "")
+        role = st.session_state.get("user_role", "")
+        industry = st.session_state.get("industry", "")
     
-        compare_prompt = f"""
-        You are an expert supply-chain strategist.
-        Compare {sel_sys} with Technology Transfer and Facility Design across Core Processes, KPIs, and Drivers.
-        Explain relative strengths and weaknesses from the lens of {role} aiming to achieve "{objective}".
-        Conclude with one actionable recommendation to balance synergy, resilience, and innovation.
-        ≤180 words, analytical and concise tone.
-        """
-        compare_expl = safe_llm_call(compare_prompt, compare_payload, temp=0.35, max_toks=450)
-        if compare_expl:
-            st.markdown("### Comparative Interpretation")
-            st.write(clean_numbers(compare_expl)
+        # Build dynamic list of the other systems
+        other_systems = [s for s in SYSTEMS if s != sel_sys]
+        if len(other_systems) == 0:
+            st.info("Select a system to enable comparison.")
         else:
-            st.warning("⚠️ Comparative interpretation returned no content or was truncated.")
+            # Nicely formatted string: "A and B" or just "A" if only one
+            others_str = " and ".join(other_systems)
+    
+            compare_payload = compact_dict({
+                "selected_system": sel_sys,
+                "other_systems": other_systems,
+                "objective": objective,
+                "role": role,
+                "industry": industry,
+                "core": res["scored"]["core_processes"],
+                "kpis": res["scored"]["kpis"],
+                "drivers": res["scored"]["drivers"],
+            })
+    
+            compare_prompt = f"""
+            You are an expert supply-chain strategist.
+            Compare {sel_sys} with {others_str} across Core Processes, KPIs, and Drivers.
+            Explain relative strengths and weaknesses from the lens of a {role} aiming to achieve "{objective}".
+            Highlight where {sel_sys} outperforms and where the others offer advantages, and indicate complementarities.
+            Conclude with one actionable recommendation to balance synergy, resilience, and innovation.
+            Keep tone analytical and concise (≤180 words). Avoid numeric values or parentheses.
+            """
+    
+            compare_expl = safe_llm_call(compare_prompt, compare_payload, temp=0.35, max_toks=450)
+            if compare_expl:
+                st.markdown("### Comparative Interpretation")
+                st.write(re.sub(r"\s*\(\d+(\.\d+)?\)", "", compare_expl))
+            else:
+                st.warning("⚠️ Comparative interpretation returned no content or was truncated.")
 
 # =====================================================
 #                CHAT SECTION
@@ -583,4 +596,5 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
