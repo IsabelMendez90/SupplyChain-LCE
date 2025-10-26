@@ -318,6 +318,7 @@ if st.button("Analyze", use_container_width=True):
     }
 
 
+
 # =====================================================
 #            RESULTS RENDERING SECTION (IMPROVED)
 # =====================================================
@@ -424,7 +425,8 @@ if "results" in st.session_state:
     core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
     core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
     
-    context_payload.update({"core_labels": core_labels})
+    core_payload = context_payload.copy()
+    core_payload.update({"core_labels": core_labels})
     
     prompt_core = f"""
     You are a supply-chain strategist advising a {role} in the {industry} industry.
@@ -445,7 +447,7 @@ if "results" in st.session_state:
                 model=LLM_MODEL,
                 messages=[
                     {"role": "system", "content": prompt_core},
-                    {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+                    {"role": "user", "content": json.dumps(core_payload, ensure_ascii=False)}
                 ],
                 extra_headers=OPENROUTER_HEADERS,
                 temperature=0.35,
@@ -462,7 +464,6 @@ if "results" in st.session_state:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(core_expl))
 
-    
     # =====================================================
     #  KPIs × System (Label-Based Interpretation)
     # =====================================================
@@ -473,7 +474,8 @@ if "results" in st.session_state:
     kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
     kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
     
-    context_payload.update({"kpi_labels": kpi_labels})
+    kpi_payload = context_payload.copy()
+    kpi_payload.update({"kpi_labels": kpi_labels})
     
     prompt_kpi = f"""
     You are a performance strategist advising a {role} in the {industry} sector.
@@ -494,7 +496,7 @@ if "results" in st.session_state:
                 model=LLM_MODEL,
                 messages=[
                     {"role": "system", "content": prompt_kpi},
-                    {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+                    {"role": "user", "content": json.dumps(kpi_payload, ensure_ascii=False)}
                 ],
                 extra_headers=OPENROUTER_HEADERS,
                 temperature=0.35,
@@ -510,8 +512,9 @@ if "results" in st.session_state:
     if kpi_expl:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(kpi_expl))
+    else:
+        st.warning("⚠️ KPI interpretation returned no content.")
 
-    
     # =====================================================
     #  RESILIENCE DRIVERS × System (Label-Based Interpretation)
     # =====================================================
@@ -522,7 +525,8 @@ if "results" in st.session_state:
     driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
     driver_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in driver_scores.items()}
     
-    context_payload.update({"driver_labels": driver_labels})
+    driver_payload = context_payload.copy()
+    driver_payload.update({"driver_labels": driver_labels})
     
     prompt_drv = f"""
     You are a resilience strategist advising a {role} in the {industry} industry.
@@ -543,7 +547,7 @@ if "results" in st.session_state:
                 model=LLM_MODEL,
                 messages=[
                     {"role": "system", "content": prompt_drv},
-                    {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
+                    {"role": "user", "content": json.dumps(driver_payload, ensure_ascii=False)}
                 ],
                 extra_headers=OPENROUTER_HEADERS,
                 temperature=0.35,
@@ -559,6 +563,8 @@ if "results" in st.session_state:
     if driver_expl:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(driver_expl))
+    else:
+        st.warning("⚠️ Driver interpretation returned no content.")
 
 
     # =====================================================
@@ -636,6 +642,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
