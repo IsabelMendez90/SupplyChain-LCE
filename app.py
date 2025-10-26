@@ -761,8 +761,9 @@ if "results" in st.session_state:
             synth_expl = ""
     else:
         synth_expl = st.session_state["llm_explanations"]["synthetic"]
-    
+
     if synth_expl:
+        synth_expl = re.sub(r"(<s>|</s>|\[OUT\]|\[/OUT\])", "", synth_expl).strip()
         st.markdown("**Synthetic Data Interpretation:**")
         st.write(clean_numbers(synth_expl))
 
@@ -870,6 +871,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
