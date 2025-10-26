@@ -449,10 +449,13 @@ if "results" in st.session_state:
     You are a supply-chain strategist advising a {role} in the {industry} industry.
     Below is the qualitative status of each core process for the {sel_sys} system:
     {json.dumps(core_labels, indent=2)}
-    Interpret these labels as *priority levels*, not performance results.
-    Focus on which High-priority processes should remain central to achieving "{objective}".
-    ≤170 words, directive and analytical tone.
+    Interpret these labels as *priority levels*, not performance metrics.
+    Provide a qualitative explanation—no numbers, percentages, or parentheses.
+    Describe which High-priority processes should remain central to achieving "{objective}",
+    which Medium ones deserve strengthening, and which Low ones can be simplified or delegated.
+    Keep tone analytical and directive, under 170 words.
     """
+
     core_expl = safe_llm_call(prompt_core, core_payload)
     if core_expl:
         st.markdown("**Interpretation:**")
@@ -475,10 +478,13 @@ if "results" in st.session_state:
     You are a performance strategist advising a {role} in the {industry} sector.
     Below is the qualitative status of each KPI for the {sel_sys} system:
     {json.dumps(kpi_labels, indent=2)}
-    Interpret these labels as *priority signals*, not results.
-    Focus on which High-priority KPIs are essential to achieving "{objective}".
-    ≤170 words, professional and directive tone.
+    Interpret these labels as *priority signals*, not results or measurements.
+    Write only qualitative insights—avoid any numbers, percentages, or parentheses.
+    Highlight which High-priority KPIs sustain competitive advantage, which Medium KPIs require optimization,
+    and which Low KPIs reflect improvement opportunities aligned with "{objective}".
+    Keep tone professional, concise, and prescriptive, under 170 words.
     """
+
     kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
     if kpi_expl:
         st.markdown("**Interpretation:**")
@@ -501,9 +507,13 @@ if "results" in st.session_state:
     You are a resilience strategist advising a {role} in the {industry} industry.
     Below is the qualitative status of each resilience driver for the {sel_sys} system:
     {json.dumps(driver_labels, indent=2)}
-    Interpret these labels as *priority guidance*—which elements to reinforce or elevate.
-    ≤170 words, prescriptive and analytical tone.
+    Interpret these labels as *priority guidance* for building robustness and adaptability.
+    Do not use numbers, percentages, or parentheses—focus on qualitative reasoning only.
+    Explain which High-priority drivers reinforce stability, which Medium drivers enhance flexibility,
+    and which Low drivers represent emerging areas of attention to strengthen "{objective}".
+    Keep tone prescriptive, analytical, and under 170 words.
     """
+
     driver_expl = safe_llm_call(prompt_drv, driver_payload)
     if driver_expl:
         st.markdown("**Interpretation:**")
@@ -586,6 +596,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
