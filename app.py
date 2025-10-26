@@ -589,18 +589,23 @@ if "results" in st.session_state:
     #          ENHANCED SYNTHETIC SENSITIVITY SIMULATION
     # =====================================================
     st.markdown("### Sensitivity Simulation")
-    
+
     st.info("""
     **About Synthetic Data:**  
-    This section generates *synthetic stress-test data* to illustrate how each
+    This section generates *synthetic stress-test data* to visualise how each
     performance pillar (Quality, Cost, Volume, Time, Flexibility, Environment)
-    might vary under disruption scenarios — **Volatility**, **Geopolitical Risk**, and **Carbon Constraints**.
-    The values are not empirical; they are produced by applying bounded random
-    perturbations (±30 %) and small scenario penalties to the baseline pillar weights.
-    This exploratory simulation helps visualize potential **resilience patterns**
-    for your system, given your role, objective, and 5S priorities.
+    might react to **user-defined disruption scenarios**.
+    Typical examples include *Volatility*, *Geopolitical Risk*, *Carbon Constraints*, or any
+    custom condition typed by the user (e.g. “Cyberattack”, “Supplier Strike”, “Energy Shortage”).  
+    
+    The values are **not empirical**; they are produced by applying bounded random
+    perturbations (≈ ±30 %) around baseline pillar strengths, combined with adaptive
+    penalties linked to 5S priorities and scenario meaning.
+    This exploratory simulation highlights **relative resilience patterns**
+    for the selected system, given your role, objective, and LCE-stage context.
+    Interpret green zones as robust responses and red/orange zones as fragile or
+    high-sensitivity areas requiring strategic reinforcement.
     """)
-
     
     # --- Retrieve custom scenario tags safely ---
     custom = st.session_state.get("custom_tags_text", "")
@@ -885,6 +890,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
