@@ -736,19 +736,16 @@ if "results" in st.session_state:
                 f"≤180 words, clear and explanatory tone."
             )
             
+
+            )
     
-          resp = client.chat.completions.create(
-              model=LLM_MODEL,
-              messages=[
-                  {"role": "system", "content": prompt_synth},
-                  {"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}
-              ],
-              extra_headers=OPENROUTER_HEADERS,
-              temperature=0.35,
-              max_tokens=380,
-          )
-
-
+            resp = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[{"role": "system", "content": prompt_synth},{"role": "user", "content": json.dumps(context_payload, ensure_ascii=False)}],
+                extra_headers=OPENROUTER_HEADERS,
+                temperature=0.35,
+                max_tokens=380,
+            )
     
             synth_expl = ""
             if hasattr(resp, "choices") and resp.choices:
@@ -888,6 +885,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
