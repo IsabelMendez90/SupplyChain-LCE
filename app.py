@@ -493,49 +493,49 @@ if "results" in st.session_state:
         st.warning("⚠️ Driver interpretation returned no content.")
 
 
+
+    
     # =====================================================
     #  COMPARATIVE INTERPRETATION (when toggle active)
     # =====================================================
     if st.session_state.get("compare_all", False):
-        if "compare" not in st.session_state["llm_explanations"]:
-            try:
-                compare_payload = {
-                    "selected_system": sel_sys,
-                    "objective": objective,
-                    "role": role,
-                    "industry": industry,
-                    "core": res["scored"]["core_processes"],
-                    "kpis": res["scored"]["kpis"],
-                    "drivers": res["scored"]["drivers"],
-                }
-                compare_prompt = f"""
-                You are an expert supply-chain strategist. The user focuses on {sel_sys} with objective "{objective}" in {industry}.
-                Compare this system against Technology Transfer and Facility Design across Core Processes, KPIs, and Drivers.
-                Highlight how strengths and weaknesses differ, and how they align with {role}'s perspective.
-                Conclude with one practical insight on when a hybrid or complementary strategy could be beneficial.
-                Do not include numeric values, parentheses or the amount of words.
-                """
-                compare_expl = client.chat.completions.create(
-                    model=LLM_MODEL,
-                    messages=[
-                        {"role": "system", "content": compare_prompt},
-                        {"role": "user", "content": json.dumps(compare_payload, ensure_ascii=False)},
-                    ],
-                    extra_headers=OPENROUTER_HEADERS,
-                    temperature=0.35,
-                    max_tokens=450
-                ).choices[0].message.content
-                st.session_state["llm_explanations"]["compare"] = compare_expl
-            except Exception as e:
-                st.warning(f"Comparative explanation failed: {e}")
-                compare_expl = ""
-        else:
-            compare_expl = st.session_state["llm_explanations"]["compare"]
-
+        sel_sys = st.session_state.get("selected_system", "Product Transfer")
+        objective = st.session_state.get("objective", "")
+        role = st.session_state.get("user_role", "")
+        industry = st.session_state.get("industry", "")
+    
+        compare_payload = {
+            "selected_system": sel_sys,
+            "objective": objective,
+            "role": role,
+            "industry": industry,
+            "core": res["scored"]["core_processes"],
+            "kpis": res["scored"]["kpis"],
+            "drivers": res["scored"]["drivers"],
+        }
+    
+        compare_prompt = f"""
+        You are an expert supply-chain strategist.
+        The user focuses on {sel_sys} with the objective "{objective}" in the {industry} sector.
+        Compare this system against **Technology Transfer** and **Facility Design** across Core Processes, KPIs, and Drivers.
+        Identify distinctive strengths and vulnerabilities for each system in relation to {role}'s perspective.
+        Discuss how {sel_sys} aligns with the given objective, where it outperforms, and where it lags behind.
+        Highlight how Technology Transfer and Facility Design might complement it in a hybrid strategy.
+        Conclude with one **actionable recommendation** that balances system synergy, resilience, and innovation.
+        Avoid numeric values, parentheses, or explicit token counts.
+        Keep tone analytical, concise (≤180 words).
+        """
+    
+        # --- Compact payload to prevent model truncation ---
+        compare_payload_compact = compact_dict(compare_payload)
+    
+        compare_expl = safe_llm_call(compare_prompt, compare_payload_compact, temp=0.35, max_toks=450)
+    
         if compare_expl:
             st.markdown("### Comparative Interpretation")
-            st.write(clean_numbers(compare_expl))
-
+            st.write(re.sub(r"\s*\(\d+(\.\d+)?\)", "", compare_expl))
+        else:
+            st.warning("⚠️ Comparative interpretation returned no content or was truncated.")
 
 # =====================================================
 #                CHAT SECTION
@@ -568,6 +568,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
