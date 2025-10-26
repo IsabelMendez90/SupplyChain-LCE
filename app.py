@@ -737,7 +737,7 @@ if "results" in st.session_state:
             )
             
 
-            )
+            
     
             resp = client.chat.completions.create(
                 model=LLM_MODEL,
@@ -885,6 +885,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
