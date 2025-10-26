@@ -118,30 +118,12 @@ STAGE_TAGS_DRIVERS = {"Inventory/Capacity Buffers":{"Operation":0.7},
 def clamp01(x): return max(0.0,min(1.0,x))
 def clamp03(x): return max(0.0,min(3.0,x))
 
-def scenario_memberships(custom_tags: List[str]):
-    tags=[t.strip().lower() for t in custom_tags if t.strip()]
-    mem={k:0.0 for k in list(BASE_DRIVERS.keys())+list(BASE_KPIS.keys())+list(BASE_CORE.keys())}
-    def add(k,v): mem[k]=max(mem[k],v)
-    for t in tags:
-        if "port" in t or "congestion" in t:
-            add("Nearshoring",0.7); add("Network Diversification",0.5)
-        if "bankruptcy" in t or "single-source" in t:
-            add("Multisourcing",0.8)
-        if "digital twin" in t:
-            add("Platform/Plant Harmonization",0.6)
-    return mem
+
 
 def s_boost(w,s_tags,name): return sum(w.get(k,0.0)*v for k,v in s_tags.get(name,{}).items())
 def stage_boost(stage, tags, name, max_gain=0.8): return clamp01(tags.get(name,{}).get(stage,0.0))*max_gain
-def scenario_boost(flags, mem, name, matrix):
-    b=0.0
-    if flags.get("volatility") and matrix=="drivers" and name in ["Inventory/Capacity Buffers","Platform/Plant Harmonization"]: b+=0.5
-    if flags.get("geo_risk") and matrix=="drivers" and name in ["Multisourcing","Network Diversification","Nearshoring"]: b+=0.5
-    if flags.get("carbon"):
-        if matrix=="drivers" and name in ["Nearshoring","Ecosystem Partnerships"]: b+=0.4
-        if matrix=="kpis" and name in ["ESG index","Lifecycle cost"]: b+=0.3
-    return b + mem.get(name,0.0)
-def pillar_boost(pillars,item_pillars,max_gain=1.2): return max_gain*sum(pillars.get(k,0.0)*v for k,v in item_pillars.items())
+
+def pillar_boost(pillars,item_pillars,max_gain=1.2): return mƒax_gain*sum(pillars.get(k,0.0)*v for k,v in item_pillars.items())
 
 def score_matrix(base_map, matrix, w5s, stage, flags, mem, pillars):
     out={}
@@ -153,7 +135,7 @@ def score_matrix(base_map, matrix, w5s, stage, flags, mem, pillars):
                 score += pillar_boost(pillars, KPI_TO_PILLARS.get(item,{}), 1.2)
                 score += stage_boost(stage, STAGE_TAGS_KPI, item, 0.8)
                 score += clamp01(s_boost(w5s, S_TAGS_KPI, item))*0.8
-                score += scenario_boost(flags, mem, item, matrix)
+                score += 0
             elif matrix=="core_processes":
                 score += stage_boost(stage, STAGE_TAGS_CORE, item, 0.8)
                 score += clamp01(s_boost(w5s, S_TAGS_CORE, item))*0.8
@@ -164,11 +146,10 @@ def score_matrix(base_map, matrix, w5s, stage, flags, mem, pillars):
                 score += scenario_boost(flags, mem, item, matrix)
             out[item][system]=clamp03(score)
     return out
-def score_all(w5s, stage, flags, custom_tags, pillars):
-    mem=scenario_memberships(custom_tags)
-    return {"core_processes":score_matrix(BASE_CORE,"core_processes",w5s,stage,flags,mem,pillars),
-            "kpis":score_matrix(BASE_KPIS,"kpis",w5s,stage,flags,mem,pillars),
-            "drivers":score_matrix(BASE_DRIVERS,"drivers",w5s,stage,flags,mem,pillars)}
+def score_all(w5s, stage, pillars):
+    return {"core_processes":score_matrix(BASE_CORE,"core_processes",w5s,stage,pillars),
+            "kpis":score_matrix(BASE_KPIS,"kpis",w5s,stage,pillars),
+            "drivers":score_matrix(BASE_DRIVERS,"drivers",w5s,stage,pillars)}
 
 # =====================================================
 #                 LLM INTERFACES
@@ -223,7 +204,7 @@ def synthetic_stress(weights_5s,lce_stage,custom_tags,pillars):
                      "Carbon":f["carbon"],"AvgDriverScore":avg_drv})
     df=pd.DataFrame(data)
     fig=px.bar(df,x=["Volatility","GeoRisk","Carbon"],y="AvgDriverScore",
-               title="Resilience Sensitivity under Disruption Scenarios")
+               title="Resilience Sensitivity")
     st.plotly_chart(fig,use_container_width=True)
     return df
 
@@ -267,13 +248,6 @@ with st.sidebar:
     st.caption("5S sliders are priorities: 0 = deprioritize, 0.5 = neutral, 1 = strongly prioritize.")
     for s in FIVE_S:
         st.slider(s, 0.0, 1.0, 0.5, 0.05, key=f"s5_{s}")
-    st.header("Scenarios")
-    st.multiselect("Preset scenarios",
-        ["High demand volatility","Geopolitical risk","Carbon constraints"],
-        default=preset["preset"], key="preset_scenarios")
-    st.text_input("Additional tags (comma-separated)",
-        value=", ".join(preset["custom"]) if preset_name!="Other" else "",
-        key="custom_tags_text")
     st.toggle("Compare all systems (view)", value=False, key="compare_all")
 
 # =====================================================
@@ -285,19 +259,13 @@ st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 if st.button("Analyze", use_container_width=True):
     role_val = st.session_state.get("user_role_other") if st.session_state.get("user_role")=="Other" else st.session_state.get("user_role")
     weights_5s = {s: st.session_state.get(f"s5_{s}", 0.5) for s in FIVE_S}
-    flags={"volatility":"High demand volatility" in st.session_state.get("preset_scenarios",[]),
-           "geo_risk":"Geopolitical risk" in st.session_state.get("preset_scenarios",[]),
-           "carbon":"Carbon constraints" in st.session_state.get("preset_scenarios",[])}
-    custom=[t.strip() for t in st.session_state.get("custom_tags_text","").split(",") if t.strip()]
 
     payload = {
         "objective": st.session_state.get("objective",""),
         "industry": st.session_state.get("industry",""),
         "user_role": role_val,
         "system_type": st.session_state.get("selected_system","Product Transfer"),
-        "lce_stage": st.session_state.get("lce_stage","Operation"),
-        "weights_5s": weights_5s,
-        "scenarios": {"preset": st.session_state.get("preset_scenarios",[]),"custom": custom}
+        "lce_stage": st.session_state.get("lce_stage","Operation")
     }
 
     with st.spinner("Running LLM analysis..."):
@@ -316,7 +284,7 @@ if st.button("Analyze", use_container_width=True):
     pillars={k:v/ssum for k,v in pillars.items()}
 
     # run deterministic scoring
-    scored=score_all(weights_5s, st.session_state.get("lce_stage","Operation"), flags, custom+tags, pillars)
+    scored=score_all(weights_5s, st.session_state.get("lce_stage","Operation"), pillars)
 
     # single guidance per system
     guidance_single={}
@@ -390,7 +358,7 @@ if "results" in st.session_state:
     Each axis (Quality, Cost, Volume, Time, Flexibility, Environment) reflects proportional emphasis that sums to 100%.
     Explain which two or three pillars show the strongest strategic weight and why they align with the user's stated objective:
     "{objective}".
-    Also mention which dimensions are comparatively weaker and how that could affect balance, risk, or sustainability under {scenarios}.
+    Also mention which dimensions are comparatively weaker and how that could affect balance, risk, or sustainability.
     Avoid numeric details or parenthetical notation.
     Speak in a professional but concise tone (≤180 words).
     """
@@ -456,7 +424,7 @@ if "results" in st.session_state:
     Below is the qualitative status of each core process for the {sel_sys} system:
     {json.dumps(core_labels, indent=2)}
     Interpret these labels as *priority levels*, not performance results.
-    Focus on which High-priority processes should remain central to achieving "{objective}" under {scenarios},
+    Focus on which High-priority processes should remain central to achieving "{objective}" ,
     and which Medium ones should be **raised** to High to reinforce system maturity.
     If no Low processes exist, skip that discussion entirely.
     Avoid re-labelling or contradicting the given levels — refer to them exactly as stated.
@@ -505,7 +473,7 @@ if "results" in st.session_state:
     Below is the qualitative status of each KPI for the {sel_sys} system:
     {json.dumps(kpi_labels, indent=2)}
     Interpret these labels as *priority signals*, not results.
-    Focus on which High-priority KPIs are essential to achieving "{objective}" under {scenarios},
+    Focus on which High-priority KPIs are essential to achieving "{objective}" ,
     and which Medium or Low KPIs should be reinforced to close operational or sustainability gaps.
     Do not contradict the given labels — refer to them exactly as stated.
     Provide role-oriented guidance on how to leverage High KPIs and develop weaker ones.
@@ -555,7 +523,7 @@ if "results" in st.session_state:
     {json.dumps(driver_labels, indent=2)}
     Interpret these labels as *priority guidance*—which elements to reinforce or elevate.
     Focus on which High drivers are already central to system stability and which Medium ones should be developed
-    to strengthen adaptability under {scenarios}.
+    to strengthen adaptability.
     If Low drivers appear, discuss how this role can address them through design, sourcing, or collaboration.
     Never contradict or reinterpret the given levels—use them exactly as presented.
     Conclude with one actionable recommendation on how to improve systemic resilience for "{objective}".
@@ -662,6 +630,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
