@@ -238,7 +238,7 @@ def llm_variability(payload,runs=3):
 # =====================================================
 #                SIDEBAR CONFIGURATION
 # =====================================================
-PRESETS={"IECOS/PRIMA (PT)":{"system":"Product Transfer","preset":["High demand volatility","Geopolitical risk"],
+PRESETS={"IECOS (PT)":{"system":"Product Transfer","preset":["High demand volatility","Geopolitical risk"],
                               "custom":["lean logistics","digital platforms","supplier collaboration"],
                               "objective":"Stabilize outsourced supply and assemble-to-order delivery performance."},
          "Cardanes (TT)":{"system":"Technology Transfer","preset":["High demand volatility"],
@@ -813,6 +813,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
