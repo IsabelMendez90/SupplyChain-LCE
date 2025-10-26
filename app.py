@@ -603,20 +603,65 @@ if "results" in st.session_state:
 
     
     # Generate synthetic stress data
+    # =====================================================
+    #  DYNAMIC + CONTEXTUAL SYNTHETIC STRESS SIMULATION
+    # =====================================================
     np.random.seed(42)
-    scenario_types = ["Volatility", "GeoRisk", "Carbon"]
+    
+    # --- Dynamic scenario mapping (preset + custom) ---
+    user_scenarios = st.session_state.get("preset_scenarios", []) + custom
+    if not user_scenarios:
+        user_scenarios = ["Volatility"]
+    
+    scenario_types = []
+    for s in user_scenarios:
+        s_clean = s.strip().title()
+        if "Volat" in s_clean:
+            scenario_types.append("Volatility")
+        elif "Geo" in s_clean or "Political" in s_clean:
+            scenario_types.append("GeoRisk")
+        elif "Carbon" in s_clean or "Sustain" in s_clean:
+            scenario_types.append("Carbon")
+        else:
+            scenario_types.append(s_clean)
+    scenario_types = list(dict.fromkeys(scenario_types))  # remove duplicates
+    
+    # --- Contextual synthetic stress-test generation ---
     perf_dimensions = list(res["pillars"].keys())
+    
+    # Compute baseline pillar intensity from real system matrices
+    pillar_agg = {p: 0 for p in perf_dimensions}
+    for p in perf_dimensions:
+        pillar_agg[p] = np.mean([
+            np.mean([v.get(sel_sys, 0) for v in res["scored"]["kpis"].values()]),
+            np.mean([v.get(sel_sys, 0) for v in res["scored"]["core_processes"].values()]),
+            np.mean([v.get(sel_sys, 0) for v in res["scored"]["drivers"].values()]),
+        ])
+    max_val = max(pillar_agg.values()) or 1
+    pillar_agg = {k: v / max_val for k, v in pillar_agg.items()}
+    
+    # --- Generate adaptive stress data ---
     data = np.zeros((len(perf_dimensions), len(scenario_types)))
     
     for i, p in enumerate(perf_dimensions):
-        base = res["pillars"][p]
+        base = pillar_agg[p]
         for j, s in enumerate(scenario_types):
-            # simulate non-linear stress response
-            factor = np.random.uniform(0.7, 1.2)
-            stress = (base * factor) * (0.9 if s == "GeoRisk" else 1.0)
+            # map penalties to 5S priorities based on scenario meaning
+            if "Carbon" in s:
+                penalty = 0.15 * res["weights_5s"].get("Sustainable", 0.5)
+            elif "Geo" in s:
+                penalty = 0.15 * res["weights_5s"].get("Social", 0.5)
+            elif "Volat" in s:
+                penalty = 0.15 * res["weights_5s"].get("Smart", 0.5)
+            else:
+                # custom / unknown scenario penalty
+                penalty = 0.1 * np.mean(list(res["weights_5s"].values()))
+            noise = np.random.uniform(0.85, 1.15)
+            stress = base * noise * (1 - penalty)
             data[i, j] = np.clip(stress, 0, 1)
     
     df_heat = pd.DataFrame(data, index=perf_dimensions, columns=scenario_types)
+
     fig_heat = px.imshow(
         df_heat,
         color_continuous_scale="RdYlGn",
@@ -813,6 +858,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
