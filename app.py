@@ -125,31 +125,40 @@ def stage_boost(stage, tags, name, max_gain=0.8): return clamp01(tags.get(name,{
 
 def pillar_boost(pillars,item_pillars,max_gain=1.2): return mƒax_gain*sum(pillars.get(k,0.0)*v for k,v in item_pillars.items())
 
-def score_matrix(base_map, matrix, w5s, stage, flags, mem, pillars):
-    out={}
+def score_matrix(base_map, matrix, w5s, stage, pillars):
+    out = {}
     for item, cols in base_map.items():
-        out[item]={}
+        out[item] = {}
         for system, base in cols.items():
-            score=float(base)
-            if matrix=="kpis":
-                score += pillar_boost(pillars, KPI_TO_PILLARS.get(item,{}), 1.2)
+            score = float(base)
+
+            # --- KPI Matrix ---
+            if matrix == "kpis":
+                score += pillar_boost(pillars, KPI_TO_PILLARS.get(item, {}), 1.2)
                 score += stage_boost(stage, STAGE_TAGS_KPI, item, 0.8)
-                score += clamp01(s_boost(w5s, S_TAGS_KPI, item))*0.8
-                score += 0
-            elif matrix=="core_processes":
+                score += clamp01(s_boost(w5s, S_TAGS_KPI, item)) * 0.8
+
+            # --- Core Processes Matrix ---
+            elif matrix == "core_processes":
                 score += stage_boost(stage, STAGE_TAGS_CORE, item, 0.8)
-                score += clamp01(s_boost(w5s, S_TAGS_CORE, item))*0.8
-                score += scenario_boost(flags, mem, item, matrix)*0.6
+                score += clamp01(s_boost(w5s, S_TAGS_CORE, item)) * 0.8
+
+            # --- Resilience Drivers Matrix ---
             else:
                 score += stage_boost(stage, STAGE_TAGS_DRIVERS, item, 0.6)
-                score += clamp01(s_boost(w5s, S_TAGS_DRIVERS, item))*0.6
-                score += scenario_boost(flags, mem, item, matrix)
-            out[item][system]=clamp03(score)
+                score += clamp01(s_boost(w5s, S_TAGS_DRIVERS, item)) * 0.6
+
+            out[item][system] = clamp03(score)
     return out
+
+
 def score_all(w5s, stage, pillars):
-    return {"core_processes":score_matrix(BASE_CORE,"core_processes",w5s,stage,pillars),
-            "kpis":score_matrix(BASE_KPIS,"kpis",w5s,stage,pillars),
-            "drivers":score_matrix(BASE_DRIVERS,"drivers",w5s,stage,pillars)}
+    return {
+        "core_processes": score_matrix(BASE_CORE, "core_processes", w5s, stage, pillars),
+        "kpis": score_matrix(BASE_KPIS, "kpis", w5s, stage, pillars),
+        "drivers": score_matrix(BASE_DRIVERS, "drivers", w5s, stage, pillars),
+    }
+
 
 # =====================================================
 #                 LLM INTERFACES
@@ -630,6 +639,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
