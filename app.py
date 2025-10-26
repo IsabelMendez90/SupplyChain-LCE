@@ -655,54 +655,54 @@ if "results" in st.session_state:
     Avoid numeric or parenthetical notation. ≤190 words, explanatory and instructive tone.
     """
 
-if "synthetic" not in st.session_state["llm_explanations"]:
-    try:
-        # --- Shortened, safer messaging sequence for Mistral 7B ---
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a pedagogical supply-chain strategist who explains synthetic simulations clearly "
-                    "and in ≤190 words. Avoid numeric notation or parentheses."
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Interpret the synthetic sensitivity heatmap for the {sel_sys} system in the {industry} industry. "
-                    f"Explain first what synthetic data means (simulated stress-testing using ±30% perturbations on "
-                    "the six performance pillars: Quality, Cost, Volume, Time, Flexibility, Environment). "
-                    "Then describe how these simulated variations relate to the user's objective "
-                    f"'{objective}', the selected 5S priorities, LCE stage, and scenarios ({scenarios}). "
-                    "End by teaching how reading these synthetic patterns helps a "
-                    f"{role} anticipate trade-offs and strengthen resilience."
-                ),
-            },
-            {
-                "role": "user",
-                "content": json.dumps(context_payload, ensure_ascii=False),
-            },
-        ]
-
-        resp = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=messages,
-            extra_headers=OPENROUTER_HEADERS,
-            temperature=0.35,
-            max_tokens=380,
-        )
-
-        synth_expl = resp.choices[0].message.content.strip() if resp.choices else ""
-        if not synth_expl:
-            st.warning("⚠️ Synthetic analysis returned no content — try rerunning.")
-        else:
-            st.session_state["llm_explanations"]["synthetic"] = synth_expl
-
-    except Exception as e:
-        st.warning(f"Synthetic explanation failed: {e}")
-        synth_expl = ""
-else:
-    synth_expl = st.session_state["llm_explanations"]["synthetic"]
+    if "synthetic" not in st.session_state["llm_explanations"]:
+        try:
+            # --- Shortened, safer messaging sequence for Mistral 7B ---
+            messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a pedagogical supply-chain strategist who explains synthetic simulations clearly "
+                        "and in ≤190 words. Avoid numeric notation or parentheses."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Interpret the synthetic sensitivity heatmap for the {sel_sys} system in the {industry} industry. "
+                        f"Explain first what synthetic data means (simulated stress-testing using ±30% perturbations on "
+                        "the six performance pillars: Quality, Cost, Volume, Time, Flexibility, Environment). "
+                        "Then describe how these simulated variations relate to the user's objective "
+                        f"'{objective}', the selected 5S priorities, LCE stage, and scenarios ({scenarios}). "
+                        "End by teaching how reading these synthetic patterns helps a "
+                        f"{role} anticipate trade-offs and strengthen resilience."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(context_payload, ensure_ascii=False),
+                },
+            ]
+    
+            resp = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=messages,
+                extra_headers=OPENROUTER_HEADERS,
+                temperature=0.35,
+                max_tokens=380,
+            )
+    
+            synth_expl = resp.choices[0].message.content.strip() if resp.choices else ""
+            if not synth_expl:
+                st.warning("⚠️ Synthetic analysis returned no content — try rerunning.")
+            else:
+                st.session_state["llm_explanations"]["synthetic"] = synth_expl
+    
+        except Exception as e:
+            st.warning(f"Synthetic explanation failed: {e}")
+            synth_expl = ""
+    else:
+        synth_expl = st.session_state["llm_explanations"]["synthetic"]
     
     if synth_expl:
         st.markdown("**Synthetic Data Interpretation:**")
@@ -813,6 +813,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
