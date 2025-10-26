@@ -350,18 +350,43 @@ def show_matrix(title, df_dict):
     st.dataframe(styled, use_container_width=True)
     return df_label
 
+def _json_default(o):
+    import numpy as _np, pandas as _pd
+    if isinstance(o, (_np.integer, _np.floating)): return float(o)
+    if isinstance(o, (_pd.Timestamp,)): return o.isoformat()
+    return str(o)
+
+def compact_dict(d, max_items=10):
+    import numpy as _np
+    def _compact(v, depth=0):
+        if isinstance(v, dict):
+            out = {}
+            for i, (kk, vv) in enumerate(v.items()):
+                if i >= max_items:
+                    break
+                out[str(kk)] = _compact(vv, depth + 1)
+            return out
+        if isinstance(v, (list, tuple)):
+            return [_compact(x, depth + 1) for x in v[:max_items]]
+        if isinstance(v, (_np.integer, _np.floating)):
+            return float(v)
+        if isinstance(v, (int, float, bool)) or v is None:
+            return v
+        if isinstance(v, str):
+            return v
+        return str(v)
+    return {str(k): _compact(v) for k, v in d.items()}
 # =====================================================
 #     SAFE LLM CALL WRAPPER (handles null responses)
 # =====================================================
 def safe_llm_call(prompt: str, payload: dict, temp=0.35, max_toks=400, retries=2):
-    """Safer call for OpenRouter free models that occasionally drop outputs."""
     for _ in range(retries):
         try:
             r = client.chat.completions.create(
                 model=LLM_MODEL,
                 messages=[
                     {"role": "system", "content": prompt},
-                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}
+                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=_json_default)},
                 ],
                 extra_headers=OPENROUTER_HEADERS,
                 temperature=temp,
@@ -428,26 +453,17 @@ if "results" in st.session_state:
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
     core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
-
-    core_payload = context_payload.copy()
-    core_payload.update({"core_labels": core_labels})
-    core_payload_compact = compact_dict(core_payload)
+    core_payload = compact_dict({**context_payload, "core_labels": core_labels})
 
     prompt_core = f"""
     You are a supply-chain strategist advising a {role} in the {industry} industry.
     Below is the qualitative status of each core process for the {sel_sys} system:
     {json.dumps(core_labels, indent=2)}
     Interpret these labels as *priority levels*, not performance results.
-    Focus on which High-priority processes should remain central to achieving "{objective}" ,
-    and which Medium ones should be **raised** to High to reinforce system maturity.
-    If no Low processes exist, skip that discussion entirely.
-    Avoid re-labelling or contradicting the given levels — refer to them exactly as stated.
-    End with one prescriptive recommendation on how this role should rebalance focus.
+    Focus on which High-priority processes should remain central to achieving "{objective}".
     ≤170 words, directive and analytical tone.
     """
-
-    core_expl = safe_llm_call(prompt_core, core_payload_compact)
-
+    core_expl = safe_llm_call(prompt_core, core_payload)
     if core_expl:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(core_expl))
@@ -463,26 +479,17 @@ if "results" in st.session_state:
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
     kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
-
-    kpi_payload = context_payload.copy()
-    kpi_payload.update({"kpi_labels": kpi_labels})
-    kpi_payload_compact = compact_dict(kpi_payload)
+    kpi_payload = compact_dict({**context_payload, "kpi_labels": kpi_labels})
 
     prompt_kpi = f"""
     You are a performance strategist advising a {role} in the {industry} sector.
     Below is the qualitative status of each KPI for the {sel_sys} system:
     {json.dumps(kpi_labels, indent=2)}
     Interpret these labels as *priority signals*, not results.
-    Focus on which High-priority KPIs are essential to achieving "{objective}" ,
-    and which Medium or Low KPIs should be reinforced to close operational or sustainability gaps.
-    Do not contradict the given labels — refer to them exactly as stated.
-    Provide role-oriented guidance on how to leverage High KPIs and develop weaker ones.
-    Conclude with one prescriptive insight summarizing how KPI focus can strengthen system performance.
+    Focus on which High-priority KPIs are essential to achieving "{objective}".
     ≤170 words, professional and directive tone.
     """
-
-    kpi_expl = safe_llm_call(prompt_kpi, kpi_payload_compact)
-
+    kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
     if kpi_expl:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(kpi_expl))
@@ -498,26 +505,16 @@ if "results" in st.session_state:
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
     driver_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in driver_scores.items()}
-
-    driver_payload = context_payload.copy()
-    driver_payload.update({"driver_labels": driver_labels})
-    driver_payload_compact = compact_dict(driver_payload)
-
+    driver_payload = compact_dict({**context_payload, "driver_labels": driver_labels})
+  
     prompt_drv = f"""
     You are a resilience strategist advising a {role} in the {industry} industry.
     Below is the qualitative status of each resilience driver for the {sel_sys} system:
     {json.dumps(driver_labels, indent=2)}
     Interpret these labels as *priority guidance*—which elements to reinforce or elevate.
-    Focus on which High drivers are already central to system stability and which Medium ones should be developed
-    to strengthen adaptability.
-    If Low drivers appear, discuss how this role can address them through design, sourcing, or collaboration.
-    Never contradict or reinterpret the given levels—use them exactly as presented.
-    Conclude with one actionable recommendation on how to improve systemic resilience for "{objective}".
     ≤170 words, prescriptive and analytical tone.
     """
-
-    driver_expl = safe_llm_call(prompt_drv, driver_payload_compact)
-
+    driver_expl = safe_llm_call(prompt_drv, driver_payload)
     if driver_expl:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(driver_expl))
@@ -531,12 +528,7 @@ if "results" in st.session_state:
     #  COMPARATIVE INTERPRETATION (when toggle active)
     # =====================================================
     if st.session_state.get("compare_all", False):
-        sel_sys = st.session_state.get("selected_system", "Product Transfer")
-        objective = st.session_state.get("objective", "")
-        role = st.session_state.get("user_role", "")
-        industry = st.session_state.get("industry", "")
-    
-        compare_payload = {
+        compare_payload = compact_dict({
             "selected_system": sel_sys,
             "objective": objective,
             "role": role,
@@ -544,28 +536,19 @@ if "results" in st.session_state:
             "core": res["scored"]["core_processes"],
             "kpis": res["scored"]["kpis"],
             "drivers": res["scored"]["drivers"],
-        }
+        })
     
         compare_prompt = f"""
         You are an expert supply-chain strategist.
-        The user focuses on {sel_sys} with the objective "{objective}" in the {industry} sector.
-        Compare this system against **Technology Transfer** and **Facility Design** across Core Processes, KPIs, and Drivers.
-        Identify distinctive strengths and vulnerabilities for each system in relation to {role}'s perspective.
-        Discuss how {sel_sys} aligns with the given objective, where it outperforms, and where it lags behind.
-        Highlight how Technology Transfer and Facility Design might complement it in a hybrid strategy.
-        Conclude with one **actionable recommendation** that balances system synergy, resilience, and innovation.
-        Avoid numeric values, parentheses, or explicit token counts.
-        Keep tone analytical, concise (≤180 words).
+        Compare {sel_sys} with Technology Transfer and Facility Design across Core Processes, KPIs, and Drivers.
+        Explain relative strengths and weaknesses from the lens of {role} aiming to achieve "{objective}".
+        Conclude with one actionable recommendation to balance synergy, resilience, and innovation.
+        ≤180 words, analytical and concise tone.
         """
-    
-        # --- Compact payload to prevent model truncation ---
-        compare_payload_compact = compact_dict(compare_payload)
-    
-        compare_expl = safe_llm_call(compare_prompt, compare_payload_compact, temp=0.35, max_toks=450)
-    
+        compare_expl = safe_llm_call(compare_prompt, compare_payload, temp=0.35, max_toks=450)
         if compare_expl:
             st.markdown("### Comparative Interpretation")
-            st.write(re.sub(r"\s*\(\d+(\.\d+)?\)", "", compare_expl))
+            st.write(clean_numbers(compare_expl)
         else:
             st.warning("⚠️ Comparative interpretation returned no content or was truncated.")
 
@@ -600,51 +583,4 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
