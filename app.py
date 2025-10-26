@@ -10,7 +10,6 @@ import numpy as np
 import streamlit as st
 from openai import OpenAI
 from sklearn.feature_extraction.text import CountVectorizer
-import plotly.express as px
 
 # =====================================================
 #                   SETUP
@@ -28,7 +27,6 @@ LLM_MODEL = "mistralai/mistral-7b-instruct:free"
 SYSTEMS = ["Product Transfer","Technology Transfer","Facility Design"]
 LCE = ["Ideation","Basic Development","Advanced Development","Launch","Operation","End-of-Life"]
 FIVE_S = ["Social","Sustainable","Sensing","Smart","Safe"]
-PILLARS = ["quality","cost","volume","time","flexibility","environment"]
 
 COMPETITIVE={"Product Transfer":"Operational Excellence","Technology Transfer":"Product Innovation","Facility Design":"Customer Focus/Intimacy"}
 VALUE_CHAIN={"Product Transfer":"Collaboration Networks","Technology Transfer":"Strategic Business Units","Facility Design":"Vertical Integration"}
@@ -72,21 +70,7 @@ BASE_DRIVERS = {
     "Platform/Plant Harmonization":{"Product Transfer":1,"Technology Transfer":1,"Facility Design":3},
     "Ecosystem Partnerships":{"Product Transfer":3,"Technology Transfer":3,"Facility Design":1},
 }
-KPI_TO_PILLARS = {
-    "Supplier on-time delivery":{"time":0.45,"flexibility":0.2,"cost":0.2,"quality":0.05},
-    "Incoming defect rate":{"quality":0.6,"cost":0.2,"time":0.1},
-    "Assembly cost per unit":{"cost":0.7,"time":0.1},
-    "Logistics lead time":{"time":0.6,"cost":0.15,"flexibility":0.15},
-    "Ramp-up time":{"time":0.55,"flexibility":0.2,"quality":0.1},
-    "First-pass yield":{"quality":0.7,"time":0.1},
-    "Learning-curve productivity":{"quality":0.3,"time":0.25,"cost":0.2},
-    "% revenue from new products":{"flexibility":0.3,"quality":0.2,"volume":0.2},
-    "OEE":{"volume":0.35,"quality":0.25,"cost":0.2},
-    "OTIF":{"time":0.35,"quality":0.2,"flexibility":0.2,"volume":0.1},
-    "Lifecycle cost":{"environment":0.25,"cost":0.5},
-    "ESG index":{"environment":0.8},
-    "Safety incidents":{"environment":0.2,"quality":0.2},
-}
+
 S_TAGS_KPI = {"ESG index":{"Sustainable":1.0},"Lifecycle cost":{"Sustainable":0.6},
               "Safety incidents":{"Safe":1.0},"OEE":{"Smart":0.4,"Sensing":0.4},
               "First-pass yield":{"Smart":0.4,"Sensing":0.4},"Supplier on-time delivery":{"Social":0.6},
@@ -123,10 +107,8 @@ def clamp03(x): return max(0.0,min(3.0,x))
 def s_boost(w,s_tags,name): return sum(w.get(k,0.0)*v for k,v in s_tags.get(name,{}).items())
 def stage_boost(stage, tags, name, max_gain=0.8): return clamp01(tags.get(name,{}).get(stage,0.0))*max_gain
 
-def pillar_boost(pillars, item_pillars, max_gain=1.2):
-    return max_gain * sum(pillars.get(k, 0.0) * v for k, v in item_pillars.items())
 
-def score_matrix(base_map, matrix, w5s, stage, pillars):
+def score_matrix(base_map, matrix, w5s, stage):
     out = {}
     for item, cols in base_map.items():
         out[item] = {}
@@ -135,7 +117,6 @@ def score_matrix(base_map, matrix, w5s, stage, pillars):
 
             # --- KPI Matrix ---
             if matrix == "kpis":
-                score += pillar_boost(pillars, KPI_TO_PILLARS.get(item, {}), 1.2)
                 score += stage_boost(stage, STAGE_TAGS_KPI, item, 0.8)
                 score += clamp01(s_boost(w5s, S_TAGS_KPI, item)) * 0.8
 
@@ -153,39 +134,18 @@ def score_matrix(base_map, matrix, w5s, stage, pillars):
     return out
 
 
-def score_all(w5s, stage, pillars):
+def score_all(w5s, stage):
     return {
-        "core_processes": score_matrix(BASE_CORE, "core_processes", w5s, stage, pillars),
-        "kpis": score_matrix(BASE_KPIS, "kpis", w5s, stage, pillars),
-        "drivers": score_matrix(BASE_DRIVERS, "drivers", w5s, stage, pillars),
+        "core_processes": score_matrix(BASE_CORE, "core_processes", w5s, stage),
+        "kpis": score_matrix(BASE_KPIS, "kpis", w5s, stage),
+        "drivers": score_matrix(BASE_DRIVERS, "drivers", w5s, stage),
     }
 
 
 # =====================================================
 #                 LLM INTERFACES
 # =====================================================
-ANALYZER_SYSTEM = (
-    "You are an experienced Supply Chain Director. Output ONLY JSON.\n"
-    "Input: objective, industry, user_role, system_type, lce_stage, 5S weights.\n"
-    "Return: {pillars:{quality,cost,volume,time,flexibility,environment∈[0,1]},reasons:[…],tags:[…]}."
-)
-def analyze_to_pillars(payload: Dict) -> Dict:
-    msgs=[{"role":"system","content":ANALYZER_SYSTEM},
-          {"role":"user","content":json.dumps(payload, ensure_ascii=False)}]
-    r=client.chat.completions.create(model=LLM_MODEL, messages=msgs,
-        extra_headers=OPENROUTER_HEADERS,
-        response_format={"type":"json_object"}, temperature=0.2, max_tokens=700)
-    return json.loads(r.choices[0].message.content)
 
-SINGLE_GUIDANCE_SYSTEM = (
-    "You are a senior supply-chain advisor. Speak directly to the user in ≤160 words."
-)
-def make_single_guidance(ctx: Dict) -> str:
-    r=client.chat.completions.create(model=LLM_MODEL,
-        messages=[{"role":"system","content":SINGLE_GUIDANCE_SYSTEM},
-                  {"role":"user","content":json.dumps(ctx, ensure_ascii=False)}],
-        extra_headers=OPENROUTER_HEADERS, temperature=0.3, max_tokens=700)
-    return r.choices[0].message.content
 
 # =====================================================
 #                PERFORMANCE & ANALYTICS
@@ -198,28 +158,6 @@ def extract_keywords(text, topn=10):
     return [w for w,_ in sorted(freqs,key=lambda x:-x[1])[:topn]]
 
 
-def synthetic_stress(weights_5s,lce_stage,custom_tags,pillars):
-    data=[]
-    combos=[{"volatility":v,"geo_risk":g,"carbon":c}
-            for v in [True,False] for g in [True,False] for c in [True,False]]
-    for f in combos:
-        scores=score_all(weights_5s,lce_stage,f,custom_tags,pillars)
-        avg_drv=np.mean([np.mean(list(v.values())) for v in scores["drivers"].values()])
-        data.append({"Volatility":f["volatility"],"GeoRisk":f["geo_risk"],
-                     "Carbon":f["carbon"],"AvgDriverScore":avg_drv})
-    df=pd.DataFrame(data)
-    fig=px.bar(df,x=["Volatility","GeoRisk","Carbon"],y="AvgDriverScore",
-               title="Resilience Sensitivity")
-    st.plotly_chart(fig,use_container_width=True)
-    return df
-
-def llm_variability(payload,runs=3):
-    results=[]
-    for _ in range(runs):
-        try: results.append(analyze_to_pillars(payload)["pillars"])
-        except: continue
-    if len(results)<2:return None
-    return pd.DataFrame(results).std().mean()
 
 # =====================================================
 #                SIDEBAR CONFIGURATION
@@ -264,66 +202,19 @@ st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 analyze_clicked = st.button("Analyze", use_container_width=True)
 
 if analyze_clicked or "results" not in st.session_state:
-    # --- Run analysis only if button clicked or no prior results ---
     role_val = st.session_state.get("user_role_other") if st.session_state.get("user_role")=="Other" else st.session_state.get("user_role")
     weights_5s = {s: st.session_state.get(f"s5_{s}", 0.5) for s in FIVE_S}
+    lce_stage = st.session_state.get("lce_stage","Operation")
 
-    payload = {
-        "objective": st.session_state.get("objective",""),
-        "industry": st.session_state.get("industry",""),
-        "user_role": role_val,
-        "system_type": st.session_state.get("selected_system","Product Transfer"),
-        "lce_stage": st.session_state.get("lce_stage","Operation")
-    }
-
-    with st.spinner("Running LLM analysis..."):
-        t0 = time.time()
-        try:
-            analysis = analyze_to_pillars(payload)
-            pillars = analysis.get("pillars", {})
-            reasons = analysis.get("reasons", [])
-            tags = analysis.get("tags", [])
-        except Exception as e:
-            st.warning(f"Analyzer failed: {e}")
-            pillars = {k: 1/len(PILLARS) for k in PILLARS}
-            reasons = ["Equal weights used"]
-            tags = []
-        elapsed = time.time() - t0
-
-    ssum = sum(pillars.values()) or 1
-    pillars = {k: v/ssum for k, v in pillars.items()}
-
-    # Deterministic scoring
-    scored = score_all(weights_5s, st.session_state.get("lce_stage","Operation"), pillars)
-
-    # Generate single guidance
-    guidance_single = {}
-    for sys in SYSTEMS:
-        ctx = {
-            "objective": st.session_state.get("objective",""),
-            "industry": st.session_state.get("industry",""),
-            "user_role": role_val,
-            "system_type": sys,
-            "lce_stage": st.session_state.get("lce_stage","Operation"),
-            "pillar_weights": pillars,
-            "weights_5s": weights_5s,
-            "strategies": {
-                "Competitive": COMPETITIVE[sys],
-                "Value Chain": VALUE_CHAIN[sys],
-                "Product/Service": PROD_SERVICE[sys],
-            },
-            "selected_scores": {k: {i: float(v[sys]) for i, v in scored[k].items()} for k in scored}
-        }
-        guidance_single[sys] = make_single_guidance(ctx)
+    # --- Deterministic scoring (no LLM radar)
+    scored = score_all(weights_5s, lce_stage)  # empty dict placeholder
 
     st.session_state["results"] = {
-        "pillars": pillars,
         "scored": scored,
         "weights_5s": weights_5s,
-        "reasons": reasons,
-        "guidance_single": guidance_single,
-        "elapsed": elapsed,
+        "elapsed": 0.0
     }
+
 
 
 # =====================================================
@@ -430,8 +321,8 @@ if "results" in st.session_state:
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
     core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
-    core_payload = compact_dict({**context_payload, "core_labels": core_labels})
-
+    core_payload = {"core_labels": core_labels}
+  
     prompt_core = f"""
     You are a supply-chain strategist advising a {role} in the {industry} industry.
     Below is the qualitative status of each core process for the {sel_sys} system:
@@ -459,7 +350,7 @@ if "results" in st.session_state:
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
     kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
-    kpi_payload = compact_dict({**context_payload, "kpi_labels": kpi_labels})
+    kpi_payload = {"kpi_labels": kpi_labels}
 
     prompt_kpi = f"""
     You are a performance strategist advising a {role} in the {industry} sector.
@@ -488,7 +379,7 @@ if "results" in st.session_state:
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
     driver_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in driver_scores.items()}
-    driver_payload = compact_dict({**context_payload, "driver_labels": driver_labels})
+    driver_payload = {"driver_labels": driver_labels}
   
     prompt_drv = f"""
     You are a resilience strategist advising a {role} in the {industry} industry.
@@ -573,8 +464,7 @@ if user_q:
         reply="Please run **Analyze** first."
     else:
         res=st.session_state["results"]
-        ctx={"pillars":res["pillars"],"weights_5s":res["weights_5s"],
-             "scores":res["scored"]}
+        ctx={"weights_5s":res["weights_5s"],"scores":res["scored"]}
         r=client.chat.completions.create(model=LLM_MODEL,
             messages=[{"role":"system","content":"You are a supply-chain advisor."},
                       {"role":"user","content":json.dumps(ctx)},
@@ -583,9 +473,3 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
-
-
-
-
-
-
