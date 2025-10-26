@@ -318,6 +318,29 @@ if st.button("Analyze", use_container_width=True):
     }
 
 
+# =====================================================
+#     SAFE LLM CALL WRAPPER (handles null responses)
+# =====================================================
+def safe_llm_call(prompt: str, payload: dict, temp=0.35, max_toks=400):
+    """Safer call for OpenRouter free models that occasionally drop outputs."""
+    try:
+        r = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}
+            ],
+            extra_headers=OPENROUTER_HEADERS,
+            temperature=temp,
+            max_tokens=max_toks,
+        )
+        out = r.choices[0].message.content
+        if not out or len(out.strip()) == 0:
+            raise ValueError("Empty LLM response")
+        return out
+    except Exception as e:
+        st.warning(f"⚠️ LLM call failed: {e}")
+        return ""
 
 # =====================================================
 #            RESULTS RENDERING SECTION (IMPROVED)
@@ -443,22 +466,12 @@ if "results" in st.session_state:
     
     if "core" not in st.session_state["llm_explanations"]:
         try:
-            core_expl = client.chat.completions.create(
-                model=LLM_MODEL,
-                messages=[
-                    {"role": "system", "content": prompt_core},
-                    {"role": "user", "content": json.dumps(core_payload, ensure_ascii=False)}
-                ],
-                extra_headers=OPENROUTER_HEADERS,
-                temperature=0.35,
-                max_tokens=400
-            ).choices[0].message.content
-            st.session_state["llm_explanations"]["core"] = core_expl
+            core_expl = safe_llm_call(prompt_core, core_payload)
         except Exception as e:
             st.warning(f"Core analysis failed: {e}")
             core_expl = ""
     else:
-        core_expl = st.session_state["llm_explanations"]["core"]
+        core_expl = safe_llm_call(prompt_core, core_payload)
     
     if core_expl:
         st.markdown("**Interpretation:**")
@@ -492,22 +505,12 @@ if "results" in st.session_state:
     
     if "kpi" not in st.session_state["llm_explanations"]:
         try:
-            kpi_expl = client.chat.completions.create(
-                model=LLM_MODEL,
-                messages=[
-                    {"role": "system", "content": prompt_kpi},
-                    {"role": "user", "content": json.dumps(kpi_payload, ensure_ascii=False)}
-                ],
-                extra_headers=OPENROUTER_HEADERS,
-                temperature=0.35,
-                max_tokens=400
-            ).choices[0].message.content
-            st.session_state["llm_explanations"]["kpi"] = kpi_expl
+            kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
         except Exception as e:
             st.warning(f"KPI analysis failed: {e}")
             kpi_expl = ""
     else:
-        kpi_expl = st.session_state["llm_explanations"]["kpi"]
+        kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
     
     if kpi_expl:
         st.markdown("**Interpretation:**")
@@ -543,22 +546,12 @@ if "results" in st.session_state:
     
     if "driver" not in st.session_state["llm_explanations"]:
         try:
-            driver_expl = client.chat.completions.create(
-                model=LLM_MODEL,
-                messages=[
-                    {"role": "system", "content": prompt_drv},
-                    {"role": "user", "content": json.dumps(driver_payload, ensure_ascii=False)}
-                ],
-                extra_headers=OPENROUTER_HEADERS,
-                temperature=0.35,
-                max_tokens=400
-            ).choices[0].message.content
-            st.session_state["llm_explanations"]["driver"] = driver_expl
+            driver_expl = safe_llm_call(prompt_drv, driver_payload)
         except Exception as e:
             st.warning(f"Driver analysis failed: {e}")
             driver_expl = ""
     else:
-        driver_expl = st.session_state["llm_explanations"]["driver"]
+        driver_expl = safe_llm_call(prompt_drv, driver_payload)
     
     if driver_expl:
         st.markdown("**Interpretation:**")
@@ -642,6 +635,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
