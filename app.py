@@ -687,35 +687,36 @@ if "results" in st.session_state:
     # --- Summarize synthetic resilience qualitatively ---
     summary_text = []
     for pillar in df_heat.index:
-        values = df_heat.loc[pillar].values
-        mean_val = np.mean(values)
-        if mean_val > 0.9:
-            summary_text.append(f"{pillar.title()}: highly resilient")
-        elif mean_val > 0.8:
-            summary_text.append(f"{pillar.title()}: moderately resilient")
-        else:
-            summary_text.append(f"{pillar.title()}: vulnerable under stress")
-    synthetic_summary = "; ".join(summary_text)
-
+        scenario_vals = df_heat.loc[pillar]
+        # Identify scenario extremes
+        min_scen = scenario_vals.idxmin()
+        max_scen = scenario_vals.idxmax()
+        min_val = scenario_vals[min_scen]
+        max_val = scenario_vals[max_scen]
+        if min_val < 0.88:
+            summary_text.append(f"{pillar.title()} shows low resilience under {min_scen}.")
+        if max_val > 0.95:
+            summary_text.append(f"{pillar.title()} remains strong under {max_scen}.")
+    qualitative_map = " ".join(summary_text) if summary_text else "All pillars show balanced resilience across scenarios."
     
     prompt_synth = f"""
-    You are a senior supply-chain strategist and educator.
-    Interpret the *synthetic sensitivity heatmap* generated for the {sel_sys} system.
+    You are a supply-chain strategist and educator.
+    Interpret the *synthetic sensitivity heatmap* for the {sel_sys} system in the {industry} sector.
     
     Observed pattern summary:
-    {synthetic_summary}
+    {qualitative_map}
     
-    First, explain clearly what synthetic data represents — that it is a controlled simulation using bounded random perturbations
-    on the six performance pillars (Quality, Cost, Volume, Time, Flexibility, Environment) to observe reactions under
-    disruption scenarios: {', '.join(scenario_types)}.
+    Explain what this means for the user’s stated objective:
+    “{objective}.”
+    Focus the analysis on *vulnerable pillars (red/orange)*—describe how weaknesses such as low resilience of certain
+    pillars under specific scenarios (e.g., cost under volatility or environment under carbon) may threaten performance stability.
+    Then connect this to the selected LCE stage ({st.session_state.get('lce_stage')}) and 5S priorities {res['weights_5s']}.
     
-    Then, connect these qualitative results to the user's objective (“{objective}”), the selected LCE stage ({st.session_state.get('lce_stage')}),
-    and the 5S priorities {res['weights_5s']}. Explain how the stronger pillars reinforce or limit resilience for this configuration.
-    
-    Conclude with one instructive insight describing how this role ({role}) can adjust focus areas to strengthen vulnerable pillars
-    and align resilience with strategic goals. ≤190 words, explanatory and instructive tone.
+    Provide clear guidance on how a {role} can reinforce these fragile dimensions through design, sourcing, or process
+    adaptation, and how the more resilient ones can be leveraged to buffer systemic risk.
+    Avoid repeating the definition of synthetic data; assume the user already understands it.
+    Be direct, diagnostic, and actionable (≤190 words).
     """
-
     
     if "synthetic" not in st.session_state["llm_explanations"]:
         try:
@@ -881,6 +882,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
