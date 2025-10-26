@@ -166,7 +166,7 @@ def score_all(w5s, stage, pillars):
 # =====================================================
 ANALYZER_SYSTEM = (
     "You are an experienced Supply Chain Director. Output ONLY JSON.\n"
-    "Input: objective, industry, user_role, system_type, lce_stage, 5S weights, scenarios.\n"
+    "Input: objective, industry, user_role, system_type, lce_stage, 5S weights.\n"
     "Return: {pillars:{quality,cost,volume,time,flexibility,environment∈[0,1]},reasons:[…],tags:[…]}."
 )
 def analyze_to_pillars(payload: Dict) -> Dict:
@@ -307,7 +307,6 @@ if st.button("Analyze", use_container_width=True):
             "lce_stage": st.session_state.get("lce_stage","Operation"),
             "pillar_weights": pillars,
             "weights_5s": weights_5s,
-            "scenarios": {"preset": st.session_state.get("preset_scenarios",[]),"custom": custom+tags},
             "strategies": {"Competitive":COMPETITIVE[sys],"Value Chain":VALUE_CHAIN[sys],"Product/Service":PROD_SERVICE[sys]},
             "selected_scores": {k:{i:float(v[sys]) for i,v in scored[k].items()} for k in scored}
         }
@@ -333,7 +332,7 @@ if "results" in st.session_state:
     This chart shows proportional emphasis (summing to 100%).
     It visualizes how the LLM Agent allocates your strategic focus
     across the pillars Quality, Cost, Volume, Time, Flexibility, and Environment
-    based on your role, industry, and selected scenarios.
+    based on your role, and industry.
     """)
 
     # --- Context data ---
@@ -341,14 +340,12 @@ if "results" in st.session_state:
     role = st.session_state.get("user_role", "")
     industry = st.session_state.get("industry", "")
     objective = st.session_state.get("objective", "")
-    scenarios = ", ".join(st.session_state.get("preset_scenarios", []))
 
     context_payload = {
         "system_type": sel_sys,
         "user_role": role,
         "industry": industry,
         "objective": objective,
-        "scenarios": scenarios,
         "pillars": res["pillars"],
     }
 
@@ -575,7 +572,6 @@ if "results" in st.session_state:
                     "objective": objective,
                     "role": role,
                     "industry": industry,
-                    "scenarios": scenarios,
                     "core": res["scored"]["core_processes"],
                     "kpis": res["scored"]["kpis"],
                     "drivers": res["scored"]["drivers"],
@@ -583,9 +579,9 @@ if "results" in st.session_state:
                 compare_prompt = f"""
                 You are an expert supply-chain strategist. The user focuses on {sel_sys} with objective "{objective}" in {industry}.
                 Compare this system against Technology Transfer and Facility Design across Core Processes, KPIs, and Drivers.
-                Highlight how strengths and weaknesses differ, and how they align with {role}'s perspective and {scenarios}.
+                Highlight how strengths and weaknesses differ, and how they align with {role}'s perspective.
                 Conclude with one practical insight on when a hybrid or complementary strategy could be beneficial.
-                Do not include numeric values or parentheses. ≤180 words.
+                Do not include numeric values, parentheses or the amount of words.
                 """
                 compare_expl = client.chat.completions.create(
                     model=LLM_MODEL,
@@ -640,6 +636,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
