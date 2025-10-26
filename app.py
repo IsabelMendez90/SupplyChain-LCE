@@ -168,6 +168,10 @@ PRESETS={"IECOS (PT)":{"system":"Product Transfer","preset":["High demand volati
 
 with st.sidebar:
     st.header("Template & Context")
+    if st.button("🔄 Reset App"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.experimental_rerun()
     preset_name = st.selectbox("Preset", list(PRESETS.keys()), key="preset")
     preset = PRESETS[preset_name]
     st.radio("Manufacturing system (view)", SYSTEMS,
@@ -185,10 +189,6 @@ with st.sidebar:
     for s in FIVE_S:
         st.slider(s, 0.0, 1.0, 0.5, 0.05, key=f"s5_{s}")
     st.toggle("Compare all systems (view)", value=False, key="compare_all")
-    if st.button("🔄 Reset App"):
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.experimental_rerun()
 # =====================================================
 #                MAIN APP LOGIC
 # =====================================================
@@ -471,6 +471,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
