@@ -143,20 +143,13 @@ def score_all(w5s, stage):
 
 
 # =====================================================
-#                 LLM INTERFACES
+#              FORCE SESSION RESET ON RELOAD
 # =====================================================
-
-
-# =====================================================
-#                PERFORMANCE & ANALYTICS
-# =====================================================
-def extract_keywords(text, topn=10):
-    text=re.sub(r'[^A-Za-z\s]', '', text)
-    vec=CountVectorizer(stop_words='english')
-    X=vec.fit_transform([text.lower()])
-    freqs=zip(vec.get_feature_names_out(), X.toarray().flatten())
-    return [w for w,_ in sorted(freqs,key=lambda x:-x[1])[:topn]]
-
+if "initialized" not in st.session_state:
+    # Reset everything except secrets
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.session_state["initialized"] = True
 
 
 # =====================================================
@@ -200,6 +193,10 @@ st.title("Supply-Chain Strategy Agent")
 st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 
 analyze_clicked = st.button("Analyze", use_container_width=True)
+if st.button("🔄 Reset App"):
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.experimental_rerun()
 
 if analyze_clicked or "results" not in st.session_state:
     role_val = st.session_state.get("user_role_other") if st.session_state.get("user_role")=="Other" else st.session_state.get("user_role")
@@ -306,7 +303,6 @@ def safe_llm_call(prompt: str, payload: dict, temp=0.35, max_toks=400, retries=2
 # =====================================================
 if "results" in st.session_state:
     res = st.session_state["results"]
-    st.success(f"LLM completed in {res['elapsed']:.1f} s")
 
 
     def clean_numbers(text: str) -> str:
@@ -476,4 +472,5 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
