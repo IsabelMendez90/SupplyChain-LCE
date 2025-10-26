@@ -684,28 +684,38 @@ if "results" in st.session_state:
         "scenarios_list": scenario_types
     })
 
+    # --- Summarize synthetic resilience qualitatively ---
+    summary_text = []
+    for pillar in df_heat.index:
+        values = df_heat.loc[pillar].values
+        mean_val = np.mean(values)
+        if mean_val > 0.9:
+            summary_text.append(f"{pillar.title()}: highly resilient")
+        elif mean_val > 0.8:
+            summary_text.append(f"{pillar.title()}: moderately resilient")
+        else:
+            summary_text.append(f"{pillar.title()}: vulnerable under stress")
+    synthetic_summary = "; ".join(summary_text)
+
+    
     prompt_synth = f"""
     You are a senior supply-chain strategist and educator.
     Interpret the *synthetic sensitivity heatmap* generated for the {sel_sys} system.
     
-    First, explain clearly what the synthetic data represents in this context:
-    that it is a controlled simulation using bounded random perturbations (±30%) on the
-    six performance pillars (Quality, Cost, Volume, Time, Flexibility, Environment)
-    to observe how each reacts under disruption scenarios — Volatility, Geopolitical Risk, and Carbon Constraints.
-    Clarify that this is not real data but an *exploratory model* to illustrate how stress
-    affects systemic balance.
+    Observed pattern summary:
+    {synthetic_summary}
     
-    Then, link the synthetic behaviour to the user’s objective (“{objective}”) and their inputs —
-    specifically the selected 5S priorities, LCE stage, and scenario configuration ({scenarios}).
-    Describe how these inputs influence the pattern of resilience or vulnerability across pillars,
-    and what this means for the system’s stability, cost control, and adaptability.
+    First, explain clearly what synthetic data represents — that it is a controlled simulation using bounded random perturbations
+    on the six performance pillars (Quality, Cost, Volume, Time, Flexibility, Environment) to observe reactions under
+    disruption scenarios: {', '.join(scenario_types)}.
     
-    Finally, provide one or two teaching insights:
-    how understanding these simulated results helps a {role} anticipate trade-offs,
-    adjust focus areas, or test “what-if” decisions to align strategy and resilience.
+    Then, connect these qualitative results to the user's objective (“{objective}”), the selected LCE stage ({st.session_state.get('lce_stage')}),
+    and the 5S priorities {res['weights_5s']}. Explain how the stronger pillars reinforce or limit resilience for this configuration.
     
-    Avoid numeric or parenthetical notation. ≤190 words, explanatory and instructive tone.
+    Conclude with one instructive insight describing how this role ({role}) can adjust focus areas to strengthen vulnerable pillars
+    and align resilience with strategic goals. ≤190 words, explanatory and instructive tone.
     """
+
     
     if "synthetic" not in st.session_state["llm_explanations"]:
         try:
@@ -871,6 +881,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
