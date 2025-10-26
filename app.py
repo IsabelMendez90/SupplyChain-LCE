@@ -197,11 +197,6 @@ def extract_keywords(text, topn=10):
     freqs=zip(vec.get_feature_names_out(), X.toarray().flatten())
     return [w for w,_ in sorted(freqs,key=lambda x:-x[1])[:topn]]
 
-def radar_plot(pillars_dict):
-    df=pd.DataFrame(list(pillars_dict.items()),columns=["Pillar","Weight"])
-    fig=px.line_polar(df,r="Weight",theta="Pillar",line_close=True)
-    fig.update_traces(fill='toself')
-    st.plotly_chart(fig,use_container_width=True)
 
 def synthetic_stress(weights_5s,lce_stage,custom_tags,pillars):
     data=[]
@@ -422,28 +417,6 @@ if "results" in st.session_state:
     res = st.session_state["results"]
     st.success(f"LLM completed in {res['elapsed']:.1f} s")
 
-    # --- RADAR ---
-    radar_plot(res["pillars"])
-    st.info("""
-    **About this Radar:**  
-    This chart shows proportional emphasis (summing to 100%).
-    It visualizes how the LLM Agent allocates your strategic focus
-    across the pillars Quality, Cost, Volume, Time, Flexibility, and Environment
-    based on your role, and industry.
-    """)
-
-    sel_sys = st.session_state.get("selected_system", "Product Transfer")
-    role = st.session_state.get("user_role", "")
-    industry = st.session_state.get("industry", "")
-    objective = st.session_state.get("objective", "")
-
-    context_payload = {
-        "system_type": sel_sys,
-        "user_role": role,
-        "industry": industry,
-        "objective": objective,
-        "pillars": res["pillars"],
-    }
 
     def clean_numbers(text: str) -> str:
         return re.sub(r"\s*\(\d+(\.\d+)?\)", "", text)
@@ -610,6 +583,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
