@@ -313,7 +313,7 @@ if st.button("Analyze", use_container_width=True):
         guidance_single[sys]=make_single_guidance(ctx)
 
     st.session_state["results"]={
-        "pillars":pillars,"scored":scored,"weights_5s":weights_5s,"flags":flags,
+        "pillars":pillars,"scored":scored,"weights_5s":weights_5s,
         "reasons":reasons,"guidance_single":guidance_single,"elapsed":elapsed
     }
 
@@ -626,7 +626,7 @@ if user_q:
         reply="Please run **Analyze** first."
     else:
         res=st.session_state["results"]
-        ctx={"pillars":res["pillars"],"weights_5s":res["weights_5s"],"flags":res["flags"],
+        ctx={"pillars":res["pillars"],"weights_5s":res["weights_5s"],
              "scores":res["scored"]}
         r=client.chat.completions.create(model=LLM_MODEL,
             messages=[{"role":"system","content":"You are a supply-chain advisor."},
@@ -636,6 +636,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
