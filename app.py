@@ -317,6 +317,38 @@ if st.button("Analyze", use_container_width=True):
         "reasons":reasons,"guidance_single":guidance_single,"elapsed":elapsed
     }
 
+# =====================================================
+#  HELPER: DISPLAY MATRIX WITH LABEL COLORS
+# =====================================================
+def show_matrix(title, df_dict):
+    st.markdown(f"### {title}")
+    df = pd.DataFrame(df_dict).T
+    compare_all = st.session_state.get("compare_all", False)
+    selected = st.session_state.get("selected_system", "Product Transfer")
+
+    # Handle cases where system selection comes as list/dict
+    if isinstance(selected, (tuple, list)):
+        selected = selected[0]
+    if isinstance(selected, dict):
+        selected = next(iter(selected.values()))
+
+    # Filter or show all systems
+    if not compare_all:
+        if selected in df.columns:
+            df = df[[selected]]
+        else:
+            st.warning(f"⚠️ The selected system '{selected}' is not available; showing all instead.")
+
+    # Map numeric scores to qualitative labels
+    df_label = df.applymap(lambda x: "Low" if x < 1 else "Medium" if x < 2 else "High")
+
+    color_map = {"Low": "#f8d7da", "Medium": "#fff3cd", "High": "#d4edda"}
+    styled = df_label.style.applymap(
+        lambda v: f"background-color: {color_map[v]}; color:black; text-align:center; font-weight:bold;"
+    )
+
+    st.dataframe(styled, use_container_width=True)
+    return df_label
 
 # =====================================================
 #     SAFE LLM CALL WRAPPER (handles null responses)
@@ -568,6 +600,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
