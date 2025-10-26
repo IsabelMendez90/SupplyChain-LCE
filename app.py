@@ -440,28 +440,30 @@ if "results" in st.session_state:
         return df_label
 
     # =====================================================
-    #  CORE PROCESSES
+    #  CORE PROCESSES (Label-Based Interpretation)
     # =====================================================
     df_core = show_matrix("Core Processes × System", res["scored"]["core_processes"])
     st.caption("Core Processes show where structural strengths are most evident. High = critical to maturity level.")
-
+    
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
-    context_payload.update({"core_process_scores": core_scores})
-
+    core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
+    
+    context_payload.update({"core_labels": core_labels})
+    
     prompt_core = f"""
-    You are a supply-chain strategist guiding a {role} in the {industry} industry.
-    Interpret the 'Core Processes × System' matrix for {sel_sys}.
-    Treat High, Medium, and Low as *priority signals*, not performance outcomes.
-    Indicate which core processes should be elevated to High priority to strengthen the system’s capability
-    to achieve "{objective}" under {scenarios}.
-    Briefly justify why two or three processes (e.g., CRM, Co-Engineering, SRM, Order Fulfillment)
-    are strategic levers that deserve emphasis, and what operational or coordination limits
-    the Medium/Low ones reflect.
-    Conclude with a short prescriptive insight on how to rebalance focus across processes
-    for greater maturity and adaptability. ≤170 words, directive tone.
+    You are a supply-chain strategist advising a {role} in the {industry} industry.
+    Below is the qualitative status of each core process for the {sel_sys} system:
+    {json.dumps(core_labels, indent=2)}
+    Interpret these labels as *priority levels*, not performance results.
+    Focus on which High-priority processes should remain central to achieving "{objective}" under {scenarios},
+    and which Medium ones should be **raised** to High to reinforce system maturity.
+    If no Low processes exist, skip that discussion entirely.
+    Avoid re-labelling or contradicting the given levels — refer to them exactly as stated.
+    End with one prescriptive recommendation on how this role should rebalance focus.
+    ≤170 words, directive and analytical tone.
     """
-
+    
     if "core" not in st.session_state["llm_explanations"]:
         try:
             core_expl = client.chat.completions.create(
@@ -480,35 +482,35 @@ if "results" in st.session_state:
             core_expl = ""
     else:
         core_expl = st.session_state["llm_explanations"]["core"]
-
+    
     if core_expl:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(core_expl))
 
+    
     # =====================================================
-    #  KPIs (Improved Prescriptive Logic)
+    #  KPIs × System (Label-Based Interpretation)
     # =====================================================
     df_kpi = show_matrix("KPIs × System", res["scored"]["kpis"])
     st.caption("KPIs summarize efficiency, productivity, and cost. High = leverage points; Low = development priorities.")
     
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
     kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
-    context_payload.update({"kpi_scores": kpi_scores})
+    kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
     
-    # Detect which KPIs are High vs Low
-    kpi_levels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
-    high_kpis = [k for k, lvl in kpi_levels.items() if lvl == "High"]
-    low_kpis = [k for k, lvl in kpi_levels.items() if lvl == "Low"]
+    context_payload.update({"kpi_labels": kpi_labels})
     
     prompt_kpi = f"""
     You are a performance strategist advising a {role} in the {industry} sector.
-    Focus strictly on the *High* KPIs detected: {', '.join(high_kpis) or 'none'}.
-    These represent the strongest potential levers to advance the objective "{objective}" under {scenarios}.
-    Explain why these KPIs matter strategically in the context of {sel_sys}, linking them to efficiency, sustainability, or cost leverage.
-    If there are Low ones ({', '.join(low_kpis) or 'none'}), briefly indicate how improving them would complement the High KPIs.
-    Avoid repeating the words "Low" or "Medium" in the output — instead, use phrases like *"needs reinforcement"* or *"requires further development"*.
-    Do not fabricate categories not present in the matrix.
-    Keep the tone prescriptive and role-oriented (≤170 words).
+    Below is the qualitative status of each KPI for the {sel_sys} system:
+    {json.dumps(kpi_labels, indent=2)}
+    Interpret these labels as *priority signals*, not results.
+    Focus on which High-priority KPIs are essential to achieving "{objective}" under {scenarios},
+    and which Medium or Low KPIs should be reinforced to close operational or sustainability gaps.
+    Do not contradict the given labels — refer to them exactly as stated.
+    Provide role-oriented guidance on how to leverage High KPIs and develop weaker ones.
+    Conclude with one prescriptive insight summarizing how KPI focus can strengthen system performance.
+    ≤170 words, professional and directive tone.
     """
     
     if "kpi" not in st.session_state["llm_explanations"]:
@@ -533,30 +535,33 @@ if "results" in st.session_state:
     if kpi_expl:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(kpi_expl))
-    
 
+    
     # =====================================================
-    #  RESILIENCE DRIVERS
+    #  RESILIENCE DRIVERS × System (Label-Based Interpretation)
     # =====================================================
     df_drv = show_matrix("Resilience Drivers × System", res["scored"]["drivers"])
     st.caption("Resilience Drivers represent adaptability to disruption, sustainability, and ecosystem interdependence.")
-
+    
+    sel_sys = st.session_state.get("selected_system", "Product Transfer")
     driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
-    context_payload.update({"driver_scores": driver_scores})
-
-
+    driver_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in driver_scores.items()}
+    
+    context_payload.update({"driver_labels": driver_labels})
+    
     prompt_drv = f"""
     You are a resilience strategist advising a {role} in the {industry} industry.
-    Interpret the 'Resilience Drivers × System' matrix for {sel_sys}.
-    Treat High, Medium, and Low as *strategic guidance*—areas that should be reinforced, not judged.
-    Highlight which drivers need to be elevated to High priority to strengthen adaptability under {scenarios}.
-    Explain how focusing on two or three drivers (e.g., Multisourcing, Nearshoring, Ecosystem Partnerships)
-    would improve system stability, sustainability, or collaboration for "{objective}".
-    Briefly note what the Medium/Low ones reveal about current vulnerabilities,
-    and suggest targeted actions this role could promote to boost overall resilience. ≤170 words, prescriptive tone.
+    Below is the qualitative status of each resilience driver for the {sel_sys} system:
+    {json.dumps(driver_labels, indent=2)}
+    Interpret these labels as *priority guidance*—which elements to reinforce or elevate.
+    Focus on which High drivers are already central to system stability and which Medium ones should be developed
+    to strengthen adaptability under {scenarios}.
+    If Low drivers appear, discuss how this role can address them through design, sourcing, or collaboration.
+    Never contradict or reinterpret the given levels—use them exactly as presented.
+    Conclude with one actionable recommendation on how to improve systemic resilience for "{objective}".
+    ≤170 words, prescriptive and analytical tone.
     """
-
-
+    
     if "driver" not in st.session_state["llm_explanations"]:
         try:
             driver_expl = client.chat.completions.create(
@@ -575,22 +580,10 @@ if "results" in st.session_state:
             driver_expl = ""
     else:
         driver_expl = st.session_state["llm_explanations"]["driver"]
-
+    
     if driver_expl:
         st.markdown("**Interpretation:**")
         st.write(clean_numbers(driver_expl))
-
-    
-    # --- Pillar rationale ---
-    if res.get("reasons"):
-        st.markdown("**Pillar Rationale:**")
-        st.write("\n".join(f"- {r}" for r in res["reasons"]))
-
-    # --- Guidance ---
-    st.markdown("### Guidance")
-    sel_sys = st.session_state.get("selected_system", "Product Transfer")
-    st.write(res["guidance_single"].get(sel_sys, "No guidance available."))
-
 
     # =====================================================
     #          ENHANCED SYNTHETIC SENSITIVITY SIMULATION
@@ -638,16 +631,28 @@ if "results" in st.session_state:
         "synthetic_heatmap": df_heat.to_dict(),
         "scenarios_list": scenario_types
     })
-    
+
     prompt_synth = f"""
-    You are a senior supply-chain strategist addressing a {role} in the {industry} industry.
+    You are a senior supply-chain strategist and educator.
     Interpret the *synthetic sensitivity heatmap* generated for the {sel_sys} system.
-    Explain what synthetic stress-testing means — that it uses simulated data to explore
-    how each pillar reacts to {scenario_types}.
-    Identify which performance dimensions appear more resilient or more vulnerable.
-    Relate your insights to the user's objective: "{objective}" and the selected scenarios: {scenarios}.
-    End with one actionable insight that helps this role anticipate or mitigate risk.
-    Avoid numeric mentions and parenthetical notation. ≤180 words.
+    
+    First, explain clearly what the synthetic data represents in this context:
+    that it is a controlled simulation using bounded random perturbations (±30%) on the
+    six performance pillars (Quality, Cost, Volume, Time, Flexibility, Environment)
+    to observe how each reacts under disruption scenarios — Volatility, Geopolitical Risk, and Carbon Constraints.
+    Clarify that this is not real data but an *exploratory model* to illustrate how stress
+    affects systemic balance.
+    
+    Then, link the synthetic behaviour to the user’s objective (“{objective}”) and their inputs —
+    specifically the selected 5S priorities, LCE stage, and scenario configuration ({scenarios}).
+    Describe how these inputs influence the pattern of resilience or vulnerability across pillars,
+    and what this means for the system’s stability, cost control, and adaptability.
+    
+    Finally, provide one or two teaching insights:
+    how understanding these simulated results helps a {role} anticipate trade-offs,
+    adjust focus areas, or test “what-if” decisions to align strategy and resilience.
+    
+    Avoid numeric or parenthetical notation. ≤190 words, explanatory and instructive tone.
     """
     
     if "synthetic" not in st.session_state["llm_explanations"]:
@@ -672,7 +677,6 @@ if "results" in st.session_state:
     if synth_expl:
         st.markdown("**Synthetic Data Interpretation:**")
         st.write(clean_numbers(synth_expl))
-
 
 
     # --- Keyword extraction ---
@@ -779,6 +783,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
