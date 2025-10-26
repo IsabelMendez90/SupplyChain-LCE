@@ -400,16 +400,6 @@ def safe_llm_call(prompt: str, payload: dict, temp=0.35, max_toks=400, retries=2
     return ""
 
 
-def compact_dict(d, max_items=10):
-    """Simplify nested dicts to reduce LLM payload size."""
-    out = {}
-    for k, v in d.items():
-        if isinstance(v, dict):
-            out[k] = {kk: float(vv) for kk, vv in list(v.items())[:max_items]}
-        else:
-            out[k] = v
-    return out
-
 
 # =====================================================
 #            RESULTS RENDERING SECTION (IMPROVED)
@@ -596,5 +586,6 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
