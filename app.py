@@ -319,6 +319,9 @@ if "results" in st.session_state:
     st.caption("Core Processes show where structural strengths are most evident. High = critical to maturity level.")
 
     sel_sys = st.session_state.get("selected_system", "Product Transfer")
+    role = st.session_state.get("user_role", "")
+    industry = st.session_state.get("industry", "")
+    objective = st.session_state.get("objective", "")
     core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
     core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
     core_payload = {"core_labels": core_labels}
@@ -473,3 +476,4 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
