@@ -266,7 +266,10 @@ with st.sidebar:
 st.title("Supply-Chain Strategy Agent")
 st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 
-if st.button("Analyze", use_container_width=True):
+analyze_clicked = st.button("Analyze", use_container_width=True)
+
+if analyze_clicked or "results" not in st.session_state:
+    # --- Run analysis only if button clicked or no prior results ---
     role_val = st.session_state.get("user_role_other") if st.session_state.get("user_role")=="Other" else st.session_state.get("user_role")
     weights_5s = {s: st.session_state.get(f"s5_{s}", 0.5) for s in FIVE_S}
 
@@ -279,27 +282,29 @@ if st.button("Analyze", use_container_width=True):
     }
 
     with st.spinner("Running LLM analysis..."):
-        t0=time.time()
+        t0 = time.time()
         try:
-            analysis=analyze_to_pillars(payload)
-            pillars=analysis.get("pillars",{})
-            reasons=analysis.get("reasons",[])
-            tags=analysis.get("tags",[])
+            analysis = analyze_to_pillars(payload)
+            pillars = analysis.get("pillars", {})
+            reasons = analysis.get("reasons", [])
+            tags = analysis.get("tags", [])
         except Exception as e:
             st.warning(f"Analyzer failed: {e}")
-            pillars={k:1/len(PILLARS) for k in PILLARS}; reasons=["Equal weights used"]; tags=[]
-        elapsed=time.time()-t0
+            pillars = {k: 1/len(PILLARS) for k in PILLARS}
+            reasons = ["Equal weights used"]
+            tags = []
+        elapsed = time.time() - t0
 
-    ssum=sum(pillars.values()) or 1
-    pillars={k:v/ssum for k,v in pillars.items()}
+    ssum = sum(pillars.values()) or 1
+    pillars = {k: v/ssum for k, v in pillars.items()}
 
-    # run deterministic scoring
-    scored=score_all(weights_5s, st.session_state.get("lce_stage","Operation"), pillars)
+    # Deterministic scoring
+    scored = score_all(weights_5s, st.session_state.get("lce_stage","Operation"), pillars)
 
-    # single guidance per system
-    guidance_single={}
+    # Generate single guidance
+    guidance_single = {}
     for sys in SYSTEMS:
-        ctx={
+        ctx = {
             "objective": st.session_state.get("objective",""),
             "industry": st.session_state.get("industry",""),
             "user_role": role_val,
@@ -307,15 +312,24 @@ if st.button("Analyze", use_container_width=True):
             "lce_stage": st.session_state.get("lce_stage","Operation"),
             "pillar_weights": pillars,
             "weights_5s": weights_5s,
-            "strategies": {"Competitive":COMPETITIVE[sys],"Value Chain":VALUE_CHAIN[sys],"Product/Service":PROD_SERVICE[sys]},
-            "selected_scores": {k:{i:float(v[sys]) for i,v in scored[k].items()} for k in scored}
+            "strategies": {
+                "Competitive": COMPETITIVE[sys],
+                "Value Chain": VALUE_CHAIN[sys],
+                "Product/Service": PROD_SERVICE[sys],
+            },
+            "selected_scores": {k: {i: float(v[sys]) for i, v in scored[k].items()} for k in scored}
         }
-        guidance_single[sys]=make_single_guidance(ctx)
+        guidance_single[sys] = make_single_guidance(ctx)
 
-    st.session_state["results"]={
-        "pillars":pillars,"scored":scored,"weights_5s":weights_5s,
-        "reasons":reasons,"guidance_single":guidance_single,"elapsed":elapsed
+    st.session_state["results"] = {
+        "pillars": pillars,
+        "scored": scored,
+        "weights_5s": weights_5s,
+        "reasons": reasons,
+        "guidance_single": guidance_single,
+        "elapsed": elapsed,
     }
+
 
 # =====================================================
 #  HELPER: DISPLAY MATRIX WITH LABEL COLORS
@@ -596,6 +610,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
