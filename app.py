@@ -123,7 +123,8 @@ def clamp03(x): return max(0.0,min(3.0,x))
 def s_boost(w,s_tags,name): return sum(w.get(k,0.0)*v for k,v in s_tags.get(name,{}).items())
 def stage_boost(stage, tags, name, max_gain=0.8): return clamp01(tags.get(name,{}).get(stage,0.0))*max_gain
 
-def pillar_boost(pillars,item_pillars,max_gain=1.2): return mƒax_gain*sum(pillars.get(k,0.0)*v for k,v in item_pillars.items())
+def pillar_boost(pillars, item_pillars, max_gain=1.2):
+    return max_gain * sum(pillars.get(k, 0.0) * v for k, v in item_pillars.items())
 
 def score_matrix(base_map, matrix, w5s, stage, pillars):
     out = {}
@@ -639,6 +640,7 @@ if user_q:
         reply=r.choices[0].message.content
     st.session_state["chat"].append({"role":"assistant","content":reply})
     with st.chat_message("assistant"): st.markdown(reply)
+
 
 
 
