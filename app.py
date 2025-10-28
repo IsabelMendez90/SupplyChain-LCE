@@ -82,26 +82,39 @@ BASE_DRIVERS = {
 }
 
 S_TAGS_KPI = {
-    "ESG index":{"Sustainable":1.0},
-    "Lifecycle cost":{"Sustainable":0.6},
-    "Safety incidents":{"Safe":1.0},
-    "OEE":{"Smart":0.4,"Sensing":0.4},
-    "First-pass yield":{"Smart":0.4,"Sensing":0.4},
-    "Supplier on-time delivery":{"Social":0.6},
-    "Logistics lead time":{"Social":0.6}
+    "Supplier on-time delivery": {"Social": 0.6, "Sustainable": 0.2},
+    "Incoming defect rate": {"Smart": 0.4, "Sensing": 0.6},
+    "Assembly cost per unit": {"Smart": 0.4, "Sustainable": 0.4},
+    "Logistics lead time": {"Social": 0.6, "Smart": 0.2},
+    "Ramp-up time": {"Smart": 0.6, "Safe": 0.3},
+    "First-pass yield": {"Smart": 0.4, "Sensing": 0.4},
+    "Learning-curve productivity": {"Smart": 0.5, "Social": 0.3},
+    "% revenue from new products": {"Sustainable": 0.6, "Smart": 0.4},
+    "OEE": {"Smart": 0.4, "Sensing": 0.4, "Safe": 0.2},
+    "OTIF": {"Social": 0.5, "Safe": 0.3},
+    "Lifecycle cost": {"Sustainable": 0.8, "Smart": 0.2},
+    "ESG index": {"Sustainable": 1.0},
+    "Safety incidents": {"Safe": 1.0, "Social": 0.2},
 }
+
 S_TAGS_CORE = {
-    "Co-Engineering":{"Social":0.6,"Smart":0.3},
-    "SRM":{"Social":1.0},
-    "Order Fulfillment":{"Social":0.8,"Smart":0.2},
-    "Customer Service":{"Social":1.0},
-    "Customer Driven Design":{"Smart":0.4,"Social":0.4},
-    "NPD":{"Smart":0.6}
+    "Customer Driven Design": {"Smart": 0.4, "Social": 0.4, "Sustainable": 0.2},
+    "CRM": {"Social": 0.8, "Smart": 0.2},
+    "Co-Engineering": {"Social": 0.6, "Smart": 0.3, "Sensing": 0.2},
+    "SRM": {"Social": 0.8, "Sustainable": 0.3},
+    "NPD": {"Smart": 0.6, "Sustainable": 0.4},
+    "Obtain Customer Commit.": {"Social": 0.7, "Smart": 0.3},
+    "Order Fulfillment": {"Social": 0.8, "Smart": 0.2, "Safe": 0.2},
+    "Customer Service": {"Social": 0.8, "Safe": 0.3, "Sustainable": 0.2},
 }
+
 S_TAGS_DRIVERS = {
-    "Nearshoring":{"Sustainable":0.6,"Safe":0.2},
-    "Platform/Plant Harmonization":{"Smart":0.5},
-    "Ecosystem Partnerships":{"Social":0.6}
+    "Inventory/Capacity Buffers": {"Safe": 0.6, "Sustainable": 0.3},
+    "Network Diversification": {"Social": 0.5, "Safe": 0.3, "Sustainable": 0.3},
+    "Multisourcing": {"Sustainable": 0.4, "Social": 0.4, "Safe": 0.2},
+    "Nearshoring": {"Sustainable": 0.6, "Safe": 0.2, "Social": 0.2},
+    "Platform/Plant Harmonization": {"Smart": 0.5, "Sensing": 0.3, "Safe": 0.2},
+    "Ecosystem Partnerships": {"Social": 0.6, "Sustainable": 0.4, "Smart": 0.2},
 }
 
 STAGE_TAGS_KPI = {
@@ -148,17 +161,17 @@ def score_matrix(base_map, matrix, w5s, stage):
             # --- KPI Matrix ---
             if matrix == "kpis":
                 score += stage_boost(stage, STAGE_TAGS_KPI, item, 0.8)
-                score += clamp01(s_boost(w5s, S_TAGS_KPI, item)) * 0.8
+                score += clamp01(s_boost(w5s, S_TAGS_KPI, item)) * 1.2
 
             # --- Core Processes Matrix ---
             elif matrix == "core_processes":
                 score += stage_boost(stage, STAGE_TAGS_CORE, item, 0.8)
-                score += clamp01(s_boost(w5s, S_TAGS_CORE, item)) * 0.8
+                score += clamp01(s_boost(w5s, S_TAGS_CORE, item)) * 1.2
 
             # --- Resilience Drivers Matrix ---
             else:
                 score += stage_boost(stage, STAGE_TAGS_DRIVERS, item, 0.6)
-                score += clamp01(s_boost(w5s, S_TAGS_DRIVERS, item)) * 0.6
+                score += clamp01(s_boost(w5s, S_TAGS_DRIVERS, item)) * 1.0
 
             out[item][system] = clamp03(score)
     return out
@@ -351,10 +364,35 @@ with tabs[0]:
     else:
         st.info("Run **Analyze** first to see matrices.")
 
-# ---------- TAB 2: INTERPRETATIONS (Role-based prompts preserved) ----------
+# ---------- TAB 2: INTERPRETATIONS (5S + LCE-AWARE) ----------
 with tabs[1]:
     if "results" in st.session_state:
         res = st.session_state["results"]
+
+        # --- funciones auxiliares locales ---
+        def qual_5s_weights(w5s):
+            def q(x): return "High" if x >= 0.75 else "Medium" if x >= 0.5 else "Low"
+            return {k: q(v) for k, v in w5s.items()}
+
+        def item_contrib_5s(item_name, matrix_type, w5s):
+            s_tags = {
+                "kpis": S_TAGS_KPI,
+                "core_processes": S_TAGS_CORE,
+                "drivers": S_TAGS_DRIVERS
+            }[matrix_type]
+            raw = {s: w5s.get(s, 0.0) * s_tags.get(item_name, {}).get(s, 0.0) for s in FIVE_S}
+            if sum(raw.values()) == 0:
+                return []
+            sorted_S = sorted(raw.items(), key=lambda x: x[1], reverse=True)
+            return [k for k, _ in sorted_S[:2]]  # top 2 S most influential
+
+        def item_contrib_lce(item_name, matrix_type, stage):
+            stage_tags = {
+                "kpis": STAGE_TAGS_KPI,
+                "core_processes": STAGE_TAGS_CORE,
+                "drivers": STAGE_TAGS_DRIVERS
+            }[matrix_type]
+            return [stage for stage, val in stage_tags.get(item_name, {}).items() if val > 0.5]
 
         if not st.session_state.get("llm_done", False):
             st.info("Generating qualitative interpretations with the LLM...")
@@ -363,55 +401,91 @@ with tabs[1]:
             role = st.session_state.get("user_role", "")
             industry = st.session_state.get("industry", "")
             objective = st.session_state.get("objective", "")
+            lce_stage = st.session_state.get("lce_stage", "Operation")
+            w5s = res["weights_5s"]
+            w5s_qual = qual_5s_weights(w5s)
 
             # ---- CORE ----
             core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
             core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
-            core_payload = {"core_labels": core_labels}
+            core_topS = {k: item_contrib_5s(k, "core_processes", w5s) for k in core_labels}
+            core_stage = {k: item_contrib_lce(k, "core_processes", lce_stage) for k in core_labels}
+
+            core_payload = {
+                "core_labels": core_labels,
+                "weights_5s_qual": w5s_qual,
+                "top_5s_per_item": core_topS,
+                "stage": lce_stage,
+                "stage_push": core_stage
+            }
+
             prompt_core = f"""
             You are a supply-chain strategist advising a {role} in the {industry} industry.
+            The user's 5S priorities are: {json.dumps(w5s_qual)}.
             Below is the qualitative status of each core process for the {sel_sys} system:
-            {json.dumps(core_labels, indent=2)}
-            Interpret these labels as *priority levels*, not performance metrics.
-            Provide a qualitative explanation—no numbers, percentages, or parentheses.
-            Describe which High-priority processes should remain central to achieving "{objective}",
-            which Medium ones deserve strengthening, and which Low ones can be simplified or delegated.
-            Keep tone analytical and directive, under 170 words.
+            {json.dumps(core_labels, indent=2)}.
+            For each High or Medium process, refer to the dominant 5S dimensions that drove it 
+            (see 'top_5s_per_item') and consider how the current LCE stage '{lce_stage}' 
+            influences that priority. 
+            Provide a concise, 5S-aware qualitative explanation on which processes to strengthen,
+            simplify, or maintain to achieve "{objective}". Avoid numbers or parentheses.
+            Limit to 170 words.
             """
             core_expl = safe_llm_call(prompt_core, core_payload)
 
             # ---- KPIs ----
             kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
             kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
-            kpi_payload = {"kpi_labels": kpi_labels}
+            kpi_topS = {k: item_contrib_5s(k, "kpis", w5s) for k in kpi_labels}
+            kpi_stage = {k: item_contrib_lce(k, "kpis", lce_stage) for k in kpi_labels}
+
+            kpi_payload = {
+                "kpi_labels": kpi_labels,
+                "weights_5s_qual": w5s_qual,
+                "top_5s_per_item": kpi_topS,
+                "stage": lce_stage,
+                "stage_push": kpi_stage
+            }
+
             prompt_kpi = f"""
             You are a performance strategist advising a {role} in the {industry} sector.
+            The user's 5S priorities are: {json.dumps(w5s_qual)}.
             Below is the qualitative status of each KPI for the {sel_sys} system:
-            {json.dumps(kpi_labels, indent=2)}
-            Interpret these labels as *priority signals*, not results or measurements.
-            Write only qualitative insights—avoid any numbers, percentages, or parentheses.
-            Highlight which High-priority KPIs sustain competitive advantage, which Medium KPIs require optimization,
-            and which Low KPIs reflect improvement opportunities aligned with "{objective}".
-            Keep tone professional, concise, and prescriptive, under 170 words.
+            {json.dumps(kpi_labels, indent=2)}.
+            Interpret them as *priority signals* influenced by those 5S dimensions and the stage '{lce_stage}'.
+            Explain which High KPIs sustain competitive advantage given the user's 5S profile,
+            which Medium KPIs to optimize next, and which Low KPIs to monitor or delegate.
+            Keep it analytical, prescriptive, and 5S-aligned (no numbers or parentheses, ≤170 words).
             """
             kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
 
             # ---- DRIVERS ----
             driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
             driver_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in driver_scores.items()}
-            driver_payload = {"driver_labels": driver_labels}
+            driver_topS = {k: item_contrib_5s(k, "drivers", w5s) for k in driver_labels}
+            driver_stage = {k: item_contrib_lce(k, "drivers", lce_stage) for k in driver_labels}
+
+            driver_payload = {
+                "driver_labels": driver_labels,
+                "weights_5s_qual": w5s_qual,
+                "top_5s_per_item": driver_topS,
+                "stage": lce_stage,
+                "stage_push": driver_stage
+            }
+
             prompt_drv = f"""
             You are a resilience strategist advising a {role} in the {industry} industry.
+            The user's 5S priorities are: {json.dumps(w5s_qual)}.
             Below is the qualitative status of each resilience driver for the {sel_sys} system:
-            {json.dumps(driver_labels, indent=2)}
-            Interpret these labels as *priority guidance* for building robustness and adaptability.
-            Do not use numbers, percentages, or parentheses—focus on qualitative reasoning only.
-            Explain which High-priority drivers reinforce stability, which Medium drivers enhance flexibility,
-            and which Low drivers represent emerging areas of attention to strengthen "{objective}".
-            Keep tone prescriptive, analytical, and under 170 words.
+            {json.dumps(driver_labels, indent=2)}.
+            Use the 5S profile ('top_5s_per_item') and the LCE stage '{lce_stage}' to reason 
+            which drivers reinforce stability, enhance flexibility, or need rethinking.
+            Align the explanation with "{objective}" and write it 5S-aware, prescriptive,
+            analytical, and concise (≤170 words, no numbers or parentheses).
             """
             driver_expl = safe_llm_call(prompt_drv, driver_payload)
 
+            # --- store ---
             st.session_state["llm_interpretations"] = {
                 "core": clean_numbers(core_expl),
                 "kpi": clean_numbers(kpi_expl),
@@ -419,6 +493,7 @@ with tabs[1]:
             }
             st.session_state["llm_done"] = True
 
+        # --- render ---
         inter = st.session_state["llm_interpretations"]
         st.markdown("### Core Processes Interpretation")
         st.write(inter["core"])
@@ -559,6 +634,10 @@ with tabs[3]:
                 "for trade-offs, prioritization, and system design."
             )
 
+        
+            ctx_compact = compact_dict(ctx, max_items=5)
+
+
             # --------------------------------------------------
             #  CALL MODEL
             # --------------------------------------------------
@@ -568,7 +647,7 @@ with tabs[3]:
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user",
-                         "content": json.dumps(ctx, ensure_ascii=False, default=_json_default)},
+                         "content": json.dumps(ctx_compact, ensure_ascii=False, default=_json_default)},
                         {"role": "user", "content": user_q},
                     ],
                     extra_headers=OPENROUTER_HEADERS,
@@ -592,4 +671,5 @@ with tabs[3]:
             st.session_state["chat"].append({"role": "assistant", "content": reply})
             with st.chat_message("assistant"):
                 st.markdown(reply)
+
 
