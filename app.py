@@ -197,13 +197,12 @@ st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 
 analyze_clicked = st.button("Analyze", use_container_width=True)
 
-if analyze_clicked or "results" not in st.session_state:
+if analyze_clicked:  # ← SOLO cuando se presiona el botón
     role_val = st.session_state.get("user_role_other") if st.session_state.get("user_role")=="Other" else st.session_state.get("user_role")
     weights_5s = {s: st.session_state.get(f"s5_{s}", 0.5) for s in FIVE_S}
     lce_stage = st.session_state.get("lce_stage","Operation")
 
-    # --- Deterministic scoring (no LLM radar)
-    scored = score_all(weights_5s, lce_stage)  # empty dict placeholder
+    scored = score_all(weights_5s, lce_stage)
 
     st.session_state["results"] = {
         "scored": scored,
@@ -458,8 +457,11 @@ user_q = st.chat_input("Ask about trade-offs or recommendations…")
 if user_q:
     st.session_state["chat"].append({"role":"user","content":user_q})
     with st.chat_message("user"): st.markdown(user_q)
+    
     if "results" not in st.session_state:
         reply="Please run **Analyze** first."
+        st.session_state["chat"].append({"role":"assistant","content":reply})
+        with st.chat_message("assistant"): st.markdown(reply)
     else:
         res=st.session_state["results"]
         ctx={"weights_5s":res["weights_5s"],"scores":res["scored"]}
@@ -469,8 +471,8 @@ if user_q:
                       {"role":"user","content":user_q}],
             extra_headers=OPENROUTER_HEADERS,temperature=0.4,max_tokens=600)
         reply=r.choices[0].message.content
-    st.session_state["chat"].append({"role":"assistant","content":reply})
-    with st.chat_message("assistant"): st.markdown(reply)
+        st.session_state["chat"].append({"role":"assistant","content":reply})
+        with st.chat_message("assistant"): st.markdown(reply)
 
 
 
