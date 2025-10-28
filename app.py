@@ -464,40 +464,99 @@ with tabs[3]:
     st.markdown("---")
     st.subheader("Chat with the Strategy Agent")
 
+    # Initialize chat history
     if "chat" not in st.session_state:
-        st.session_state["chat"]=[]
+        st.session_state["chat"] = []
 
+    # Display existing messages
     for m in st.session_state["chat"]:
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
 
+    # --------------------------------------------------
+    #  CHAT INPUT
+    # --------------------------------------------------
     user_q = st.chat_input("Ask about trade-offs or recommendations…")
-    if user_q:
-        st.session_state["chat"].append({"role":"user","content":user_q})
-        with st.chat_message("user"): st.markdown(user_q)
 
-        if "results" not in st.session_state:
-            reply="Please run **Analyze** first."
-            st.session_state["chat"].append({"role":"assistant","content":reply})
-            with st.chat_message("assistant"): st.markdown(reply)
+    if user_q:
+        # Record user question
+        st.session_state["chat"].append({"role": "user", "content": user_q})
+        with st.chat_message("user"):
+            st.markdown(user_q)
+
+        # --------------------------------------------------
+        #  SAFETY: Verify analysis exists
+        # --------------------------------------------------
+        if "results" not in st.session_state or not st.session_state["results"]:
+            reply = "Please run **Analyze** first to activate the Strategy Agent."
+            st.session_state["chat"].append({"role": "assistant", "content": reply})
+            with st.chat_message("assistant"):
+                st.markdown(reply)
         else:
             res = st.session_state["results"]
-            ctx = {"weights_5s":res["weights_5s"],"scores":res["scored"]}
+
+            # Pull all contextual elements already generated
+            interp = st.session_state.get("llm_interpretations", {})
+            compare_expl = st.session_state.get("compare_analysis", "")
+            objective = st.session_state.get("objective", "")
+            lce_stage = st.session_state.get("lce_stage", "")
+            sel_sys = st.session_state.get("selected_system", "")
+            role = st.session_state.get("user_role", "")
+            industry = st.session_state.get("industry", "")
+
+            # --------------------------------------------------
+            #  ENRICHED CONTEXT
+            # --------------------------------------------------
+            ctx = {
+                "weights_5s": res.get("weights_5s", {}),
+                "scores": res.get("scored", {}),
+                "interpretations": interp,
+                "comparative_summary": compare_expl,
+                "constraints": {
+                    "objective": objective,
+                    "lce_stage": lce_stage,
+                    "selected_system": sel_sys,
+                    "role": role,
+                    "industry": industry,
+                },
+            }
+
+            # --------------------------------------------------
+            #  STRATEGY-AWARE SYSTEM PROMPT
+            # --------------------------------------------------
+            system_prompt = (
+                "You are the Strategy Agent, a supply-chain advisor. "
+                "Base every answer on the user's 5S weights, scored matrices, "
+                "qualitative interpretations, and comparative summary. "
+                "Stay consistent with previous analyses. "
+                "Explain reasoning clearly and give actionable guidance "
+                "for trade-offs, prioritization, and system design."
+            )
+
+            # --------------------------------------------------
+            #  CALL MODEL
+            # --------------------------------------------------
             try:
                 r = client.chat.completions.create(
                     model=LLM_MODEL,
                     messages=[
-                        {"role":"system","content":"You are a supply-chain advisor."},
-                        {"role":"user","content":json.dumps(ctx, ensure_ascii=False, default=_json_default)},
-                        {"role":"user","content":user_q}
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user",
+                         "content": json.dumps(ctx, ensure_ascii=False, default=_json_default)},
+                        {"role": "user", "content": user_q},
                     ],
                     extra_headers=OPENROUTER_HEADERS,
                     temperature=0.4,
-                    max_tokens=600
+                    max_tokens=700,
                 )
-                reply = r.choices[0].message.content
+                reply = r.choices[0].message.content.strip() or \
+                        "No response generated — please try rephrasing."
             except Exception as e:
-                reply = f"LLM error: {e}"
+                reply = f"⚠️ LLM error: {e}"
 
-            st.session_state["chat"].append({"role":"assistant","content":reply})
-            with st.chat_message("assistant"): st.markdown(reply)
+            # --------------------------------------------------
+            #  DISPLAY + STORE REPLY
+            # --------------------------------------------------
+            st.session_state["chat"].append({"role": "assistant", "content": reply})
+            with st.chat_message("assistant"):
+                st.markdown(reply)
