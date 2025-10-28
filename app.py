@@ -222,6 +222,20 @@ def safe_llm_call(prompt: str, payload: dict, temp=0.35, max_toks=400, retries=2
         except Exception as e:
             st.warning(f"⚠️ LLM call failed: {e}")
     return ""
+# =====================================================
+#  CONVERT NUMERIC SCORES TO QUALITATIVE LABELS
+# =====================================================
+def qualitative_scores(scored_dict):
+    qualitative = {}
+    for category, items in scored_dict.items():
+        qualitative[category] = {
+            name: {
+                sys: ("High" if val >= 2 else "Medium" if val >= 1 else "Low")
+                for sys, val in sysvals.items()
+            }
+            for name, sysvals in items.items()
+        }
+    return qualitative
 
 # =====================================================
 #                SIDEBAR CONFIGURATION
@@ -430,34 +444,46 @@ with tabs[2]:
                 st.info("Select a system to enable comparison.")
             else:
                 others_str = " and ".join(other_systems)
-                compare_payload = compact_dict({
-                    "selected_system": sel_sys,
-                    "other_systems": other_systems,
-                    "objective": objective,
-                    "role": role,
-                    "industry": industry,
-                    "core": res["core_processes"],
-                    "kpis": res["kpis"],
-                    "drivers": res["drivers"],
-                })
-                compare_prompt = f"""
-                You are an expert supply-chain strategist.
-                Compare {sel_sys} with {others_str} across Core Processes, KPIs, and Drivers.
-                Explain relative strengths and weaknesses from the lens of a {role} aiming to achieve "{objective}".
-                Highlight where {sel_sys} outperforms and where the others offer advantages, and indicate complementarities.
-                Conclude with one actionable recommendation to balance synergy, resilience, and innovation.
-                Keep tone analytical and concise (≤180 words). Avoid numeric values or parentheses.
-                """
-                compare_expl = safe_llm_call(compare_prompt, compare_payload, temp=0.35, max_toks=450)
+
+                # Use cached value if exists
+                if "compare_analysis" not in st.session_state:
+                    compare_payload = compact_dict({
+                        "selected_system": sel_sys,
+                        "other_systems": other_systems,
+                        "objective": objective,
+                        "role": role,
+                        "industry": industry,
+                        "core": res["core_processes"],
+                        "kpis": res["kpis"],
+                        "drivers": res["drivers"],
+                    })
+                    compare_prompt = f"""
+                    You are an expert supply-chain strategist.
+                    Compare {sel_sys} with {others_str} across Core Processes, KPIs, and Drivers.
+                    Explain relative strengths and weaknesses from the lens of a {role} aiming to achieve "{objective}".
+                    Highlight where {sel_sys} outperforms and where the others offer advantages, and indicate complementarities.
+                    Conclude with one actionable recommendation to balance synergy, resilience, and innovation.
+                    Keep tone analytical and concise (≤180 words). Avoid numeric values or parentheses.
+                    """
+
+                    st.info("Generating comparative interpretation (first run only)...")
+                    compare_expl = safe_llm_call(compare_prompt, compare_payload,
+                                                 temp=0.35, max_toks=450)
+                    st.session_state["compare_analysis"] = clean_numbers(compare_expl)
+                else:
+                    compare_expl = st.session_state["compare_analysis"]
+
+                # Display cached or freshly generated result
                 if compare_expl:
                     st.markdown("### Comparative Interpretation")
-                    st.write(clean_numbers(compare_expl))
+                    st.write(compare_expl)
                 else:
                     st.warning("⚠️ Comparative interpretation returned no content or was truncated.")
         else:
             st.info("Activate **Compare all systems (view)** in the sidebar to generate a comparison.")
     else:
         st.info("Run **Analyze** first.")
+
 
 # ---------- TAB 4: CHAT ----------
 with tabs[3]:
@@ -509,7 +535,7 @@ with tabs[3]:
             # --------------------------------------------------
             ctx = {
                 "weights_5s": res.get("weights_5s", {}),
-                "scores": res.get("scored", {}),
+                "scores": qualitative_scores(res.get("scored", {})),
                 "interpretations": interp,
                 "comparative_summary": compare_expl,
                 "constraints": {
@@ -553,6 +579,12 @@ with tabs[3]:
                         "No response generated — please try rephrasing."
             except Exception as e:
                 reply = f"⚠️ LLM error: {e}"
+            
+            # --------------------------------------------------
+            #  CLEAN REPLY (remove stray numbers and parentheses)
+            # --------------------------------------------------
+            reply = re.sub(r"\b\d+(\.\d+)?\b", "", reply)   # remove numeric values
+            reply = re.sub(r"\(\s*\)", "", reply).strip()   # clean empty parentheses
 
             # --------------------------------------------------
             #  DISPLAY + STORE REPLY
@@ -560,3 +592,4 @@ with tabs[3]:
             st.session_state["chat"].append({"role": "assistant", "content": reply})
             with st.chat_message("assistant"):
                 st.markdown(reply)
+
