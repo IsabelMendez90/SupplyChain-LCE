@@ -142,7 +142,11 @@ STAGE_TAGS_DRIVERS = {
 # =====================================================
 #                  CORE SCORING FUNCTIONS
 # =====================================================
-def clamp01(x): return max(0.0,min(1.0,x))
+def s_boost(w, s_tags, name):
+    """Compute weighted 5S boost allowing differentiation (no saturation)."""
+    raw = sum(w.get(k, 0.0) * s_tags.get(name, {}).get(k, 0.0) for k in FIVE_S)
+    return min(raw * 1.2, 2.0)  # amplify a bit but cap at 2.0
+
 def clamp03(x): return max(0.0,min(3.0,x))
 
 def s_boost(w,s_tags,name): 
@@ -161,17 +165,17 @@ def score_matrix(base_map, matrix, w5s, stage):
             # --- KPI Matrix ---
             if matrix == "kpis":
                 score += stage_boost(stage, STAGE_TAGS_KPI, item, 0.8)
-                score += clamp01(s_boost(w5s, S_TAGS_KPI, item)) * 1.2
+                score += s_boost(w5s, S_TAGS_KPI, item) * 1.2
 
             # --- Core Processes Matrix ---
             elif matrix == "core_processes":
                 score += stage_boost(stage, STAGE_TAGS_CORE, item, 0.8)
-                score += clamp01(s_boost(w5s, S_TAGS_CORE, item)) * 1.2
+                sscore += s_boost(w5s, S_TAGS_CORE, item) * 1.2
 
             # --- Resilience Drivers Matrix ---
             else:
                 score += stage_boost(stage, STAGE_TAGS_DRIVERS, item, 0.6)
-                score += clamp01(s_boost(w5s, S_TAGS_DRIVERS, item)) * 1.0
+                score += s_boost(w5s, S_TAGS_DRIVERS, item) * 1.0
 
             out[item][system] = clamp03(score)
     return out
@@ -671,5 +675,6 @@ with tabs[3]:
             st.session_state["chat"].append({"role": "assistant", "content": reply})
             with st.chat_message("assistant"):
                 st.markdown(reply)
+
 
 
