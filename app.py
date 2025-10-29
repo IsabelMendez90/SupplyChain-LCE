@@ -501,7 +501,7 @@ def show_chat():
             st.markdown(m["content"])
 
 
-    user_q = st.chat_input("Ask the Strategy Agent…")
+    user_q = st.chat_input("Ask the Strategy Agent…", key=f"chat_input_{st.session_state.get('selected_system','default')}_{st.session_state.get('lce_stage','Operation')}")
 
     if user_q:
         st.session_state["chat"].append({"role": "user", "content": user_q})
@@ -1029,6 +1029,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
