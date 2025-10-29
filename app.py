@@ -574,7 +574,7 @@ def show_chat(tab_id: str):
 
 
 with tabs[1]:
-    sub_tabs = st.tabs(["Interpretation", "Comparative", "Chat"])
+    sub_tabs = st.tabs(["Interpretation", "Comparative"])
     with sub_tabs[0]:
         if "results" in st.session_state:
             res = st.session_state["results"]
@@ -1033,6 +1033,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
