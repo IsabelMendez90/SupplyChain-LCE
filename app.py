@@ -221,9 +221,14 @@ def score_matrix(base_map, matrix, w5s, stage):
                                           else STAGE_TAGS_DRIVERS, item)
 
             total_inf = clamp01((s_influence + stage_influence) / 2)
-            contrast = 1.2  # increase for sharper spread
-            penalty = (0.5 - total_inf) * contrast  # negative if strong match, positive if weak
-            score = clamp03(base * (1 - penalty) + 3 * total_inf * 0.5)
+            λ = st.session_state.get("λ", 1.2)
+            α = st.session_state.get("α", 0.5)
+            β = st.session_state.get("β", 0.5)
+            stage_gain = st.session_state.get("stage_gain", 0.8)
+            
+            contrast = λ
+            penalty  = (α - total_inf) * contrast
+            score    = clamp03(base * (1 - penalty) + 3 * total_inf * β)
 
             out[item][system] = round(score, 3)
     return out
@@ -456,7 +461,23 @@ def topsis_compare(matrix):
     weights = np.ones(len(df.columns)) / len(df.columns)
     score = (norm * weights).sum(axis=1)
     return score.rank(ascending=False)
+def ahp_compare(matrix):
+    """Approximate Analytic Hierarchy Process via normalized pairwise priority."""
+    df = pd.DataFrame(matrix).T.fillna(0)
+    weights = df / df.sum()
+    priority = weights.mean()
+    return priority.rank(ascending=False)
 
+def promethee_compare(matrix):
+    """Simplified PROMETHEE preference flow (linear preference function)."""
+    df = pd.DataFrame(matrix).T.fillna(0)
+    pref = pd.DataFrame(0, index=df.index, columns=df.index)
+    for i in df.index:
+        for j in df.index:
+            if i != j:
+                pref.loc[i, j] = max(0, (df.loc[i] - df.loc[j]).mean())
+    flow = pref.sum(axis=1) - pref.sum(axis=0)
+    return flow.rank(ascending=False)
 # -----------------------------------------------------
 # Sensitivity / robustness test
 # -----------------------------------------------------
@@ -855,7 +876,18 @@ with tabs[2]:
             # -------------------------------------------------
             # Sensitivity / Robustness Sandbox
             # -------------------------------------------------
-            st.subheader("Sensitivity Sandbox")
+
+            st.subheader("Hyperparameter Sensitivity (λ, α, β, stage_boost)")
+            λ          = st.slider("λ (fuzzy spread)",  0.1, 2.0, 1.2, 0.1)
+            α          = st.slider("α (penalty weight)",0.1, 1.0, 0.5, 0.05)
+            β          = st.slider("β (boost gain)",    0.1, 1.0, 0.5, 0.05)
+            stage_gain = st.slider("stage_boost scaling",0.0,1.0,0.8,0.05)
+            
+            st.session_state["λ"] = λ
+            st.session_state["α"] = α
+            st.session_state["β"] = β
+            st.session_state["stage_gain"] = stage_gain
+    
             
             delta = st.slider("Perturbation (±%)", 0.0, 1.0, 0.2, 0.05)
             
@@ -891,15 +923,25 @@ with tabs[2]:
     
             kpi_matrix = results["scored"]["kpis"]
             rank_custom = pd.DataFrame(kpi_matrix).mean().rank(ascending=False)
-            rank_topsis = topsis_compare(kpi_matrix)
-            tau = rank_custom.corr(rank_topsis, method="kendall")
-    
-            st.metric("Kendall τ vs TOPSIS baseline", f"{tau:.2f}")
-    
-            if tau >= 0.7:
-                st.success("High alignment with MCDA baseline — consistent prioritization.")
+
+            rank_topsis  = topsis_compare(kpi_matrix)
+            rank_ahp      = ahp_compare(kpi_matrix)
+            rank_prom     = promethee_compare(kpi_matrix)
+            
+            tau_topsis = rank_custom.corr(rank_topsis,  method="kendall")
+            tau_ahp     = rank_custom.corr(rank_ahp,    method="kendall")
+            tau_prom    = rank_custom.corr(rank_prom,   method="kendall")
+            
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Kendall τ vs TOPSIS",   f"{tau_topsis:.2f}")
+            col2.metric("Kendall τ vs AHP",      f"{tau_ahp:.2f}")
+            col3.metric("Kendall τ vs PROMETHEE",f"{tau_prom:.2f}")
+            if min(tau_topsis, tau_ahp, tau_prom) >= 0.7:
+                st.success("High alignment with MCDA baselines — consistent prioritization across methods.")
+            elif max(tau_topsis, tau_ahp, tau_prom) >= 0.5:
+                st.info("Moderate alignment — partial consistency; verify 5S or stage influence.")
             else:
-                st.warning("Divergence from baseline — check 5S or stage weight impacts.")
+                st.warning("Low alignment with MCDA baselines — review fuzzy or lifecycle parameters.")
     
             # -------------------------------------------------
             # Quantitative Amplitude Check (5S effect range)
@@ -1084,6 +1126,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
