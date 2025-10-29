@@ -791,6 +791,7 @@ with tabs[4]:
         delta = st.slider("Perturbation (±%)", 0.0, 1.0, 0.2, 0.05)
         if st.button("Run Sensitivity Test"):
             perturbed = perturb_weights(weights_5s, delta)
+            st.json(perturbed, expanded=False)
             scored_pert = score_all(perturbed, stage)
             base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
             new_df = pd.DataFrame(scored_pert["kpis"]).T.mean()
@@ -858,6 +859,7 @@ with tabs[4]:
         - **Robustness (KPI corr):** {corr:.2f}  
         - **Baseline alignment (Kendall τ):** {tau:.2f}
         """)
+
 
 
 
