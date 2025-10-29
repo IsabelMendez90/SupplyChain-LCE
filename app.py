@@ -462,10 +462,10 @@ def topsis_compare(matrix):
     score = (norm * weights).sum(axis=1)
     return score.rank(ascending=False)
 def ahp_compare(matrix):
-    """Approximate Analytic Hierarchy Process via normalized pairwise priority."""
     df = pd.DataFrame(matrix).T.fillna(0)
-    weights = df / df.sum()
-    priority = weights.mean()
+    col_sums = df.sum().replace(0, np.finfo(float).eps)
+    weights  = df / col_sums
+    priority = weights.mean(axis=1)
     return priority.rank(ascending=False)
 
 def promethee_compare(matrix):
@@ -899,9 +899,11 @@ with tabs[2]:
                 st.json(perturbed, expanded=False)
                 scored_pert = score_all(perturbed, stage)
             
-                base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
-                new_df = pd.DataFrame(scored_pert["kpis"]).T.mean()
-                corr = base_df.corr(new_df)
+                system = st.session_state.get("selected_system", "Product Transfer")
+                base_series = pd.DataFrame(results["scored"]["kpis"])[system]
+                new_series  = pd.DataFrame(scored_pert["kpis"])[system]
+                corr = base_series.corr(new_series, method="pearson")
+                
             
                 st.metric("KPI Correlation (original vs perturbed)", f"{corr:.2f}")
             
@@ -924,13 +926,14 @@ with tabs[2]:
             kpi_matrix = results["scored"]["kpis"]
             rank_custom = pd.DataFrame(kpi_matrix).mean().rank(ascending=False)
 
-            rank_topsis  = topsis_compare(kpi_matrix)
-            rank_ahp      = ahp_compare(kpi_matrix)
-            rank_prom     = promethee_compare(kpi_matrix)
+            rk_t = pd.concat([rank_custom, rank_topsis], axis=1).dropna()
+            rk_a = pd.concat([rank_custom, rank_ahp], axis=1).dropna()
+            rk_p = pd.concat([rank_custom, rank_prom], axis=1).dropna()
             
-            tau_topsis = rank_custom.corr(rank_topsis,  method="kendall")
-            tau_ahp     = rank_custom.corr(rank_ahp,    method="kendall")
-            tau_prom    = rank_custom.corr(rank_prom,   method="kendall")
+            tau_topsis = rk_t.iloc[:,0].corr(rk_t.iloc[:,1], method="kendall")
+            tau_ahp     = rk_a.iloc[:,0].corr(rk_a.iloc[:,1], method="kendall")
+            tau_prom    = rk_p.iloc[:,0].corr(rk_p.iloc[:,1], method="kendall")
+            
             
             col1, col2, col3 = st.columns(3)
             col1.metric("Kendall τ vs TOPSIS",   f"{tau_topsis:.2f}")
@@ -956,9 +959,9 @@ with tabs[2]:
             ])
             
             # Compute range across systems
-            mean_max = scores_df.max().mean()
-            mean_min = scores_df.min().mean()
-            variation = mean_max - mean_min
+            
+            row_range = (scores_df.max(axis=1) - scores_df.min(axis=1)).mean()
+            variation = float(row_range)
             
             st.metric("Average Score Range across Systems", f"{variation:.2f}")
             
@@ -1126,6 +1129,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
