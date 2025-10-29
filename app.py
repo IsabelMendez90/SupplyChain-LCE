@@ -166,8 +166,13 @@ def clamp03(x):
 def clamp01(x): 
     return max(0.0, min(1.0, x))
 
-def s_boost(w,s_tags,name): 
-    return sum(w.get(k,0.0)*v for k,v in s_tags.get(name,{}).items())
+def s_boost(w, s_tags, name):
+    tags = s_tags.get(name, {})
+    tot = sum(tags.values())
+    if tot == 0:
+        return 0.0
+    return sum(w.get(k, 0.0) * v for k, v in tags.items()) / tot
+
 
 def stage_boost(stage, tags, name, max_gain=0.8): 
     return clamp01(tags.get(name,{}).get(stage,0.0))*max_gain
@@ -188,9 +193,6 @@ def score_matrix(base_map, matrix, w5s, stage):
                                           else STAGE_TAGS_DRIVERS, item)
 
             total_inf = clamp01((s_influence + stage_influence) / 2)
-
-            # --- New balanced formula ---
-            # Base weighted by (1 ± contrast factor)
             contrast = 1.2  # increase for sharper spread
             penalty = (0.5 - total_inf) * contrast  # negative if strong match, positive if weak
             score = clamp03(base * (1 - penalty) + 3 * total_inf * 0.5)
@@ -319,21 +321,19 @@ with st.sidebar:
 # =====================================================
 #                MAIN APP LOGIC
 # =====================================================
+weights_5s = {s: st.session_state.get(f"s5_{s}", 0.5) for s in FIVE_S}
+lce_stage  = st.session_state.get("lce_stage", "Operation")
+st.session_state["matrices_live"] = score_all(weights_5s, lce_stage)
+
 st.title("Supply-Chain Strategy Agent (LCE + 5S)")
 st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 
-analyze_clicked = st.button("Analyze", use_container_width=True)
-
-if analyze_clicked:
-    role_val = st.session_state.get("user_role_other") if st.session_state.get("user_role")=="Other" else st.session_state.get("user_role")
-    weights_5s = {s: st.session_state.get(f"s5_{s}", 0.5) for s in FIVE_S}
-    lce_stage = st.session_state.get("lce_stage","Operation")
-    scored = score_all(weights_5s, lce_stage)
-
+# Single analyze button: freeze state & trigger LLM on tabs 2–3
+if st.button("Analyze", use_container_width=True):
     st.session_state["results"] = {
-        "scored": scored,
+        "scored": st.session_state["matrices_live"],
         "weights_5s": weights_5s,
-        "elapsed": 0.0
+        "elapsed": 0.0,
     }
     st.session_state["analyzed"] = True
     st.session_state["llm_done"] = False
@@ -426,13 +426,13 @@ tabs = st.tabs(["📊 Matrices", "🧠 Interpretations", "⚖️ Comparative", "
 
 # ---------- TAB 1: MATRICES ----------
 with tabs[0]:
-    if "results" in st.session_state:
-        res = st.session_state["results"]["scored"]
-        show_matrix("Core Processes × System", res["core_processes"])
-        show_matrix("KPIs × System", res["kpis"])
-        show_matrix("Resilience Drivers × System", res["drivers"])
+    res_live = st.session_state.get("matrices_live")
+    if res_live:
+        show_matrix("Core Processes × System", res_live["core_processes"])
+        show_matrix("KPIs × System",            res_live["kpis"])
+        show_matrix("Resilience Drivers × System", res_live["drivers"])
     else:
-        st.info("Run **Analyze** first to see matrices.")
+        st.info("Adjust 5S sliders or LCE stage to generate matrices.")
 
 # ---------- TAB 2: INTERPRETATIONS (5S + LCE-AWARE) ----------
 with tabs[1]:
