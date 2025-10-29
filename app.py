@@ -178,18 +178,25 @@ def score_matrix(base_map, matrix, w5s, stage):
         out[item] = {}
         for system, base in cols.items():
             base = float(base)
-            s_influence = s_boost(w5s, S_TAGS_KPI if matrix=="kpis"
-                                            else S_TAGS_CORE if matrix=="core_processes"
-                                            else S_TAGS_DRIVERS, item)
+            s_influence = s_boost(w5s, 
+                                  S_TAGS_KPI if matrix=="kpis"
+                                  else S_TAGS_CORE if matrix=="core_processes"
+                                  else S_TAGS_DRIVERS, item)
             stage_influence = stage_boost(stage,
                                           STAGE_TAGS_KPI if matrix=="kpis"
                                           else STAGE_TAGS_CORE if matrix=="core_processes"
                                           else STAGE_TAGS_DRIVERS, item)
-            # Instead of additive noise → controlled blend
-            score = base*(1 - 0.5*(s_influence + stage_influence)) + 3*(s_influence + stage_influence)/2
-            out[item][system] = round(clamp03(score), 3)
-    return out
 
+            total_inf = clamp01((s_influence + stage_influence) / 2)
+
+            # --- New balanced formula ---
+            # Base weighted by (1 ± contrast factor)
+            contrast = 1.2  # increase for sharper spread
+            penalty = (0.5 - total_inf) * contrast  # negative if strong match, positive if weak
+            score = clamp03(base * (1 - penalty) + 3 * total_inf * 0.5)
+
+            out[item][system] = round(score, 3)
+    return out
 
 def score_all(w5s, stage):
     return {
@@ -908,6 +915,7 @@ with tabs[5]:
             file_name="benchmarks.json",
             mime="application/json"
         )
+
 
 
 
