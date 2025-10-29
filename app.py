@@ -14,6 +14,17 @@ from openai import OpenAI
 from sklearn.feature_extraction.text import CountVectorizer  # kept as in your code
 
 # =====================================================
+#                  LOAD BENCHMARKS
+# =====================================================
+try:
+    with open("main/benchmarks.json") as f:
+        BENCHMARKS = json.load(f)
+except Exception as e:
+    st.warning(f"⚠️ Could not load benchmarks.json: {e}")
+    BENCHMARKS = {}
+
+
+# =====================================================
 #                   SETUP
 # =====================================================
 st.set_page_config(page_title="Supply-Chain Agent (LCE+5S)", layout="wide")
@@ -406,7 +417,7 @@ def compare_matrices(base, new):
 # =====================================================
 #            RESULTS RENDERING SECTION (DETAILED)
 # =====================================================
-tabs = st.tabs(["📊 Matrices", "🧠 Interpretations", "⚖️ Comparative", "💬 Chat", "🧪 Validation"])
+tabs = st.tabs(["📊 Matrices", "🧠 Interpretations", "⚖️ Comparative", "💬 Chat", "🧪 Validation", "📈 Benchmarks"])
 
 # ---------- TAB 1: MATRICES ----------
 with tabs[0]:
@@ -500,16 +511,19 @@ with tabs[1]:
                 "stage": lce_stage,
                 "stage_push": kpi_stage
             }
+            
+            # Add benchmark context to LLM payload
+            if sel_sys in BENCHMARKS:
+                kpi_payload["benchmark_reference"] = BENCHMARKS[sel_sys]
 
             prompt_kpi = f"""
             You are a performance strategist advising a {role} in the {industry} sector.
             The user's 5S priorities are: {json.dumps(w5s_qual)}.
             Below is the qualitative status of each KPI for the {sel_sys} system:
             {json.dumps(kpi_labels, indent=2)}.
-            Interpret them as *priority signals* influenced by those 5S dimensions and the stage '{lce_stage}'.
-            Explain which High KPIs sustain competitive advantage given the user's 5S profile,
-            which Medium KPIs to optimize next, and which Low KPIs to monitor or delegate.
-            Keep it analytical, prescriptive, and 5S-aligned (no numbers or parentheses, ≤170 words).
+            Use the benchmark_reference data to calibrate your reasoning.
+            If a KPI is 'Low' relative to the benchmark, recommend realistic improvements to reach 'High' maturity.
+            Avoid numeric values in your text, but base your analysis on benchmark thresholds.
             """
             kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
 
@@ -876,6 +890,26 @@ with tabs[4]:
         - **Baseline alignment (Kendall τ):** {tau:.2f}
         """)
 
+
+# ---------- TAB 6: BENCHMARKS ----------
+with tabs[5]:
+    st.header("📈 Industry Benchmark Reference")
+
+    if not BENCHMARKS:
+        st.warning("No benchmark data loaded.")
+    else:
+        selected = st.session_state.get("selected_system", "Product Transfer")
+        st.subheader(f"Benchmarks for {selected}")
+
+        df_bench = pd.DataFrame(BENCHMARKS[selected]).T
+        st.dataframe(df_bench, use_container_width=True)
+
+        st.download_button(
+            "💾 Download Benchmarks JSON",
+            data=json.dumps(BENCHMARKS, indent=2).encode("utf-8"),
+            file_name="benchmarks.json",
+            mime="application/json"
+        )
 
 
 
