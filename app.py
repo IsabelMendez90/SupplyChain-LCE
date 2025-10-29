@@ -174,7 +174,7 @@ def score_matrix(base_map, matrix, w5s, stage):
             # --- Core Processes Matrix ---
             elif matrix == "core_processes":
                 score += stage_boost(stage, STAGE_TAGS_CORE, item, 0.8)
-                sscore += s_boost(w5s, S_TAGS_CORE, item) * 1.2
+                score += s_boost(w5s, S_TAGS_CORE, item) * 1.2
 
             # --- Resilience Drivers Matrix ---
             else:
@@ -835,6 +835,7 @@ with tabs[4]:
         - **Robustness (KPI corr):** {corr:.2f}  
         - **Baseline alignment (Kendall τ):** {tau:.2f}
         """)
+
 
 
 
