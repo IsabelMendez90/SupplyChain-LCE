@@ -1,0 +1,23 @@
+{
+  "Product Transfer": {
+    "OTIF": {"High": ">=95%", "Medium": "85–95%", "Low": "<85%", "Source": "Gartner 2025"},
+    "Order Cycle Time": {"High": "<=5 days", "Medium": "6–10 days", "Low": ">10 days", "Source": "Gartner 2025"},
+    "Inventory Turns": {"High": "8–10", "Medium": "5–8", "Low": "<5", "Source": "Gartner 2025"},
+    "Forecast Accuracy": {"High": "<10% error", "Medium": "10–20%", "Low": ">20%", "Source": "Gartner 2025"},
+    "Customer Fill Rate": {"High": ">=97%", "Medium": "90–97%", "Low": "<90%", "Source": "Gartner 2025"}
+  },
+  "Technology Transfer": {
+    "First Pass Yield": {"High": ">=95%", "Medium": "90–95%", "Low": "<90%", "Source": "McKinsey 2020; Gartner 2025"},
+    "Plant Utilization": {"High": ">90%", "Medium": "80–90%", "Low": "<80%", "Source": "Gartner 2025"},
+    "Supplier On-time Receipts": {"High": ">=95%", "Medium": "85–95%", "Low": "<85%", "Source": "Gartner 2025"},
+    "Supplier Quality Pass": {"High": ">=98%", "Medium": "90–98%", "Low": "<90%", "Source": "Gartner 2025"},
+    "Cycle Time Reduction": {"High": "≤80% baseline (−20% or more)", "Medium": "85–95%", "Low": ">95%", "Source": "McKinsey 2020"}
+  },
+  "Facility Design": {
+    "OEE": {"High": ">=85%", "Medium": "65–85%", "Low": "<65%", "Source": "McKinsey 2020"},
+    "Real-time Visibility": {"High": "≤2h blocks", "Medium": "Daily", "Low": "Weekly or later", "Source": "McKinsey 2020"},
+    "Planned Maintenance Ratio": {"High": ">=80%", "Medium": "60–80%", "Low": "<60%", "Source": "McKinsey 2020"},
+    "Labor Content Accuracy": {"High": ">=95%", "Medium": "80–95%", "Low": "<80%", "Source": "McKinsey 2020"},
+    "Productivity Improvement (8–12w)": {"High": "+30–50%", "Medium": "+10–30%", "Low": "<10%", "Source": "McKinsey 2020"}
+  }
+}
