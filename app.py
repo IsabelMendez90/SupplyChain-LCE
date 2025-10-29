@@ -1078,7 +1078,7 @@ with tabs[2]:
                 }
 
                 base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
-                new_df = pd.DataFrame(scored_pert["kpis"]).T.mean()
+                new_df = pd.DataFrame(scored_new["kpis"]).T.mean()
                 corr = base_df.corr(new_df)
                 
 
@@ -1165,6 +1165,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
