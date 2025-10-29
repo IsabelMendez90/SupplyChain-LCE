@@ -22,6 +22,34 @@ try:
 except Exception as e:
     st.warning(f"⚠️ Could not load benchmarks.json: {e}")
     BENCHMARKS = {}
+
+
+BENCHMARK_META = {
+    "Product Transfer": {
+        "Objective": "Achieve demand-driven fulfillment with high service reliability and agile response to market variability, following Gartner’s hierarchy of supply-chain metrics.",
+        "meta": {
+            "source": "Gartner (2025) Strengthening Supply Chain Performance Improvement Initiatives",
+            "mapping_framework": "5S–LCE",
+            "note": "Focus on service reliability, agility, and customer responsiveness."
+        }
+    },
+    "Technology Transfer": {
+        "Objective": "Accelerate innovation and manufacturing ramp-up by improving yield, shortening cycle time, and strengthening supplier performance through active performance management.",
+        "meta": {
+            "source": "Gartner (2025); McKinsey (2020)",
+            "mapping_framework": "5S–LCE",
+            "note": "Emphasizes ramp-up, yield improvement, and supplier coordination."
+        }
+    },
+    "Facility Design": {
+        "Objective": "Maximize equipment efficiency, maintenance discipline, and workforce reliability to sustain continuous improvement and productivity gains in industrial operations.",
+        "meta": {
+            "source": "McKinsey (2020) Energizing Industrial Manufacturing Through Active Performance Management",
+            "mapping_framework": "5S–LCE",
+            "note": "Focus on OEE, maintenance, and workforce-driven performance culture."
+        }
+    }
+}
 # =====================================================
 #                   SETUP
 # =====================================================
@@ -277,39 +305,41 @@ def qualitative_scores(scored_dict):
 # =====================================================
 #                SIDEBAR CONFIGURATION
 # =====================================================
-PRESETS={"IECOS (PT)":{"system":"Product Transfer","preset":["High demand volatility","Geopolitical risk"],
-                              "custom":["lean logistics","digital platforms","supplier collaboration"],
-                              "objective":"Stabilize outsourced supply and assemble-to-order delivery performance."},
-         "Cardanes (TT)":{"system":"Technology Transfer","preset":["High demand volatility"],
-                          "custom":["workforce training","process innovation","iot monitoring","cost of adoption"],
-                          "objective":"Adopt a new process technology and ramp product variants."},
-         "MicroMachines (FD)":{"system":"Facility Design","preset":["Carbon constraints","Geopolitical risk"],
-                               "custom":["digital twin","esg-driven operations","vertical integration"],
-                               "objective":"Design and ramp a vertically integrated facility with ESG visibility."},
-         "Other":{"system":None,"preset":[],"custom":[],"objective":""}}
-
 with st.sidebar:
-    st.header("Template & Context")
+    st.header("Benchmark & Context Configuration")
     if st.button("🔄 Reset App"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.rerun()
 
-    preset_name = st.selectbox("Preset", list(PRESETS.keys()), key="preset")
-    preset = PRESETS[preset_name]
+    # --- Select manufacturing system ---
+    selected_system = st.selectbox("Manufacturing system", SYSTEMS, key="selected_system")
 
-    st.radio("Manufacturing system (view)", SYSTEMS,
-             index=SYSTEMS.index(preset["system"]) if preset["system"] in SYSTEMS else 0,
-             key="selected_system")
+    # --- Load benchmark info dynamically ---
+    if BENCHMARKS and selected_system in BENCHMARKS:
+        bench_meta = BENCHMARKS[selected_system].get("meta", BENCHMARK_META.get(selected_system, {}).get("meta", {}))
+    else:
+        bench_meta = BENCHMARK_META.get(selected_system, {}).get("meta", {})
 
-    st.text_input("Objective", value=preset["objective"] or "Design and ramp a flexible small manufacturing cell.", key="objective")
+    # --- Objective ---
+    
+    default_obj = (
+        BENCHMARKS.get(selected_system, {})
+        .get("objective", BENCHMARK_META.get(selected_system, {}).get("Objective", f"Optimize {selected_system} performance vs benchmarks"))
+    )
+
+    st.text_input("Objective", value=default_obj, key="objective")
+
+    # --- Industry + role ---
     st.selectbox("Industry", ["Automotive","Electronics","Medical Devices","Consumer Goods","Other"], index=1, key="industry")
-
-    roles = ["Design Engineer","Process Engineer","Manufacturing Engineer","Safety Supervisor","Sustainability Manager","Supply Chain Analyst","Manager/Decision Maker","Other"]
+    roles = ["Design Engineer","Process Engineer","Manufacturing Engineer",
+             "Safety Supervisor","Sustainability Manager","Supply Chain Analyst",
+             "Manager/Decision Maker","Other"]
     st.selectbox("Your role", roles, index=5, key="user_role")
     if st.session_state.get("user_role")=="Other":
         st.text_input("Specify role", value="Other", key="user_role_other")
 
+    # --- LCE + 5S ---
     st.header("LCE & 5S Priorities")
     st.selectbox("LCE stage", LCE, key="lce_stage")
     st.caption("5S sliders are priorities: 0 = deprioritize, 0.5 = neutral, 1 = strongly prioritize.")
@@ -317,6 +347,15 @@ with st.sidebar:
         st.slider(s, 0.0, 1.0, 0.5, 0.05, key=f"s5_{s}")
 
     st.toggle("Compare all systems (view)", value=False, key="compare_all")
+
+    # --- Transparency note ---
+    st.caption("""
+    Benchmarks represent industry-average KPI ranges compiled from sources 
+    such as Deloitte, McKinsey, and Gartner.  
+    The 5S–LCE framework and fuzzy weighting logic were developed by the authors 
+    (Méndez & Molina, 2025) to translate these metrics into a lifecycle-aware context.
+    """)
+
 
 # =====================================================
 #                MAIN APP LOGIC
@@ -900,21 +939,25 @@ with tabs[4]:
 with tabs[5]:
     st.header("📈 Industry Benchmark Reference")
 
-    if not BENCHMARKS:
-        st.warning("No benchmark data loaded.")
-    else:
-        selected = st.session_state.get("selected_system", "Product Transfer")
-        st.subheader(f"Benchmarks for {selected}")
+    selected = st.session_state.get("selected_system", "Product Transfer")
+    meta = BENCHMARK_META.get(selected, {}).get("meta", {})
+    objective = BENCHMARK_META.get(selected, {}).get("Objective", "N/A")
 
+    st.subheader(f"Benchmarks for {selected}")
+    st.markdown(f"**Objective:** {objective}")
+    st.markdown(f"**Source:** {meta.get('source', 'N/A')}")
+    st.markdown(f"**Framework:** {meta.get('mapping_framework', '5S–LCE')}")
+    st.markdown(f"**Note:** {meta.get('note', '')}")
+    st.divider()
+
+    if BENCHMARKS and selected in BENCHMARKS:
         df_bench = pd.DataFrame(BENCHMARKS[selected]).T
         st.dataframe(df_bench, use_container_width=True)
+    else:
+        st.warning("No benchmark data loaded for this system.")
 
-        st.download_button(
-            "💾 Download Benchmarks JSON",
-            data=json.dumps(BENCHMARKS, indent=2).encode("utf-8"),
-            file_name="benchmarks.json",
-            mime="application/json"
-        )
+
+
 
 
 
