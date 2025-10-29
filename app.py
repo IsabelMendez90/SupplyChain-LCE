@@ -899,10 +899,17 @@ with tabs[2]:
                 st.json(perturbed, expanded=False)
                 scored_pert = score_all(perturbed, stage)
             
-                system = st.session_state.get("selected_system", "Product Transfer")
-                base_series = pd.DataFrame(results["scored"]["kpis"])[system]
-                new_series  = pd.DataFrame(scored_pert["kpis"])[system]
+                df_base = pd.DataFrame(results["scored"]["kpis"]).T
+                if system not in df_base.columns:
+                    st.warning(f"⚠️ System '{system}' not found in KPI matrix; using all systems instead.")
+                    base_series = df_base.mean(axis=1)
+                    new_series  = pd.DataFrame(scored_pert["kpis"]).T.mean(axis=1)
+                else:
+                    base_series = df_base[system]
+                    new_series  = pd.DataFrame(scored_pert["kpis"]).T[system]
+                
                 corr = base_series.corr(new_series, method="pearson")
+                
                 
             
                 st.metric("KPI Correlation (original vs perturbed)", f"{corr:.2f}")
@@ -1129,6 +1136,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
