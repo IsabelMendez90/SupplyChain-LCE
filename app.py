@@ -301,7 +301,13 @@ def qualitative_scores(scored_dict):
             for name, sysvals in items.items()
         }
     return qualitative
-
+def describe_real_5s(weights):
+    """Convert numeric 5S slider values into hybrid qualitative + numeric summary."""
+    desc = {}
+    for s, v in weights.items():
+        label = "High" if v >= 0.75 else "Medium" if v >= 0.5 else "Low"
+        desc[s] = f"{label} ({v:.2f})"
+    return desc
 # =====================================================
 #                SIDEBAR CONFIGURATION
 # =====================================================
@@ -615,7 +621,7 @@ with tabs[1]:
                 objective = st.session_state.get("objective", "")
                 lce_stage = st.session_state.get("lce_stage", "Operation")
                 w5s = res["weights_5s"]
-                w5s_qual = qual_5s_weights(w5s)
+                w5s_desc = describe_real_5s(w5s)
     
                 # ---- CORE ----
                 core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
@@ -625,7 +631,7 @@ with tabs[1]:
     
                 core_payload = {
                     "core_labels": core_labels,
-                    "weights_5s_qual": w5s_qual,
+                    "w5s_desc": w5s_desc,
                     "top_5s_per_item": core_topS,
                     "stage": lce_stage,
                     "stage_push": core_stage
@@ -633,7 +639,7 @@ with tabs[1]:
     
                 prompt_core = f"""
                 You are a supply-chain strategist advising a {role} in the {industry} industry.
-                The user's 5S priorities are: {json.dumps(w5s_qual)}.
+                The user's 5S priorities are: {json.dumps(w5s_desc)}.
                 Below is the qualitative status of each core process for the {sel_sys} system:
                 {json.dumps(core_labels, indent=2)}.
                 For each High or Medium process, refer to the dominant 5S dimensions that drove it 
@@ -653,7 +659,7 @@ with tabs[1]:
     
                 kpi_payload = {
                     "kpi_labels": kpi_labels,
-                    "weights_5s_qual": w5s_qual,
+                    "w5s_desc": w5s_desc,
                     "top_5s_per_item": kpi_topS,
                     "stage": lce_stage,
                     "stage_push": kpi_stage
@@ -665,7 +671,7 @@ with tabs[1]:
     
                 prompt_kpi = f"""
                 You are a performance strategist advising a {role} in the {industry} sector.
-                The user's 5S priorities are: {json.dumps(w5s_qual)}.
+                The user's 5S priorities are: {json.dumps(w5s_desc)}.
                 Below is the qualitative status of each KPI for the {sel_sys} system:
                 {json.dumps(kpi_labels, indent=2)}.
                 Use the benchmark_reference data to calibrate your reasoning.
@@ -682,7 +688,7 @@ with tabs[1]:
     
                 driver_payload = {
                     "driver_labels": driver_labels,
-                    "weights_5s_qual": w5s_qual,
+                    "w5s_desc": w5s_desc,
                     "top_5s_per_item": driver_topS,
                     "stage": lce_stage,
                     "stage_push": driver_stage
@@ -690,7 +696,7 @@ with tabs[1]:
     
                 prompt_drv = f"""
                 You are a resilience strategist advising a {role} in the {industry} industry.
-                The user's 5S priorities are: {json.dumps(w5s_qual)}.
+                The user's 5S priorities are: {json.dumps(w5s_desc)}.
                 Below is the qualitative status of each resilience driver for the {sel_sys} system:
                 {json.dumps(driver_labels, indent=2)}.
                 Use the 5S profile ('top_5s_per_item') and the LCE stage '{lce_stage}' to reason 
@@ -1006,6 +1012,28 @@ with tabs[2]:
 
                 top_kpis = df_kpi.tail(3)["KPI"].tolist()
                 st.markdown(f"**Top 3 most resilient KPIs:** {', '.join(top_kpis)}")
+                
+                # ---- LLM interpretation of What-If Scenario ----
+                if "llm_whatif" not in st.session_state or st.button("Generate LLM Interpretation"):
+                    w5s_desc = describe_real_5s(weights_5s)
+                    prompt_whatif = f"""
+                    You are a supply-chain strategist analyzing a What-If scenario.
+                    Disabled components: {', '.join(disabled) or 'None'}
+                    KPI correlation vs full model: {corr:.2f}
+                    Top resilient KPIs: {', '.join(top_kpis)}
+                    User's 5S weights: {json.dumps(w5s_desc, indent=2)}
+                    Explain how the current 5S emphasis and the disabled components
+                    affect overall system stability and strategy priorities.
+                    Be concise, no numbers or parentheses.
+                    """
+                    payload = {"disabled": disabled, "corr": corr, "top_kpis": top_kpis, "weights_5s": w5s_desc}
+                    expl = safe_llm_call(prompt_whatif, payload, temp=0.35, max_toks=350)
+                    st.session_state["llm_whatif"] = expl
+                
+                if "llm_whatif" in st.session_state:
+                    st.markdown("### 🧠 LLM Interpretation")
+                    st.write(clean_numbers(st.session_state["llm_whatif"]))
+    
 
                 st.download_button(
                     "📥 Download detailed What-If data (JSON)",
@@ -1035,23 +1063,3 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
