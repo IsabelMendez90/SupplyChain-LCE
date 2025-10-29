@@ -863,6 +863,8 @@ with tabs[4]:
         # Summary panel
         # -------------------------------------------------
         st.subheader("Validation Summary")
+        corr_val = f"{corr:.2f}" if corr is not None else "N/A"
+        
         st.markdown(f"""
         - **Run ID:** `{run_hash}`  
         - **LCE Stage:** `{stage}`  
@@ -871,6 +873,7 @@ with tabs[4]:
         - **Robustness (KPI corr):** {corr:.2f}  
         - **Baseline alignment (Kendall τ):** {tau:.2f}
         """)
+
 
 
 
