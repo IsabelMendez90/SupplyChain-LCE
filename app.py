@@ -924,34 +924,50 @@ with tabs[2]:
                 st.info("Adjust the perturbation slider and click **Run Sensitivity Test** to compute robustness.")
             
         
-    
             # -------------------------------------------------
-            # Baseline comparison (TOPSIS)
+            # Baseline comparison (TOPSIS / AHP / PROMETHEE)
             # -------------------------------------------------
             st.subheader("MCDA Baseline Comparison")
-    
+            
             kpi_matrix = results["scored"]["kpis"]
-            rank_custom = pd.DataFrame(kpi_matrix).mean().rank(ascending=False)
-
-            rk_t = pd.concat([rank_custom, rank_topsis], axis=1).dropna()
-            rk_a = pd.concat([rank_custom, rank_ahp], axis=1).dropna()
-            rk_p = pd.concat([rank_custom, rank_prom], axis=1).dropna()
+            df_kpi = pd.DataFrame(kpi_matrix).T.fillna(0)
             
-            tau_topsis = rk_t.iloc[:,0].corr(rk_t.iloc[:,1], method="kendall")
-            tau_ahp     = rk_a.iloc[:,0].corr(rk_a.iloc[:,1], method="kendall")
-            tau_prom    = rk_p.iloc[:,0].corr(rk_p.iloc[:,1], method="kendall")
+            # Custom (fuzzy) ranking
+            rank_custom = df_kpi.mean().rank(ascending=False)
             
+            # Baseline methods
+            rank_topsis = topsis_compare(kpi_matrix)
+            rank_ahp    = ahp_compare(kpi_matrix)
+            rank_prom   = promethee_compare(kpi_matrix)
             
+            # Safe Kendall τ computation (align indexes & drop NaN)
+            def safe_kendall(a, b):
+                try:
+                    both = pd.concat([a, b], axis=1, join="inner").dropna()
+                    if both.shape[0] < 2:
+                        return np.nan
+                    return both.iloc[:, 0].corr(both.iloc[:, 1], method="kendall")
+                except Exception:
+                    return np.nan
+            
+            tau_topsis = safe_kendall(rank_custom, rank_topsis)
+            tau_ahp    = safe_kendall(rank_custom, rank_ahp)
+            tau_prom   = safe_kendall(rank_custom, rank_prom)
+            
+            # Display results
             col1, col2, col3 = st.columns(3)
-            col1.metric("Kendall τ vs TOPSIS",   f"{tau_topsis:.2f}")
-            col2.metric("Kendall τ vs AHP",      f"{tau_ahp:.2f}")
-            col3.metric("Kendall τ vs PROMETHEE",f"{tau_prom:.2f}")
-            if min(tau_topsis, tau_ahp, tau_prom) >= 0.7:
+            col1.metric("Kendall τ vs TOPSIS",   f"{tau_topsis if pd.notna(tau_topsis) else 0:.2f}")
+            col2.metric("Kendall τ vs AHP",      f"{tau_ahp if pd.notna(tau_ahp) else 0:.2f}")
+            col3.metric("Kendall τ vs PROMETHEE",f"{tau_prom if pd.notna(tau_prom) else 0:.2f}")
+            
+            if np.nanmin([tau_topsis, tau_ahp, tau_prom]) >= 0.7:
                 st.success("High alignment with MCDA baselines — consistent prioritization across methods.")
-            elif max(tau_topsis, tau_ahp, tau_prom) >= 0.5:
+            elif np.nanmax([tau_topsis, tau_ahp, tau_prom]) >= 0.5:
                 st.info("Moderate alignment — partial consistency; verify 5S or stage influence.")
             else:
                 st.warning("Low alignment with MCDA baselines — review fuzzy or lifecycle parameters.")
+
+            
     
             # -------------------------------------------------
             # Quantitative Amplitude Check (5S effect range)
@@ -1137,6 +1153,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
