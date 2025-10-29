@@ -488,11 +488,12 @@ with tabs[0]:
 
 # ---------- TAB 2: INTERPRETATIONS (5S + LCE-AWARE) ----------
 
-def show_chat():
+def show_chat(tab_id: str):
     """Unified chat component shared between Interpretation and Comparative tabs."""
     st.markdown("---")
     st.subheader("💬 Strategy Chat Assistant")
 
+    # Historial compartido entre tabs (puedes cambiarlo a uno por tab si quieres)
     if "chat" not in st.session_state:
         st.session_state["chat"] = []
 
@@ -500,8 +501,11 @@ def show_chat():
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
 
-
-    user_q = st.chat_input("Ask the Strategy Agent…", key=f"chat_input_{st.session_state.get('selected_system','default')}_{st.session_state.get('lce_stage','Operation')}")
+    # 🔑 clave única por tab
+    user_q = st.chat_input(
+        "Ask the Strategy Agent…",
+        key=f"chat_input_{tab_id}"
+    )
 
     if user_q:
         st.session_state["chat"].append({"role": "user", "content": user_q})
@@ -550,8 +554,7 @@ def show_chat():
                     model=LLM_MODEL,
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user",
-                         "content": json.dumps(ctx_compact, ensure_ascii=False, default=_json_default)},
+                        {"role": "user", "content": json.dumps(ctx_compact, ensure_ascii=False, default=_json_default)},
                         {"role": "user", "content": user_q},
                     ],
                     extra_headers=OPENROUTER_HEADERS,
@@ -568,6 +571,7 @@ def show_chat():
         st.session_state["chat"].append({"role": "assistant", "content": reply})
         with st.chat_message("assistant"):
             st.markdown(reply)
+
 
 with tabs[1]:
     sub_tabs = st.tabs(["Interpretation", "Comparative", "Chat"])
@@ -712,7 +716,7 @@ with tabs[1]:
             st.write(inter["drivers"])
         else:
             st.info("Run **Analyze** first to enable interpretations.")
-        show_chat()
+        show_chat("interpret")
     
     # ---------- TAB 3: COMPARATIVE INTERPRETATION ----------
     with sub_tabs[1]:
@@ -768,7 +772,7 @@ with tabs[1]:
                 st.info("Activate **Compare all systems (view)** in the sidebar to generate a comparison.")
         else:
             st.info("Run **Analyze** first.")
-        show_chat()
+        show_chat("compare")
     
     
 
@@ -1029,6 +1033,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
