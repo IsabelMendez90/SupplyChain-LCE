@@ -469,7 +469,12 @@ def compare_matrices(base, new):
 # =====================================================
 #            RESULTS RENDERING SECTION (DETAILED)
 # =====================================================
-tabs = st.tabs(["📊 Matrices", "🧠 Interpretations", "⚖️ Comparative", "💬 Chat", "🧪 Validation", "📈 Benchmarks"])
+tabs = st.tabs([
+    "📊 Matrices",
+    "🧠 Strategic Insights",
+    "🧪 Validation & Scenarios",
+    "📈 Benchmarks"
+])
 
 # ---------- TAB 1: MATRICES ----------
 with tabs[0]:
@@ -483,468 +488,556 @@ with tabs[0]:
 
 # ---------- TAB 2: INTERPRETATIONS (5S + LCE-AWARE) ----------
 with tabs[1]:
-    if "results" in st.session_state:
-        res = st.session_state["results"]
-
-        # --- funciones auxiliares locales ---
-        def qual_5s_weights(w5s):
-            def q(x): return "High" if x >= 0.75 else "Medium" if x >= 0.5 else "Low"
-            return {k: q(v) for k, v in w5s.items()}
-
-        def item_contrib_5s(item_name, matrix_type, w5s):
-            s_tags = {
-                "kpis": S_TAGS_KPI,
-                "core_processes": S_TAGS_CORE,
-                "drivers": S_TAGS_DRIVERS
-            }[matrix_type]
-            raw = {s: w5s.get(s, 0.0) * s_tags.get(item_name, {}).get(s, 0.0) for s in FIVE_S}
-            if sum(raw.values()) == 0:
-                return []
-            sorted_S = sorted(raw.items(), key=lambda x: x[1], reverse=True)
-            return [k for k, _ in sorted_S[:2]]  # top 2 S most influential
-
-        def item_contrib_lce(item_name, matrix_type, stage):
-            stage_tags = {
-                "kpis": STAGE_TAGS_KPI,
-                "core_processes": STAGE_TAGS_CORE,
-                "drivers": STAGE_TAGS_DRIVERS
-            }[matrix_type]
-            return [stage for stage, val in stage_tags.get(item_name, {}).items() if val > 0.5]
-
-        if not st.session_state.get("llm_done", False):
-            st.info("Generating qualitative interpretations with the LLM...")
-
-            sel_sys = st.session_state.get("selected_system", "Product Transfer")
-            role = st.session_state.get("user_role", "")
-            industry = st.session_state.get("industry", "")
-            objective = st.session_state.get("objective", "")
-            lce_stage = st.session_state.get("lce_stage", "Operation")
-            w5s = res["weights_5s"]
-            w5s_qual = qual_5s_weights(w5s)
-
-            # ---- CORE ----
-            core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
-            core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
-            core_topS = {k: item_contrib_5s(k, "core_processes", w5s) for k in core_labels}
-            core_stage = {k: item_contrib_lce(k, "core_processes", lce_stage) for k in core_labels}
-
-            core_payload = {
-                "core_labels": core_labels,
-                "weights_5s_qual": w5s_qual,
-                "top_5s_per_item": core_topS,
-                "stage": lce_stage,
-                "stage_push": core_stage
-            }
-
-            prompt_core = f"""
-            You are a supply-chain strategist advising a {role} in the {industry} industry.
-            The user's 5S priorities are: {json.dumps(w5s_qual)}.
-            Below is the qualitative status of each core process for the {sel_sys} system:
-            {json.dumps(core_labels, indent=2)}.
-            For each High or Medium process, refer to the dominant 5S dimensions that drove it 
-            (see 'top_5s_per_item') and consider how the current LCE stage '{lce_stage}' 
-            influences that priority. 
-            Provide a concise, 5S-aware qualitative explanation on which processes to strengthen,
-            simplify, or maintain to achieve "{objective}". Avoid numbers or parentheses.
-            Limit to 170 words.
-            """
-            core_expl = safe_llm_call(prompt_core, core_payload)
-
-            # ---- KPIs ----
-            kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
-            kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
-            kpi_topS = {k: item_contrib_5s(k, "kpis", w5s) for k in kpi_labels}
-            kpi_stage = {k: item_contrib_lce(k, "kpis", lce_stage) for k in kpi_labels}
-
-            kpi_payload = {
-                "kpi_labels": kpi_labels,
-                "weights_5s_qual": w5s_qual,
-                "top_5s_per_item": kpi_topS,
-                "stage": lce_stage,
-                "stage_push": kpi_stage
-            }
-            
-            # Add benchmark context to LLM payload
-            if sel_sys in BENCHMARKS:
-                kpi_payload["benchmark_reference"] = BENCHMARKS[sel_sys]
-
-            prompt_kpi = f"""
-            You are a performance strategist advising a {role} in the {industry} sector.
-            The user's 5S priorities are: {json.dumps(w5s_qual)}.
-            Below is the qualitative status of each KPI for the {sel_sys} system:
-            {json.dumps(kpi_labels, indent=2)}.
-            Use the benchmark_reference data to calibrate your reasoning.
-            If a KPI is 'Low' relative to the benchmark, recommend realistic improvements to reach 'High' maturity.
-            Avoid numeric values in your text, but base your analysis on benchmark thresholds.
-            """
-            kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
-
-            # ---- DRIVERS ----
-            driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
-            driver_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in driver_scores.items()}
-            driver_topS = {k: item_contrib_5s(k, "drivers", w5s) for k in driver_labels}
-            driver_stage = {k: item_contrib_lce(k, "drivers", lce_stage) for k in driver_labels}
-
-            driver_payload = {
-                "driver_labels": driver_labels,
-                "weights_5s_qual": w5s_qual,
-                "top_5s_per_item": driver_topS,
-                "stage": lce_stage,
-                "stage_push": driver_stage
-            }
-
-            prompt_drv = f"""
-            You are a resilience strategist advising a {role} in the {industry} industry.
-            The user's 5S priorities are: {json.dumps(w5s_qual)}.
-            Below is the qualitative status of each resilience driver for the {sel_sys} system:
-            {json.dumps(driver_labels, indent=2)}.
-            Use the 5S profile ('top_5s_per_item') and the LCE stage '{lce_stage}' to reason 
-            which drivers reinforce stability, enhance flexibility, or need rethinking.
-            Align the explanation with "{objective}" and write it 5S-aware, prescriptive,
-            analytical, and concise (≤170 words, no numbers or parentheses).
-            """
-            driver_expl = safe_llm_call(prompt_drv, driver_payload)
-
-            # --- store ---
-            st.session_state["llm_interpretations"] = {
-                "core": clean_numbers(core_expl),
-                "kpi": clean_numbers(kpi_expl),
-                "drivers": clean_numbers(driver_expl)
-            }
-            st.session_state["llm_done"] = True
-
-        # --- render ---
-        inter = st.session_state["llm_interpretations"]
-        st.markdown("### Core Processes Interpretation")
-        st.write(inter["core"])
-        st.markdown("### KPI Interpretation")
-        st.write(inter["kpi"])
-        st.markdown("### Resilience Drivers Interpretation")
-        st.write(inter["drivers"])
-    else:
-        st.info("Run **Analyze** first to enable interpretations.")
-
-# ---------- TAB 3: COMPARATIVE INTERPRETATION ----------
-with tabs[2]:
-    if "results" in st.session_state:
-        if st.session_state.get("compare_all", False):
-            res = st.session_state["results"]["scored"]
-            sel_sys = st.session_state.get("selected_system", "Product Transfer")
-            objective = st.session_state.get("objective", "")
-            role = st.session_state.get("user_role", "")
-            industry = st.session_state.get("industry", "")
-
-            other_systems = [s for s in SYSTEMS if s != sel_sys]
-            if len(other_systems) == 0:
-                st.info("Select a system to enable comparison.")
+    sub_tabs = st.tabs(["Interpretation", "Comparative", "Chat"])
+    with sub_tabs[0]:
+        if "results" in st.session_state:
+            res = st.session_state["results"]
+    
+            # --- funciones auxiliares locales ---
+            def qual_5s_weights(w5s):
+                def q(x): return "High" if x >= 0.75 else "Medium" if x >= 0.5 else "Low"
+                return {k: q(v) for k, v in w5s.items()}
+    
+            def item_contrib_5s(item_name, matrix_type, w5s):
+                s_tags = {
+                    "kpis": S_TAGS_KPI,
+                    "core_processes": S_TAGS_CORE,
+                    "drivers": S_TAGS_DRIVERS
+                }[matrix_type]
+                raw = {s: w5s.get(s, 0.0) * s_tags.get(item_name, {}).get(s, 0.0) for s in FIVE_S}
+                if sum(raw.values()) == 0:
+                    return []
+                sorted_S = sorted(raw.items(), key=lambda x: x[1], reverse=True)
+                return [k for k, _ in sorted_S[:2]]  # top 2 S most influential
+    
+            def item_contrib_lce(item_name, matrix_type, stage):
+                stage_tags = {
+                    "kpis": STAGE_TAGS_KPI,
+                    "core_processes": STAGE_TAGS_CORE,
+                    "drivers": STAGE_TAGS_DRIVERS
+                }[matrix_type]
+                return [stage for stage, val in stage_tags.get(item_name, {}).items() if val > 0.5]
+    
+            if not st.session_state.get("llm_done", False):
+                st.info("Generating qualitative interpretations with the LLM...")
+    
+                sel_sys = st.session_state.get("selected_system", "Product Transfer")
+                role = st.session_state.get("user_role", "")
+                industry = st.session_state.get("industry", "")
+                objective = st.session_state.get("objective", "")
+                lce_stage = st.session_state.get("lce_stage", "Operation")
+                w5s = res["weights_5s"]
+                w5s_qual = qual_5s_weights(w5s)
+    
+                # ---- CORE ----
+                core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
+                core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
+                core_topS = {k: item_contrib_5s(k, "core_processes", w5s) for k in core_labels}
+                core_stage = {k: item_contrib_lce(k, "core_processes", lce_stage) for k in core_labels}
+    
+                core_payload = {
+                    "core_labels": core_labels,
+                    "weights_5s_qual": w5s_qual,
+                    "top_5s_per_item": core_topS,
+                    "stage": lce_stage,
+                    "stage_push": core_stage
+                }
+    
+                prompt_core = f"""
+                You are a supply-chain strategist advising a {role} in the {industry} industry.
+                The user's 5S priorities are: {json.dumps(w5s_qual)}.
+                Below is the qualitative status of each core process for the {sel_sys} system:
+                {json.dumps(core_labels, indent=2)}.
+                For each High or Medium process, refer to the dominant 5S dimensions that drove it 
+                (see 'top_5s_per_item') and consider how the current LCE stage '{lce_stage}' 
+                influences that priority. 
+                Provide a concise, 5S-aware qualitative explanation on which processes to strengthen,
+                simplify, or maintain to achieve "{objective}". Avoid numbers or parentheses.
+                Limit to 170 words.
+                """
+                core_expl = safe_llm_call(prompt_core, core_payload)
+    
+                # ---- KPIs ----
+                kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
+                kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
+                kpi_topS = {k: item_contrib_5s(k, "kpis", w5s) for k in kpi_labels}
+                kpi_stage = {k: item_contrib_lce(k, "kpis", lce_stage) for k in kpi_labels}
+    
+                kpi_payload = {
+                    "kpi_labels": kpi_labels,
+                    "weights_5s_qual": w5s_qual,
+                    "top_5s_per_item": kpi_topS,
+                    "stage": lce_stage,
+                    "stage_push": kpi_stage
+                }
+                
+                # Add benchmark context to LLM payload
+                if sel_sys in BENCHMARKS:
+                    kpi_payload["benchmark_reference"] = BENCHMARKS[sel_sys]
+    
+                prompt_kpi = f"""
+                You are a performance strategist advising a {role} in the {industry} sector.
+                The user's 5S priorities are: {json.dumps(w5s_qual)}.
+                Below is the qualitative status of each KPI for the {sel_sys} system:
+                {json.dumps(kpi_labels, indent=2)}.
+                Use the benchmark_reference data to calibrate your reasoning.
+                If a KPI is 'Low' relative to the benchmark, recommend realistic improvements to reach 'High' maturity.
+                Avoid numeric values in your text, but base your analysis on benchmark thresholds.
+                """
+                kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
+    
+                # ---- DRIVERS ----
+                driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
+                driver_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in driver_scores.items()}
+                driver_topS = {k: item_contrib_5s(k, "drivers", w5s) for k in driver_labels}
+                driver_stage = {k: item_contrib_lce(k, "drivers", lce_stage) for k in driver_labels}
+    
+                driver_payload = {
+                    "driver_labels": driver_labels,
+                    "weights_5s_qual": w5s_qual,
+                    "top_5s_per_item": driver_topS,
+                    "stage": lce_stage,
+                    "stage_push": driver_stage
+                }
+    
+                prompt_drv = f"""
+                You are a resilience strategist advising a {role} in the {industry} industry.
+                The user's 5S priorities are: {json.dumps(w5s_qual)}.
+                Below is the qualitative status of each resilience driver for the {sel_sys} system:
+                {json.dumps(driver_labels, indent=2)}.
+                Use the 5S profile ('top_5s_per_item') and the LCE stage '{lce_stage}' to reason 
+                which drivers reinforce stability, enhance flexibility, or need rethinking.
+                Align the explanation with "{objective}" and write it 5S-aware, prescriptive,
+                analytical, and concise (≤170 words, no numbers or parentheses).
+                """
+                driver_expl = safe_llm_call(prompt_drv, driver_payload)
+    
+                # --- store ---
+                st.session_state["llm_interpretations"] = {
+                    "core": clean_numbers(core_expl),
+                    "kpi": clean_numbers(kpi_expl),
+                    "drivers": clean_numbers(driver_expl)
+                }
+                st.session_state["llm_done"] = True
+    
+            # --- render ---
+            inter = st.session_state["llm_interpretations"]
+            st.markdown("### Core Processes Interpretation")
+            st.write(inter["core"])
+            st.markdown("### KPI Interpretation")
+            st.write(inter["kpi"])
+            st.markdown("### Resilience Drivers Interpretation")
+            st.write(inter["drivers"])
+        else:
+            st.info("Run **Analyze** first to enable interpretations.")
+    
+    # ---------- TAB 3: COMPARATIVE INTERPRETATION ----------
+    with sub_tabs[1]:
+        if "results" in st.session_state:
+            if st.session_state.get("compare_all", False):
+                res = st.session_state["results"]["scored"]
+                sel_sys = st.session_state.get("selected_system", "Product Transfer")
+                objective = st.session_state.get("objective", "")
+                role = st.session_state.get("user_role", "")
+                industry = st.session_state.get("industry", "")
+    
+                other_systems = [s for s in SYSTEMS if s != sel_sys]
+                if len(other_systems) == 0:
+                    st.info("Select a system to enable comparison.")
+                else:
+                    others_str = " and ".join(other_systems)
+    
+                    # Use cached value if exists
+                    if "compare_analysis" not in st.session_state:
+                        compare_payload = compact_dict({
+                            "selected_system": sel_sys,
+                            "other_systems": other_systems,
+                            "objective": objective,
+                            "role": role,
+                            "industry": industry,
+                            "core": res["core_processes"],
+                            "kpis": res["kpis"],
+                            "drivers": res["drivers"],
+                        })
+                        compare_prompt = f"""
+                        You are an expert supply-chain strategist.
+                        Compare {sel_sys} with {others_str} across Core Processes, KPIs, and Drivers.
+                        Explain relative strengths and weaknesses from the lens of a {role} aiming to achieve "{objective}".
+                        Highlight where {sel_sys} outperforms and where the others offer advantages, and indicate complementarities.
+                        Conclude with one actionable recommendation to balance synergy, resilience, and innovation.
+                        Keep tone analytical and concise (≤180 words). Avoid numeric values or parentheses.
+                        """
+    
+                        st.info("Generating comparative interpretation (first run only)...")
+                        compare_expl = safe_llm_call(compare_prompt, compare_payload,
+                                                     temp=0.35, max_toks=450)
+                        st.session_state["compare_analysis"] = clean_numbers(compare_expl)
+                    else:
+                        compare_expl = st.session_state["compare_analysis"]
+    
+                    # Display cached or freshly generated result
+                    if compare_expl:
+                        st.markdown("### Comparative Interpretation")
+                        st.write(compare_expl)
+                    else:
+                        st.warning("⚠️ Comparative interpretation returned no content or was truncated.")
             else:
-                others_str = " and ".join(other_systems)
-
-                # Use cached value if exists
-                if "compare_analysis" not in st.session_state:
-                    compare_payload = compact_dict({
-                        "selected_system": sel_sys,
-                        "other_systems": other_systems,
+                st.info("Activate **Compare all systems (view)** in the sidebar to generate a comparison.")
+        else:
+            st.info("Run **Analyze** first.")
+    
+    
+    # ---------- TAB 4: CHAT ----------
+    with sub_tabs[2]:
+        st.markdown("---")
+        st.subheader("Chat with the Strategy Agent")
+    
+        # Initialize chat history
+        if "chat" not in st.session_state:
+            st.session_state["chat"] = []
+    
+        # Display existing messages
+        for m in st.session_state["chat"]:
+            with st.chat_message(m["role"]):
+                st.markdown(m["content"])
+    
+        # --------------------------------------------------
+        #  CHAT INPUT
+        # --------------------------------------------------
+        user_q = st.chat_input("Ask about trade-offs or recommendations…")
+    
+        if user_q:
+            # Record user question
+            st.session_state["chat"].append({"role": "user", "content": user_q})
+            with st.chat_message("user"):
+                st.markdown(user_q)
+    
+            # --------------------------------------------------
+            #  SAFETY: Verify analysis exists
+            # --------------------------------------------------
+            if "results" not in st.session_state or not st.session_state["results"]:
+                reply = "Please run **Analyze** first to activate the Strategy Agent."
+                st.session_state["chat"].append({"role": "assistant", "content": reply})
+                with st.chat_message("assistant"):
+                    st.markdown(reply)
+            else:
+                res = st.session_state["results"]
+    
+                # Pull all contextual elements already generated
+                interp = st.session_state.get("llm_interpretations", {})
+                compare_expl = st.session_state.get("compare_analysis", "")
+                objective = st.session_state.get("objective", "")
+                lce_stage = st.session_state.get("lce_stage", "")
+                sel_sys = st.session_state.get("selected_system", "")
+                role = st.session_state.get("user_role", "")
+                industry = st.session_state.get("industry", "")
+    
+                # --------------------------------------------------
+                #  ENRICHED CONTEXT
+                # --------------------------------------------------
+                ctx = {
+                    "weights_5s": res.get("weights_5s", {}),
+                    "scores": qualitative_scores(res.get("scored", {})),
+                    "interpretations": interp,
+                    "comparative_summary": compare_expl,
+                    "constraints": {
                         "objective": objective,
+                        "lce_stage": lce_stage,
+                        "selected_system": sel_sys,
                         "role": role,
                         "industry": industry,
-                        "core": res["core_processes"],
-                        "kpis": res["kpis"],
-                        "drivers": res["drivers"],
-                    })
-                    compare_prompt = f"""
-                    You are an expert supply-chain strategist.
-                    Compare {sel_sys} with {others_str} across Core Processes, KPIs, and Drivers.
-                    Explain relative strengths and weaknesses from the lens of a {role} aiming to achieve "{objective}".
-                    Highlight where {sel_sys} outperforms and where the others offer advantages, and indicate complementarities.
-                    Conclude with one actionable recommendation to balance synergy, resilience, and innovation.
-                    Keep tone analytical and concise (≤180 words). Avoid numeric values or parentheses.
-                    """
-
-                    st.info("Generating comparative interpretation (first run only)...")
-                    compare_expl = safe_llm_call(compare_prompt, compare_payload,
-                                                 temp=0.35, max_toks=450)
-                    st.session_state["compare_analysis"] = clean_numbers(compare_expl)
-                else:
-                    compare_expl = st.session_state["compare_analysis"]
-
-                # Display cached or freshly generated result
-                if compare_expl:
-                    st.markdown("### Comparative Interpretation")
-                    st.write(compare_expl)
-                else:
-                    st.warning("⚠️ Comparative interpretation returned no content or was truncated.")
-        else:
-            st.info("Activate **Compare all systems (view)** in the sidebar to generate a comparison.")
-    else:
-        st.info("Run **Analyze** first.")
-
-
-# ---------- TAB 4: CHAT ----------
-with tabs[3]:
-    st.markdown("---")
-    st.subheader("Chat with the Strategy Agent")
-
-    # Initialize chat history
-    if "chat" not in st.session_state:
-        st.session_state["chat"] = []
-
-    # Display existing messages
-    for m in st.session_state["chat"]:
-        with st.chat_message(m["role"]):
-            st.markdown(m["content"])
-
-    # --------------------------------------------------
-    #  CHAT INPUT
-    # --------------------------------------------------
-    user_q = st.chat_input("Ask about trade-offs or recommendations…")
-
-    if user_q:
-        # Record user question
-        st.session_state["chat"].append({"role": "user", "content": user_q})
-        with st.chat_message("user"):
-            st.markdown(user_q)
-
-        # --------------------------------------------------
-        #  SAFETY: Verify analysis exists
-        # --------------------------------------------------
-        if "results" not in st.session_state or not st.session_state["results"]:
-            reply = "Please run **Analyze** first to activate the Strategy Agent."
-            st.session_state["chat"].append({"role": "assistant", "content": reply})
-            with st.chat_message("assistant"):
-                st.markdown(reply)
-        else:
-            res = st.session_state["results"]
-
-            # Pull all contextual elements already generated
-            interp = st.session_state.get("llm_interpretations", {})
-            compare_expl = st.session_state.get("compare_analysis", "")
-            objective = st.session_state.get("objective", "")
-            lce_stage = st.session_state.get("lce_stage", "")
-            sel_sys = st.session_state.get("selected_system", "")
-            role = st.session_state.get("user_role", "")
-            industry = st.session_state.get("industry", "")
-
-            # --------------------------------------------------
-            #  ENRICHED CONTEXT
-            # --------------------------------------------------
-            ctx = {
-                "weights_5s": res.get("weights_5s", {}),
-                "scores": qualitative_scores(res.get("scored", {})),
-                "interpretations": interp,
-                "comparative_summary": compare_expl,
-                "constraints": {
-                    "objective": objective,
-                    "lce_stage": lce_stage,
-                    "selected_system": sel_sys,
-                    "role": role,
-                    "industry": industry,
-                },
-            }
-
-            # --------------------------------------------------
-            #  STRATEGY-AWARE SYSTEM PROMPT
-            # --------------------------------------------------
-            system_prompt = (
-                "You are the Strategy Agent, a supply-chain advisor. "
-                "Base every answer on the user's 5S weights, scored matrices, "
-                "qualitative interpretations, and comparative summary. "
-                "Stay consistent with previous analyses. "
-                "Explain reasoning clearly and give actionable guidance "
-                "for trade-offs, prioritization, and system design."
-            )
-
-        
-            ctx_compact = compact_dict(ctx, max_items=5)
-
-
-            # --------------------------------------------------
-            #  CALL MODEL
-            # --------------------------------------------------
-            try:
-                r = client.chat.completions.create(
-                    model=LLM_MODEL,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user",
-                         "content": json.dumps(ctx_compact, ensure_ascii=False, default=_json_default)},
-                        {"role": "user", "content": user_q},
-                    ],
-                    extra_headers=OPENROUTER_HEADERS,
-                    temperature=0.4,
-                    max_tokens=700,
+                    },
+                }
+    
+                # --------------------------------------------------
+                #  STRATEGY-AWARE SYSTEM PROMPT
+                # --------------------------------------------------
+                system_prompt = (
+                    "You are the Strategy Agent, a supply-chain advisor. "
+                    "Base every answer on the user's 5S weights, scored matrices, "
+                    "qualitative interpretations, and comparative summary. "
+                    "Stay consistent with previous analyses. "
+                    "Explain reasoning clearly and give actionable guidance "
+                    "for trade-offs, prioritization, and system design."
                 )
-                reply = r.choices[0].message.content.strip() or \
-                        "No response generated — please try rephrasing."
-            except Exception as e:
-                reply = f"⚠️ LLM error: {e}"
+    
             
-            # --------------------------------------------------
-            #  CLEAN REPLY (remove stray numbers and parentheses)
-            # --------------------------------------------------
-            reply = re.sub(r"\b\d+(\.\d+)?\b", "", reply)   # remove numeric values
-            reply = re.sub(r"\(\s*\)", "", reply).strip()   # clean empty parentheses
+                ctx_compact = compact_dict(ctx, max_items=5)
+    
+    
+                # --------------------------------------------------
+                #  CALL MODEL
+                # --------------------------------------------------
+                try:
+                    r = client.chat.completions.create(
+                        model=LLM_MODEL,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user",
+                             "content": json.dumps(ctx_compact, ensure_ascii=False, default=_json_default)},
+                            {"role": "user", "content": user_q},
+                        ],
+                        extra_headers=OPENROUTER_HEADERS,
+                        temperature=0.4,
+                        max_tokens=700,
+                    )
+                    reply = r.choices[0].message.content.strip() or \
+                            "No response generated — please try rephrasing."
+                except Exception as e:
+                    reply = f"⚠️ LLM error: {e}"
+                
+                # --------------------------------------------------
+                #  CLEAN REPLY (remove stray numbers and parentheses)
+                # --------------------------------------------------
+                reply = re.sub(r"\b\d+(\.\d+)?\b", "", reply)   # remove numeric values
+                reply = re.sub(r"\(\s*\)", "", reply).strip()   # clean empty parentheses
+    
+                # --------------------------------------------------
+                #  DISPLAY + STORE REPLY
+                # --------------------------------------------------
+                st.session_state["chat"].append({"role": "assistant", "content": reply})
+                with st.chat_message("assistant"):
+                    st.markdown(reply)
 
-            # --------------------------------------------------
-            #  DISPLAY + STORE REPLY
-            # --------------------------------------------------
-            st.session_state["chat"].append({"role": "assistant", "content": reply})
-            with st.chat_message("assistant"):
-                st.markdown(reply)
-
-with tabs[4]:
-    st.header("🧪 Validation, Robustness & Reproducibility")
-
-    if "results" not in st.session_state:
-        st.info("Run **Analyze** first to enable validation.")
-    else:
-        results = st.session_state["results"]
-        weights_5s = results["weights_5s"]
-        stage = st.session_state["lce_stage"]
-        system = st.session_state.get("selected_system", "Product Transfer")
-
-        # -------------------------------------------------
-        # Compute and display run hash
-        # -------------------------------------------------
-        run_hash = compute_run_hash(weights_5s, stage, system)
-        st.caption(f"Run ID: `{run_hash}`")
-
-        # -------------------------------------------------
-        # Dominance / Monotonicity / Range checks
-        # -------------------------------------------------
-        st.subheader("Internal Consistency Checks")
-        dom_fails = dominance_test(results["scored"])
-        if dom_fails:
-            st.warning(f"{len(dom_fails)} inconsistencies detected")
-            st.dataframe(dom_fails)
+with tabs[2]:
+    sub_tabs = st.tabs(["Validation", "What-If Scenarios"])
+    with sub_tabs[0]:
+        st.header("🧪 Validation, Robustness & Reproducibility")
+    
+        if "results" not in st.session_state:
+            st.info("Run **Analyze** first to enable validation.")
         else:
-            st.success("All scores within [0,3] and consistent across matrices.")
-
-        # -------------------------------------------------
-        # 2️Save / Load reproducible JSON
-        # -------------------------------------------------
-        st.subheader("Reproducibility")
-        run_data = {
-            "hash": run_hash,
-            "system": system,
-            "lce_stage": stage,
-            "weights_5s": weights_5s,
-            "scores": results["scored"],
-        }
-
-        json_bytes = io.BytesIO(json.dumps(run_data, indent=2).encode("utf-8"))
-        st.download_button(
-            "💾 Download Run JSON",
-            data=json_bytes,
-            file_name=f"run_{run_hash}.json",
-            mime="application/json",
-        )
-
-        uploaded_run = st.file_uploader("📤 Reload run.json", type="json")
-        if uploaded_run:
-            loaded = json.load(uploaded_run)
-            st.session_state["results"] = {
-                "scored": loaded["scores"],
-                "weights_5s": loaded["weights_5s"],
-            }
-            st.success(f"Run {loaded.get('hash','?')} reloaded successfully.")
-
-        # -------------------------------------------------
-        # Sensitivity / Robustness Sandbox
-        # -------------------------------------------------
-        st.subheader("Sensitivity Sandbox")
-        
-        delta = st.slider("Perturbation (±%)", 0.0, 1.0, 0.2, 0.05)
-        
-        # Initialize variable outside to avoid NameError
-        corr = None  
-        
-        if st.button("Run Sensitivity Test"):
-            perturbed = perturb_weights(weights_5s, delta)
-            st.json(perturbed, expanded=False)
-            scored_pert = score_all(perturbed, stage)
-        
-            base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
-            new_df = pd.DataFrame(scored_pert["kpis"]).T.mean()
-            corr = base_df.corr(new_df)
-        
-            st.metric("KPI Correlation (original vs perturbed)", f"{corr:.2f}")
-        
-            if corr < 0.6:
-                st.warning("High sensitivity — small changes in weights alter results substantially.")
+            results = st.session_state["results"]
+            weights_5s = results["weights_5s"]
+            stage = st.session_state["lce_stage"]
+            system = st.session_state.get("selected_system", "Product Transfer")
+    
+            # -------------------------------------------------
+            # Compute and display run hash
+            # -------------------------------------------------
+            run_hash = compute_run_hash(weights_5s, stage, system)
+            st.caption(f"Run ID: `{run_hash}`")
+    
+            # -------------------------------------------------
+            # Dominance / Monotonicity / Range checks
+            # -------------------------------------------------
+            st.subheader("Internal Consistency Checks")
+            dom_fails = dominance_test(results["scored"])
+            if dom_fails:
+                st.warning(f"{len(dom_fails)} inconsistencies detected")
+                st.dataframe(dom_fails)
             else:
-                st.success("Robust response — stable under weight perturbations.")
-        
-
-        if corr is None:
-            st.info("Adjust the perturbation slider and click **Run Sensitivity Test** to compute robustness.")
+                st.success("All scores within [0,3] and consistent across matrices.")
+    
+            # -------------------------------------------------
+            # 2️Save / Load reproducible JSON
+            # -------------------------------------------------
+            st.subheader("Reproducibility")
+            run_data = {
+                "hash": run_hash,
+                "system": system,
+                "lce_stage": stage,
+                "weights_5s": weights_5s,
+                "scores": results["scored"],
+            }
+    
+            json_bytes = io.BytesIO(json.dumps(run_data, indent=2).encode("utf-8"))
+            st.download_button(
+                "💾 Download Run JSON",
+                data=json_bytes,
+                file_name=f"run_{run_hash}.json",
+                mime="application/json",
+            )
+    
+            uploaded_run = st.file_uploader("📤 Reload run.json", type="json")
+            if uploaded_run:
+                loaded = json.load(uploaded_run)
+                st.session_state["results"] = {
+                    "scored": loaded["scores"],
+                    "weights_5s": loaded["weights_5s"],
+                }
+                st.success(f"Run {loaded.get('hash','?')} reloaded successfully.")
+    
+            # -------------------------------------------------
+            # Sensitivity / Robustness Sandbox
+            # -------------------------------------------------
+            st.subheader("Sensitivity Sandbox")
+            
+            delta = st.slider("Perturbation (±%)", 0.0, 1.0, 0.2, 0.05)
+            
+            # Initialize variable outside to avoid NameError
+            corr = None  
+            
+            if st.button("Run Sensitivity Test"):
+                perturbed = perturb_weights(weights_5s, delta)
+                st.json(perturbed, expanded=False)
+                scored_pert = score_all(perturbed, stage)
+            
+                base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
+                new_df = pd.DataFrame(scored_pert["kpis"]).T.mean()
+                corr = base_df.corr(new_df)
+            
+                st.metric("KPI Correlation (original vs perturbed)", f"{corr:.2f}")
+            
+                if corr < 0.6:
+                    st.warning("High sensitivity — small changes in weights alter results substantially.")
+                else:
+                    st.success("Robust response — stable under weight perturbations.")
+            
+    
+            if corr is None:
+                st.info("Adjust the perturbation slider and click **Run Sensitivity Test** to compute robustness.")
+            
         
     
+            # -------------------------------------------------
+            # Baseline comparison (TOPSIS)
+            # -------------------------------------------------
+            st.subheader("MCDA Baseline Comparison")
+    
+            kpi_matrix = results["scored"]["kpis"]
+            rank_custom = pd.DataFrame(kpi_matrix).mean().rank(ascending=False)
+            rank_topsis = topsis_compare(kpi_matrix)
+            tau = rank_custom.corr(rank_topsis, method="kendall")
+    
+            st.metric("Kendall τ vs TOPSIS baseline", f"{tau:.2f}")
+    
+            if tau >= 0.7:
+                st.success("High alignment with MCDA baseline — consistent prioritization.")
+            else:
+                st.warning("Divergence from baseline — check 5S or stage weight impacts.")
+    
+            # -------------------------------------------------
+            # Quantitative Amplitude Check (5S effect range)
+            # -------------------------------------------------
+            st.subheader("Amplitude of 5S Influence")
+            
+            # Combine all scored matrices into one unified DataFrame
+            scores_df = pd.concat([
+                pd.DataFrame(results["scored"]["core_processes"]).T,
+                pd.DataFrame(results["scored"]["kpis"]).T,
+                pd.DataFrame(results["scored"]["drivers"]).T,
+            ])
+            
+            # Compute range across systems
+            mean_max = scores_df.max().mean()
+            mean_min = scores_df.min().mean()
+            variation = mean_max - mean_min
+            
+            st.metric("Average Score Range across Systems", f"{variation:.2f}")
+            
+            if variation < 0.25:
+                st.warning("⚠️ Low amplitude — 5S sliders may have limited visible impact.")
+            elif variation < 0.6:
+                st.info("Moderate amplitude — 5S weights produce perceptible variation.")
+            else:
+                st.success("High amplitude — 5S sliders meaningfully reshape system priorities.")
+    
+    
+            # -------------------------------------------------
+            # Summary panel
+            # -------------------------------------------------
+            st.subheader("Validation Summary")
+            
+            # Safe formatting for None values
+            corr_val = f"{corr:.2f}" if corr is not None else "N/A"
+            
+            st.markdown(f"""
+            - **Run ID:** `{run_hash}`  
+            - **LCE Stage:** `{stage}`  
+            - **System:** `{system}`  
+            - **Dominance tests:** {'Pass' if not dom_fails else 'Fail'}  
+            - **Robustness (KPI corr):** {corr_val}  
+            - **Baseline alignment (Kendall τ):** {tau:.2f}
+            """)
+    with sub_tabs[1]:
+        st.header("🤔 What-If Scenarios")
 
-        # -------------------------------------------------
-        # Baseline comparison (TOPSIS)
-        # -------------------------------------------------
-        st.subheader("MCDA Baseline Comparison")
-
-        kpi_matrix = results["scored"]["kpis"]
-        rank_custom = pd.DataFrame(kpi_matrix).mean().rank(ascending=False)
-        rank_topsis = topsis_compare(kpi_matrix)
-        tau = rank_custom.corr(rank_topsis, method="kendall")
-
-        st.metric("Kendall τ vs TOPSIS baseline", f"{tau:.2f}")
-
-        if tau >= 0.7:
-            st.success("High alignment with MCDA baseline — consistent prioritization.")
-        else:
-            st.warning("Divergence from baseline — check 5S or stage weight impacts.")
-
-        # -------------------------------------------------
-        # Quantitative Amplitude Check (5S effect range)
-        # -------------------------------------------------
-        st.subheader("Amplitude of 5S Influence")
-        
-        # Combine all scored matrices into one unified DataFrame
-        scores_df = pd.concat([
-            pd.DataFrame(results["scored"]["core_processes"]).T,
-            pd.DataFrame(results["scored"]["kpis"]).T,
-            pd.DataFrame(results["scored"]["drivers"]).T,
-        ])
-        
-        # Compute range across systems
-        mean_max = scores_df.max().mean()
-        mean_min = scores_df.min().mean()
-        variation = mean_max - mean_min
-        
-        st.metric("Average Score Range across Systems", f"{variation:.2f}")
-        
-        if variation < 0.25:
-            st.warning("⚠️ Low amplitude — 5S sliders may have limited visible impact.")
-        elif variation < 0.6:
-            st.info("Moderate amplitude — 5S weights produce perceptible variation.")
-        else:
-            st.success("High amplitude — 5S sliders meaningfully reshape system priorities.")
-
-
-        # -------------------------------------------------
-        # Summary panel
-        # -------------------------------------------------
-        st.subheader("Validation Summary")
-        
-        # Safe formatting for None values
-        corr_val = f"{corr:.2f}" if corr is not None else "N/A"
-        
-        st.markdown(f"""
-        - **Run ID:** `{run_hash}`  
-        - **LCE Stage:** `{stage}`  
-        - **System:** `{system}`  
-        - **Dominance tests:** {'Pass' if not dom_fails else 'Fail'}  
-        - **Robustness (KPI corr):** {corr_val}  
-        - **Baseline alignment (Kendall τ):** {tau:.2f}
+        st.markdown("""
+        Evaluate how the system behaves if key framework layers are temporarily deactivated.
+        This section recomputes results without selected influences and visualizes the overall effect.
         """)
+
+        if "results" not in st.session_state:
+            st.info("Run **Analyze** first to enable What-If Scenarios.")
+        else:
+            results = st.session_state["results"]
+            weights_5s = results["weights_5s"]
+            stage = st.session_state.get("lce_stage", "Operation")
+
+            disabled = st.multiselect(
+                "Deactivate components:",
+                ["LCE Influence", "5S Weighting"],
+                help="Choose one or both to recompute results without their effects."
+            )
+
+            def recompute(base_map, matrix, w5s, stage):
+                out = {}
+                for item, cols in base_map.items():
+                    out[item] = {}
+                    for sys, base in cols.items():
+                        base = float(base)
+                        s_infl = 0.0 if "5S Weighting" in disabled else s_boost(
+                            w5s,
+                            S_TAGS_KPI if matrix=="kpis"
+                            else S_TAGS_CORE if matrix=="core_processes"
+                            else S_TAGS_DRIVERS, item
+                        )
+                        stage_infl = 0.0 if "LCE Influence" in disabled else stage_boost(
+                            stage,
+                            STAGE_TAGS_KPI if matrix=="kpis"
+                            else STAGE_TAGS_CORE if matrix=="core_processes"
+                            else STAGE_TAGS_DRIVERS, item
+                        )
+                        total = clamp01((s_infl + stage_infl) / 2)
+                        contrast = 1.2
+                        penalty = (0.5 - total) * contrast
+                        score = clamp03(base * (1 - penalty) + 3 * total * 0.5)
+                        out[item][sys] = round(score, 3)
+                return out
+
+            if st.button("Run What-If Scenario", use_container_width=True):
+                scored_new = {
+                    "core_processes": recompute(BASE_CORE, "core_processes", weights_5s, stage),
+                    "kpis": recompute(BASE_KPIS, "kpis", weights_5s, stage),
+                    "drivers": recompute(BASE_DRIVERS, "drivers", weights_5s, stage),
+                }
+
+                base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
+                new_df = pd.DataFrame(scored_new["kpis"]).T.mean()
+                corr = base_df.corr(new_df)
+
+                st.metric("KPI Correlation (vs full model)", f"{corr:.2f}")
+                if corr >= 0.8:
+                    st.success("System remains stable — minimal dependency on disabled components.")
+                elif corr >= 0.5:
+                    st.info("Moderate deviation — partial dependency detected.")
+                else:
+                    st.warning("Significant change — these components strongly shape outcomes.")
+
+                # ---- Compact visualization ----
+                df_kpi = pd.DataFrame(scored_new["kpis"]).T.mean(axis=1).reset_index()
+                df_kpi.columns = ["KPI", "Score"]
+                df_kpi = df_kpi.sort_values("Score", ascending=True)
+
+                import plotly.express as px
+                fig = px.bar(df_kpi, x="Score", y="KPI", orientation="h",
+                             title="KPI Impact Summary (What-If Scenario)")
+                st.plotly_chart(fig, use_container_width=True)
+
+                top_kpis = df_kpi.tail(3)["KPI"].tolist()
+                st.markdown(f"**Top 3 most resilient KPIs:** {', '.join(top_kpis)}")
+
+                st.download_button(
+                    "📥 Download detailed What-If data (JSON)",
+                    data=json.dumps(scored_new, indent=2).encode("utf-8"),
+                    file_name="what_if_results.json",
+                    mime="application/json",
+                )
 
 
 # ---------- TAB 6: BENCHMARKS ----------
-with tabs[5]:
+with tabs[3]:
     st.header("📈 Industry Benchmark Reference")
 
     selected = st.session_state.get("selected_system", "Product Transfer")
@@ -963,6 +1056,7 @@ with tabs[5]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
