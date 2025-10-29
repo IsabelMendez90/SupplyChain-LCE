@@ -143,9 +143,13 @@ STAGE_TAGS_DRIVERS = {
 #                  CORE SCORING FUNCTIONS
 # =====================================================
 def s_boost(w, s_tags, name):
-    """Compute weighted 5S boost allowing differentiation (no saturation)."""
-    raw = sum(w.get(k, 0.0) * s_tags.get(name, {}).get(k, 0.0) for k in FIVE_S)
-    return min(raw * 1.2, 2.0)  # amplify a bit but cap at 2.0
+    tags = s_tags.get(name, {})
+    total_weight = sum(tags.values())
+    if total_weight == 0:
+        return 0.0
+    weighted = sum(w[k]*v for k,v in tags.items()) / total_weight
+    return weighted
+
 
 def clamp03(x): 
     return max(0.0, min(3.0, x))
@@ -164,25 +168,19 @@ def score_matrix(base_map, matrix, w5s, stage):
     for item, cols in base_map.items():
         out[item] = {}
         for system, base in cols.items():
-            score = float(base)
-
-            # --- KPI Matrix ---
-            if matrix == "kpis":
-                score += stage_boost(stage, STAGE_TAGS_KPI, item, 0.8)
-                score += s_boost(w5s, S_TAGS_KPI, item) * 1.2
-
-            # --- Core Processes Matrix ---
-            elif matrix == "core_processes":
-                score += stage_boost(stage, STAGE_TAGS_CORE, item, 0.8)
-                score += s_boost(w5s, S_TAGS_CORE, item) * 1.2
-
-            # --- Resilience Drivers Matrix ---
-            else:
-                score += stage_boost(stage, STAGE_TAGS_DRIVERS, item, 0.6)
-                score += s_boost(w5s, S_TAGS_DRIVERS, item) * 1.0
-
-            out[item][system] = clamp03(score)
+            base = float(base)
+            s_influence = s_boost(w5s, S_TAGS_KPI if matrix=="kpis"
+                                            else S_TAGS_CORE if matrix=="core_processes"
+                                            else S_TAGS_DRIVERS, item)
+            stage_influence = stage_boost(stage,
+                                          STAGE_TAGS_KPI if matrix=="kpis"
+                                          else STAGE_TAGS_CORE if matrix=="core_processes"
+                                          else STAGE_TAGS_DRIVERS, item)
+            # Instead of additive noise → controlled blend
+            score = base*(1 - 0.5*(s_influence + stage_influence)) + 3*(s_influence + stage_influence)/2
+            out[item][system] = round(clamp03(score), 3)
     return out
+
 
 def score_all(w5s, stage):
     return {
@@ -824,6 +822,33 @@ with tabs[4]:
             st.warning("Divergence from baseline — check 5S or stage weight impacts.")
 
         # -------------------------------------------------
+        # Quantitative Amplitude Check (5S effect range)
+        # -------------------------------------------------
+        st.subheader("Amplitude of 5S Influence")
+        
+        # Combine all scored matrices into one unified DataFrame
+        scores_df = pd.concat([
+            pd.DataFrame(results["scored"]["core_processes"]).T,
+            pd.DataFrame(results["scored"]["kpis"]).T,
+            pd.DataFrame(results["scored"]["drivers"]).T,
+        ])
+        
+        # Compute range across systems
+        mean_max = scores_df.max().mean()
+        mean_min = scores_df.min().mean()
+        variation = mean_max - mean_min
+        
+        st.metric("Average Score Range across Systems", f"{variation:.2f}")
+        
+        if variation < 0.25:
+            st.warning("⚠️ Low amplitude — 5S sliders may have limited visible impact.")
+        elif variation < 0.6:
+            st.info("Moderate amplitude — 5S weights produce perceptible variation.")
+        else:
+            st.success("High amplitude — 5S sliders meaningfully reshape system priorities.")
+
+
+        # -------------------------------------------------
         # Summary panel
         # -------------------------------------------------
         st.subheader("Validation Summary")
@@ -835,6 +860,7 @@ with tabs[4]:
         - **Robustness (KPI corr):** {corr:.2f}  
         - **Baseline alignment (Kendall τ):** {tau:.2f}
         """)
+
 
 
 
