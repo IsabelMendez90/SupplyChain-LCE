@@ -1050,8 +1050,9 @@ with tabs[2]:
                 }
 
                 base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
-                new_df = pd.DataFrame(scored_new["kpis"]).T.mean()
+                new_df = pd.DataFrame(scored_pert["kpis"]).T.mean()
                 corr = base_df.corr(new_df)
+                
 
                 st.metric("KPI Correlation (vs full model)", f"{corr:.2f}")
                 if corr >= 0.8:
@@ -1136,6 +1137,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
