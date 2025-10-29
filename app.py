@@ -466,6 +466,8 @@ def compare_matrices(base, new):
     new_df = pd.DataFrame(new).T.mean()
     return base_df.corr(new_df)
 
+if "chat" not in st.session_state:
+    st.session_state["chat"] = []
 # =====================================================
 #            RESULTS RENDERING SECTION (DETAILED)
 # =====================================================
@@ -1033,6 +1035,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
