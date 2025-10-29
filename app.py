@@ -147,7 +147,11 @@ def s_boost(w, s_tags, name):
     raw = sum(w.get(k, 0.0) * s_tags.get(name, {}).get(k, 0.0) for k in FIVE_S)
     return min(raw * 1.2, 2.0)  # amplify a bit but cap at 2.0
 
-def clamp03(x): return max(0.0,min(3.0,x))
+def clamp03(x): 
+    return max(0.0, min(3.0, x))
+
+def clamp01(x): 
+    return max(0.0, min(1.0, x))
 
 def s_boost(w,s_tags,name): 
     return sum(w.get(k,0.0)*v for k,v in s_tags.get(name,{}).items())
@@ -831,5 +835,6 @@ with tabs[4]:
         - **Robustness (KPI corr):** {corr:.2f}  
         - **Baseline alignment (Kendall τ):** {tau:.2f}
         """)
+
 
 
