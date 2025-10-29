@@ -923,51 +923,63 @@ with tabs[2]:
             if corr is None:
                 st.info("Adjust the perturbation slider and click **Run Sensitivity Test** to compute robustness.")
             
-        
-            # -------------------------------------------------
-            # Baseline comparison (TOPSIS / AHP / PROMETHEE)
+
+# -------------------------------------------------
+            # MCDA Baseline Comparison (all ranks are per KPI)
             # -------------------------------------------------
             st.subheader("MCDA Baseline Comparison")
             
             kpi_matrix = results["scored"]["kpis"]
-            df_kpi = pd.DataFrame(kpi_matrix).T.fillna(0)
+            df_kpi = pd.DataFrame(kpi_matrix).T.fillna(0)  # rows = KPIs, cols = systems
             
-            # Custom (fuzzy) ranking
-            rank_custom = df_kpi.mean().rank(ascending=False)
+            # 1) Custom fuzzy ranking PER KPI (use row mean across systems)
+            rank_custom = df_kpi.mean(axis=1).rank(ascending=False, method="dense")
             
-            # Baseline methods
-            rank_topsis = topsis_compare(kpi_matrix)
-            rank_ahp    = ahp_compare(kpi_matrix)
-            rank_prom   = promethee_compare(kpi_matrix)
+            # 2) Baseline methods (already return per-KPI ranks)
+            rank_topsis = topsis_compare(kpi_matrix)   # index = KPI
+            rank_ahp    = ahp_compare(kpi_matrix)      # index = KPI
+            rank_prom   = promethee_compare(kpi_matrix)# index = KPI
             
-            # Safe Kendall τ computation (align indexes & drop NaN)
+            # 3) Align indexes safely
+            def align(a, b):
+                idx = a.index.intersection(b.index)
+                return a.loc[idx], b.loc[idx]
+            
             def safe_kendall(a, b):
-                try:
-                    both = pd.concat([a, b], axis=1, join="inner").dropna()
-                    if both.shape[0] < 2:
-                        return np.nan
-                    return both.iloc[:, 0].corr(both.iloc[:, 1], method="kendall")
-                except Exception:
+                a2, b2 = align(a, b)
+                if len(a2) < 2:
                     return np.nan
+                return a2.corr(b2, method="kendall")
             
             tau_topsis = safe_kendall(rank_custom, rank_topsis)
             tau_ahp    = safe_kendall(rank_custom, rank_ahp)
             tau_prom   = safe_kendall(rank_custom, rank_prom)
             
-            # Display results
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Kendall τ vs TOPSIS",   f"{tau_topsis if pd.notna(tau_topsis) else 0:.2f}")
-            col2.metric("Kendall τ vs AHP",      f"{tau_ahp if pd.notna(tau_ahp) else 0:.2f}")
-            col3.metric("Kendall τ vs PROMETHEE",f"{tau_prom if pd.notna(tau_prom) else 0:.2f}")
+            # 4) Debug/diagnostic: show aligned ranks so you can see they’re non-empty
+            rk = pd.DataFrame({
+                "custom":    rank_custom,
+                "topsis":    rank_topsis.reindex(rank_custom.index),
+                "ahp":       rank_ahp.reindex(rank_custom.index),
+                "promethee": rank_prom.reindex(rank_custom.index),
+            }).dropna()
+            with st.expander("See aligned ranks (per KPI)"):
+                st.dataframe(rk.sort_values("custom"), use_container_width=True)
             
-            if np.nanmin([tau_topsis, tau_ahp, tau_prom]) >= 0.7:
+            # 5) Display
+            fmt = lambda x: ("—" if pd.isna(x) else f"{float(x):.2f}")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Kendall τ vs TOPSIS",    fmt(tau_topsis))
+            col2.metric("Kendall τ vs AHP",       fmt(tau_ahp))
+            col3.metric("Kendall τ vs PROMETHEE", fmt(tau_prom))
+            
+            vals = [v for v in [tau_topsis, tau_ahp, tau_prom] if pd.notna(v)]
+            if len(vals) and min(vals) >= 0.7:
                 st.success("High alignment with MCDA baselines — consistent prioritization across methods.")
-            elif np.nanmax([tau_topsis, tau_ahp, tau_prom]) >= 0.5:
+            elif len(vals) and max(vals) >= 0.5:
                 st.info("Moderate alignment — partial consistency; verify 5S or stage influence.")
             else:
-                st.warning("Low alignment with MCDA baselines — review fuzzy or lifecycle parameters.")
+                st.warning("Low/undefined alignment — check weight effects or KPI redundancy.")
 
-            
     
             # -------------------------------------------------
             # Quantitative Amplitude Check (5S effect range)
@@ -1153,6 +1165,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
