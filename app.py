@@ -784,19 +784,17 @@ with tabs[4]:
             st.success(f"Run {loaded.get('hash','?')} reloaded successfully.")
 
         # -------------------------------------------------
-        # 3️⃣ Sensitivity / Robustness Sandbox
+        # Sensitivity / Robustness Sandbox
         # -------------------------------------------------
         st.subheader("Sensitivity Sandbox")
 
         delta = st.slider("Perturbation (±%)", 0.0, 1.0, 0.2, 0.05)
-        perturbed = perturb_weights(weights_5s, delta)
-        scored_pert = score_all(perturbed, stage)
-
-        # Compute correlation for KPI matrix as proxy
-        base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
-        new_df = pd.DataFrame(scored_pert["kpis"]).T.mean()
-        corr = base_df.corr(new_df)
-
+        if st.button("Run Sensitivity Test"):
+            perturbed = perturb_weights(weights_5s, delta)
+            scored_pert = score_all(perturbed, stage)
+            base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
+            new_df = pd.DataFrame(scored_pert["kpis"]).T.mean()
+            corr = base_df.corr(new_df)
         st.metric("KPI Correlation (original vs perturbed)", f"{corr:.2f}")
 
         if corr < 0.6:
@@ -860,6 +858,7 @@ with tabs[4]:
         - **Robustness (KPI corr):** {corr:.2f}  
         - **Baseline alignment (Kendall τ):** {tau:.2f}
         """)
+
 
 
 
