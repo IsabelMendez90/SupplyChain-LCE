@@ -670,17 +670,21 @@ with tabs[1]:
                     kpi_payload["benchmark_reference"] = BENCHMARKS[sel_sys]
                 
                 prompt_kpi = f"""
-                You are a performance strategist advising a {role} in the {industry} sector.
-                The user's 5S priorities are: {json.dumps(w5s_desc)}.
-                Below is the qualitative status of each KPI for the {sel_sys} system:
-                {json.dumps(kpi_labels, indent=2)}.
-                Use the benchmark_reference data to calibrate your reasoning.
-                If a KPI is 'Low' relative to the benchmark, recommend realistic improvements to reach 'High' maturity.
-                Write a cohesive analytical paragraph (≤170 words) explaining:
-                1. Which KPIs are strengths and why,
-                2. Which are weaknesses and how to improve them,
-                3. How the 5S profile influences these priorities.
-                Avoid numeric values, lists, and rhetorical questions. End with a prescriptive insight.
+                ROLE: Senior supply-chain performance strategist.
+                TASK: Write ONE cohesive, declarative paragraph (<=170 words). Do not ask questions.
+                
+                CONTEXT
+                - System: {sel_sys}
+                - User 5S priorities: {json.dumps(w5s_desc)}
+                - KPI labels (High/Medium/Low): {json.dumps(kpi_labels, indent=2)}
+                - Benchmarks: Use 'benchmark_reference' if provided to calibrate maturity and actions.
+                
+                OUTPUT REQUIREMENTS
+                - Start with a one-sentence assessment of current KPI strengths.
+                - Then explain 1–2 weaknesses and the most realistic actions to lift them to high maturity (no numbers).
+                - Tie recommendations explicitly to the dominant 5S dimensions and current LCE stage (“{lce_stage}”).
+                - End with a single prescriptive sentence.
+                - No bullet points. No lists. No questions. Declarative voice only.
                 """
                 
                 kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
@@ -1080,5 +1084,6 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
