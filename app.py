@@ -10,20 +10,23 @@ import hashlib, io, random
 import numpy as np
 import pandas as pd
 import streamlit as st
+import pathlib
+
 from openai import OpenAI
 from sklearn.feature_extraction.text import CountVectorizer  # kept as in your code
 
 # =====================================================
 #                  LOAD BENCHMARKS
 # =====================================================
+BASE_DIR = pathlib.Path(__file__).parent
+bench_path = BASE_DIR / "main" / "benchmarks.json"  # or "data", as needed
+
 try:
-    with open("main/benchmarks.json") as f:
+    with open(bench_path) as f:
         BENCHMARKS = json.load(f)
 except Exception as e:
-    st.warning(f"⚠️ Could not load benchmarks.json: {e}")
+    st.warning(f"⚠️ Could not load {bench_path.name}: {e}")
     BENCHMARKS = {}
-
-
 # =====================================================
 #                   SETUP
 # =====================================================
@@ -910,6 +913,7 @@ with tabs[5]:
             file_name="benchmarks.json",
             mime="application/json"
         )
+
 
 
 
