@@ -863,6 +863,8 @@ with tabs[4]:
         # Summary panel
         # -------------------------------------------------
         st.subheader("Validation Summary")
+        
+        # Safe formatting for None values
         corr_val = f"{corr:.2f}" if corr is not None else "N/A"
         
         st.markdown(f"""
@@ -870,7 +872,7 @@ with tabs[4]:
         - **LCE Stage:** `{stage}`  
         - **System:** `{system}`  
         - **Dominance tests:** {'Pass' if not dom_fails else 'Fail'}  
-        - **Robustness (KPI corr):** {corr:.2f}  
+        - **Robustness (KPI corr):** {corr_val}  
         - **Baseline alignment (Kendall τ):** {tau:.2f}
         """)
 
