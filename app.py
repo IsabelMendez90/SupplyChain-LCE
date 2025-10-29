@@ -984,7 +984,7 @@ with tabs[2]:
             - **System:** `{system}`  
             - **Dominance tests:** {'Pass' if not dom_fails else 'Fail'}  
             - **Robustness (KPI corr):** {corr_val}  
-            - **Baseline alignment (Kendall τ):** {tau:.2f}
+            - **Baseline alignment (Kendall τ):** {min(tau_topsis, tau_ahp, tau_prom):.2f}
             """)
     with sub_tabs[1]:
         st.header("🤔 What-If Scenarios")
@@ -1126,6 +1126,7 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
