@@ -1014,7 +1014,11 @@ with tabs[2]:
                 st.markdown(f"**Top 3 most resilient KPIs:** {', '.join(top_kpis)}")
                 
                 # ---- LLM interpretation of What-If Scenario ----
-                if "llm_whatif" not in st.session_state or st.button("Generate LLM Interpretation"):
+                if (
+                    "llm_whatif" not in st.session_state
+                    or st.session_state.get("last_disabled") != disabled
+                    or st.session_state.get("last_weights") != weights_5s
+                ):
                     w5s_desc = describe_real_5s(weights_5s)
                     prompt_whatif = f"""
                     You are a supply-chain strategist analyzing a What-If scenario.
@@ -1026,9 +1030,17 @@ with tabs[2]:
                     affect overall system stability and strategy priorities.
                     Be concise, no numbers or parentheses.
                     """
-                    payload = {"disabled": disabled, "corr": corr, "top_kpis": top_kpis, "weights_5s": w5s_desc}
+                    payload = {
+                        "disabled": disabled,
+                        "corr": corr,
+                        "top_kpis": top_kpis,
+                        "weights_5s": w5s_desc
+                    }
                     expl = safe_llm_call(prompt_whatif, payload, temp=0.35, max_toks=350)
-                    st.session_state["llm_whatif"] = expl
+                    st.session_state["llm_whatif"] = clean_numbers(expl)
+                    st.session_state["last_disabled"] = disabled
+                    st.session_state["last_weights"] = weights_5s
+              
                 
                 if "llm_whatif" in st.session_state:
                     st.markdown("### 🧠 LLM Interpretation")
@@ -1063,3 +1075,4 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
