@@ -328,6 +328,14 @@ with st.sidebar:
         .get("objective", BENCHMARK_META.get(selected_system, {}).get("Objective", f"Optimize {selected_system} performance vs benchmarks"))
     )
 
+    # --- Auto-update objective when system changes ---
+    if "last_system" not in st.session_state or st.session_state["last_system"] != selected_system:
+        st.session_state["objective"] = (
+            BENCHMARKS.get(selected_system, {})
+            .get("objective", BENCHMARK_META.get(selected_system, {}).get("Objective", f"Optimize {selected_system} performance vs benchmarks"))
+        )
+        st.session_state["last_system"] = selected_system
+    
     st.text_input("Objective", value=default_obj, key="objective")
 
     # --- Industry + role ---
@@ -955,6 +963,7 @@ with tabs[5]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
 
 
