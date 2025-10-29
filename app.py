@@ -668,7 +668,7 @@ with tabs[1]:
                 # Add benchmark context to LLM payload
                 if sel_sys in BENCHMARKS:
                     kpi_payload["benchmark_reference"] = BENCHMARKS[sel_sys]
-    
+                
                 prompt_kpi = f"""
                 You are a performance strategist advising a {role} in the {industry} sector.
                 The user's 5S priorities are: {json.dumps(w5s_desc)}.
@@ -676,8 +676,13 @@ with tabs[1]:
                 {json.dumps(kpi_labels, indent=2)}.
                 Use the benchmark_reference data to calibrate your reasoning.
                 If a KPI is 'Low' relative to the benchmark, recommend realistic improvements to reach 'High' maturity.
-                Avoid numeric values in your text, but base your analysis on benchmark thresholds.
+                Write a cohesive analytical paragraph (≤170 words) explaining:
+                1. Which KPIs are strengths and why,
+                2. Which are weaknesses and how to improve them,
+                3. How the 5S profile influences these priorities.
+                Avoid numeric values, lists, and rhetorical questions. End with a prescriptive insight.
                 """
+                
                 kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
     
                 # ---- DRIVERS ----
@@ -1075,4 +1080,5 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
+
 
