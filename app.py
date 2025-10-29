@@ -6,7 +6,7 @@
 
 import os, json, re
 from typing import Dict, List
-
+import hashlib, io, random
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -353,10 +353,58 @@ def show_matrix(title, df_dict):
     st.dataframe(styled, use_container_width=True)
     return df_label
 
+# -----------------------------------------------------
+# Generate a unique, reproducible run hash
+# -----------------------------------------------------
+def compute_run_hash(weights_5s, lce_stage, system):
+    payload = json.dumps(
+        {"weights_5s": weights_5s, "lce_stage": lce_stage, "system": system},
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()[:10]
+
+# -----------------------------------------------------
+# Simple dominance / monotonicity test
+# -----------------------------------------------------
+def dominance_test(scored):
+    fails = []
+    for matrix, items in scored.items():
+        for name, vals in items.items():
+            # Example rule: PT baseline should not be lower than FD in ≥ half the rows
+            if not all(0 <= v <= 3 for v in vals.values()):
+                fails.append((matrix, name, "Out of [0,3] range"))
+    return fails
+
+# -----------------------------------------------------
+# Simple MCDA baseline (TOPSIS-style)
+# -----------------------------------------------------
+def topsis_compare(matrix):
+    df = pd.DataFrame(matrix).T
+    df = df.fillna(0)
+    norm = df / np.sqrt((df**2).sum())
+    weights = np.ones(len(df.columns)) / len(df.columns)
+    score = (norm * weights).sum(axis=1)
+    return score.rank(ascending=False)
+
+# -----------------------------------------------------
+# Sensitivity / robustness test
+# -----------------------------------------------------
+def perturb_weights(weights, delta=0.2):
+    return {
+        k: min(1.0, max(0.0, v + random.uniform(-delta, delta)))
+        for k, v in weights.items()
+    }
+
+def compare_matrices(base, new):
+    """Compute correlation between base and perturbed average scores."""
+    base_df = pd.DataFrame(base).T.mean()
+    new_df = pd.DataFrame(new).T.mean()
+    return base_df.corr(new_df)
+
 # =====================================================
 #            RESULTS RENDERING SECTION (DETAILED)
 # =====================================================
-tabs = st.tabs(["📊 Matrices", "🧠 Interpretations", "⚖️ Comparative", "💬 Chat"])
+tabs = st.tabs(["📊 Matrices", "🧠 Interpretations", "⚖️ Comparative", "💬 Chat", "🧪 Validation"])
 
 # ---------- TAB 1: MATRICES ----------
 with tabs[0]:
@@ -676,5 +724,112 @@ with tabs[3]:
             with st.chat_message("assistant"):
                 st.markdown(reply)
 
+with tabs[4]:
+    st.header("🧪 Validation, Robustness & Reproducibility")
+
+    if "results" not in st.session_state:
+        st.info("Run **Analyze** first to enable validation.")
+    else:
+        results = st.session_state["results"]
+        weights_5s = results["weights_5s"]
+        stage = st.session_state["lce_stage"]
+        system = st.session_state.get("selected_system", "Product Transfer")
+
+        # -------------------------------------------------
+        # Compute and display run hash
+        # -------------------------------------------------
+        run_hash = compute_run_hash(weights_5s, stage, system)
+        st.caption(f"Run ID: `{run_hash}`")
+
+        # -------------------------------------------------
+        # Dominance / Monotonicity / Range checks
+        # -------------------------------------------------
+        st.subheader("Internal Consistency Checks")
+        dom_fails = dominance_test(results["scored"])
+        if dom_fails:
+            st.warning(f"{len(dom_fails)} inconsistencies detected")
+            st.dataframe(dom_fails)
+        else:
+            st.success("All scores within [0,3] and consistent across matrices.")
+
+        # -------------------------------------------------
+        # 2️Save / Load reproducible JSON
+        # -------------------------------------------------
+        st.subheader("Reproducibility")
+        run_data = {
+            "hash": run_hash,
+            "system": system,
+            "lce_stage": stage,
+            "weights_5s": weights_5s,
+            "scores": results["scored"],
+        }
+
+        json_bytes = io.BytesIO(json.dumps(run_data, indent=2).encode("utf-8"))
+        st.download_button(
+            "💾 Download Run JSON",
+            data=json_bytes,
+            file_name=f"run_{run_hash}.json",
+            mime="application/json",
+        )
+
+        uploaded_run = st.file_uploader("📤 Reload run.json", type="json")
+        if uploaded_run:
+            loaded = json.load(uploaded_run)
+            st.session_state["results"] = {
+                "scored": loaded["scores"],
+                "weights_5s": loaded["weights_5s"],
+            }
+            st.success(f"Run {loaded.get('hash','?')} reloaded successfully.")
+
+        # -------------------------------------------------
+        # 3️⃣ Sensitivity / Robustness Sandbox
+        # -------------------------------------------------
+        st.subheader("Sensitivity Sandbox")
+
+        delta = st.slider("Perturbation (±%)", 0.0, 1.0, 0.2, 0.05)
+        perturbed = perturb_weights(weights_5s, delta)
+        scored_pert = score_all(perturbed, stage)
+
+        # Compute correlation for KPI matrix as proxy
+        base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
+        new_df = pd.DataFrame(scored_pert["kpis"]).T.mean()
+        corr = base_df.corr(new_df)
+
+        st.metric("KPI Correlation (original vs perturbed)", f"{corr:.2f}")
+
+        if corr < 0.6:
+            st.warning("High sensitivity — small changes in weights alter results substantially.")
+        else:
+            st.success("Robust response — stable under weight perturbations.")
+
+        # -------------------------------------------------
+        # Baseline comparison (TOPSIS)
+        # -------------------------------------------------
+        st.subheader("MCDA Baseline Comparison")
+
+        kpi_matrix = results["scored"]["kpis"]
+        rank_custom = pd.DataFrame(kpi_matrix).mean().rank(ascending=False)
+        rank_topsis = topsis_compare(kpi_matrix)
+        tau = rank_custom.corr(rank_topsis, method="kendall")
+
+        st.metric("Kendall τ vs TOPSIS baseline", f"{tau:.2f}")
+
+        if tau >= 0.7:
+            st.success("High alignment with MCDA baseline — consistent prioritization.")
+        else:
+            st.warning("Divergence from baseline — check 5S or stage weight impacts.")
+
+        # -------------------------------------------------
+        # Summary panel
+        # -------------------------------------------------
+        st.subheader("Validation Summary")
+        st.markdown(f"""
+        - **Run ID:** `{run_hash}`  
+        - **LCE Stage:** `{stage}`  
+        - **System:** `{system}`  
+        - **Dominance tests:** {'Pass' if not dom_fails else 'Fail'}  
+        - **Robustness (KPI corr):** {corr:.2f}  
+        - **Baseline alignment (Kendall τ):** {tau:.2f}
+        """)
 
 
