@@ -402,27 +402,35 @@ if st.button("Analyze", use_container_width=True):
 def show_matrix(title, df_dict):
     st.markdown(f"### {title}")
     df = pd.DataFrame(df_dict).T
+
     compare_all = st.session_state.get("compare_all", False)
     selected = st.session_state.get("selected_system", "Product Transfer")
 
-    # Handle cases where system selection comes as list/dict
     if isinstance(selected, (tuple, list)):
         selected = selected[0]
     if isinstance(selected, dict):
         selected = next(iter(selected.values()))
 
-    # Filter or show all systems
     if not compare_all:
         if selected in df.columns:
             df = df[[selected]]
         else:
             st.warning(f"⚠️ The selected system '{selected}' is not available; showing all instead.")
 
-    # Map numeric scores to qualitative labels
-    df_label = df.applymap(lambda x: "Low" if x < 1 else "Medium" if x < 2 else "High")
+    # Make sure values are numeric
+    df = df.apply(pd.to_numeric, errors="coerce").fillna(0)
 
-    color_map = {"Low": "#f8d7da", "Medium": "#fff3cd", "High": "#d4edda"}
-    styled = df_label.style.applymap(
+    # pandas 3 compatible replacement for applymap
+    df_label = df.map(lambda x: "Low" if x < 1 else "Medium" if x < 2 else "High")
+
+    color_map = {
+        "Low": "#f8d7da",
+        "Medium": "#fff3cd",
+        "High": "#d4edda"
+    }
+
+    # pandas 3 compatible replacement for Styler.applymap
+    styled = df_label.style.map(
         lambda v: f"background-color: {color_map[v]}; color:black; text-align:center; font-weight:bold;"
     )
 
