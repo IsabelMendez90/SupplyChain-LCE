@@ -1,0 +1,257 @@
+{
+  "method": "zero-order Sugeno",
+  "rule_base_version": "1.0-provisional",
+  "membership_functions": {
+    "Low": [
+      0.0,
+      0.0,
+      0.2,
+      0.5
+    ],
+    "Medium": [
+      0.2,
+      0.5,
+      0.8
+    ],
+    "High": [
+      0.5,
+      0.8,
+      1.0,
+      1.0
+    ]
+  },
+  "consequents": {
+    "Low": 0.5,
+    "Medium": 1.5,
+    "High": 2.5
+  },
+  "epsilon": 1e-12,
+  "antecedent_operator": "product t-norm",
+  "defuzzification": "weighted average",
+  "rules": [
+    {
+      "rule_id": "R01",
+      "baseline": "Low",
+      "5s_alignment": "Low",
+      "lifecycle_relevance": "Low",
+      "output": "Low"
+    },
+    {
+      "rule_id": "R02",
+      "baseline": "Low",
+      "5s_alignment": "Low",
+      "lifecycle_relevance": "Medium",
+      "output": "Low"
+    },
+    {
+      "rule_id": "R03",
+      "baseline": "Low",
+      "5s_alignment": "Low",
+      "lifecycle_relevance": "High",
+      "output": "Low"
+    },
+    {
+      "rule_id": "R04",
+      "baseline": "Low",
+      "5s_alignment": "Medium",
+      "lifecycle_relevance": "Low",
+      "output": "Low"
+    },
+    {
+      "rule_id": "R05",
+      "baseline": "Low",
+      "5s_alignment": "Medium",
+      "lifecycle_relevance": "Medium",
+      "output": "Low"
+    },
+    {
+      "rule_id": "R06",
+      "baseline": "Low",
+      "5s_alignment": "Medium",
+      "lifecycle_relevance": "High",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R07",
+      "baseline": "Low",
+      "5s_alignment": "High",
+      "lifecycle_relevance": "Low",
+      "output": "Low"
+    },
+    {
+      "rule_id": "R08",
+      "baseline": "Low",
+      "5s_alignment": "High",
+      "lifecycle_relevance": "Medium",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R09",
+      "baseline": "Low",
+      "5s_alignment": "High",
+      "lifecycle_relevance": "High",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R10",
+      "baseline": "Medium",
+      "5s_alignment": "Low",
+      "lifecycle_relevance": "Low",
+      "output": "Low"
+    },
+    {
+      "rule_id": "R11",
+      "baseline": "Medium",
+      "5s_alignment": "Low",
+      "lifecycle_relevance": "Medium",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R12",
+      "baseline": "Medium",
+      "5s_alignment": "Low",
+      "lifecycle_relevance": "High",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R13",
+      "baseline": "Medium",
+      "5s_alignment": "Medium",
+      "lifecycle_relevance": "Low",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R14",
+      "baseline": "Medium",
+      "5s_alignment": "Medium",
+      "lifecycle_relevance": "Medium",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R15",
+      "baseline": "Medium",
+      "5s_alignment": "Medium",
+      "lifecycle_relevance": "High",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R16",
+      "baseline": "Medium",
+      "5s_alignment": "High",
+      "lifecycle_relevance": "Low",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R17",
+      "baseline": "Medium",
+      "5s_alignment": "High",
+      "lifecycle_relevance": "Medium",
+      "output": "High"
+    },
+    {
+      "rule_id": "R18",
+      "baseline": "Medium",
+      "5s_alignment": "High",
+      "lifecycle_relevance": "High",
+      "output": "High"
+    },
+    {
+      "rule_id": "R19",
+      "baseline": "High",
+      "5s_alignment": "Low",
+      "lifecycle_relevance": "Low",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R20",
+      "baseline": "High",
+      "5s_alignment": "Low",
+      "lifecycle_relevance": "Medium",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R21",
+      "baseline": "High",
+      "5s_alignment": "Low",
+      "lifecycle_relevance": "High",
+      "output": "High"
+    },
+    {
+      "rule_id": "R22",
+      "baseline": "High",
+      "5s_alignment": "Medium",
+      "lifecycle_relevance": "Low",
+      "output": "Medium"
+    },
+    {
+      "rule_id": "R23",
+      "baseline": "High",
+      "5s_alignment": "Medium",
+      "lifecycle_relevance": "Medium",
+      "output": "High"
+    },
+    {
+      "rule_id": "R24",
+      "baseline": "High",
+      "5s_alignment": "Medium",
+      "lifecycle_relevance": "High",
+      "output": "High"
+    },
+    {
+      "rule_id": "R25",
+      "baseline": "High",
+      "5s_alignment": "High",
+      "lifecycle_relevance": "Low",
+      "output": "High"
+    },
+    {
+      "rule_id": "R26",
+      "baseline": "High",
+      "5s_alignment": "High",
+      "lifecycle_relevance": "Medium",
+      "output": "High"
+    },
+    {
+      "rule_id": "R27",
+      "baseline": "High",
+      "5s_alignment": "High",
+      "lifecycle_relevance": "High",
+      "output": "High"
+    }
+  ],
+  "provenance": {
+    "baseline_relevance": {
+      "source_keys": [
+        "lambert2008supply",
+        "gunasekaran2004framework"
+      ],
+      "role": "configuration-sensitive process and KPI relevance"
+    },
+    "5s_associations": {
+      "source_keys": [
+        "molina2021sensing",
+        "molina2024comprehensive",
+        "supplychaingdev"
+      ],
+      "role": "Social, Sustainable, Sensing, Smart, and Safe alignment"
+    },
+    "lifecycle_associations": {
+      "source_keys": [
+        "garetti2012sustainable",
+        "supplychaingdev"
+      ],
+      "role": "lifecycle-dependent relevance"
+    },
+    "resilience_logic": {
+      "source_keys": [
+        "ivanov2020viability",
+        "wong2024empirical"
+      ],
+      "role": "buffers, diversification, multisourcing, and ecosystem response"
+    },
+    "combination_rules": {
+      "type": "author-designed design-science synthesis",
+      "status": "provisional pending structured expert elicitation and calibration"
+    }
+  }
+}

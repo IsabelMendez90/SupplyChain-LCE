@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this research prototype, please cite the associated manuscript."
+title: "Hybrid Fuzzy-LLM Decision Support System for Lifecycle-Oriented Supply-Chain Strategy"
+type: software
+authors:
+  - family-names: "Méndez"
+    given-names: "Juana Isabel"
+  - family-names: "Molina"
+    given-names: "Arturo"
+year: 2026

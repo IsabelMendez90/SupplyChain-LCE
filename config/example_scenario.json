@@ -1,0 +1,12 @@
+{
+  "system": "Product Transfer",
+  "lce_stage": "Operation",
+  "stage_gain": 0.8,
+  "weights_5s": {
+    "Social": 0.5,
+    "Sustainable": 0.5,
+    "Sensing": 0.5,
+    "Smart": 0.5,
+    "Safe": 0.5
+  }
+}
