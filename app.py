@@ -12,6 +12,18 @@ import pandas as pd
 import streamlit as st
 from openai import OpenAI
 from sklearn.feature_extraction.text import CountVectorizer  
+from scipy.stats import kendalltau
+from decision_model import (
+    BASE_CORE, BASE_DRIVERS, BASE_KPIS, COMPETITIVE, FIVE_S, LCE,
+    PROD_SERVICE, S_TAGS_CORE, S_TAGS_DRIVERS, S_TAGS_KPI,
+    STAGE_TAGS_CORE, STAGE_TAGS_DRIVERS, STAGE_TAGS_KPI, SYSTEMS,
+    VALUE_CHAIN, s_boost, score_all, stage_boost,
+)
+from fuzzy_engine import (
+    EPSILON, FUZZY_MEMBERSHIP_PARAMETERS, FUZZY_RULE_BASE_VERSION,
+    FUZZY_RULE_PROVENANCE, SUGENO_CONSEQUENTS, SUGENO_RULES,
+    sugeno_fuzzy_score, validate_engine,
+)
 
 # =====================================================
 #                  LOAD BENCHMARKS
@@ -55,18 +67,22 @@ BENCHMARK_META = {
 # =====================================================
 st.set_page_config(page_title="Supply-Chain Agent (LCE+5S)", layout="wide")
 
-# OpenRouter client
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=st.secrets["OPENROUTER_API_KEY"]
-)
+# OpenRouter is optional. The fuzzy DSS and deterministic explanations work
+# without a key or network access.
+try:
+    API_KEY = st.secrets.get("OPENROUTER_API_KEY", "")
+except Exception:
+    API_KEY = ""
+API_KEY = API_KEY or os.getenv("OPENROUTER_API_KEY", "")
+client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY) if API_KEY else None
 OPENROUTER_HEADERS = {
     "HTTP-Referer": "http://localhost:8501",
     "X-Title": "LCE+5S Supply-Chain Agent"
 }
 
-# --- Single Unified Model for ALL tasks ---
-LLM_MODEL = "mistralai/mistral-7b-instruct:free"
+# OpenRouter's free-model router. The selected underlying model may vary by
+# request, so safe_llm_call() records the actual model returned by OpenRouter.
+LLM_MODEL = "openrouter/free"
 
 # =====================================================
 #                CANONICAL VOCAB
@@ -179,15 +195,6 @@ STAGE_TAGS_DRIVERS = {
 # =====================================================
 #                  CORE SCORING FUNCTIONS
 # =====================================================
-def s_boost(w, s_tags, name):
-    tags = s_tags.get(name, {})
-    total_weight = sum(tags.values())
-    if total_weight == 0:
-        return 0.0
-    weighted = sum(w[k]*v for k,v in tags.items()) / total_weight
-    return weighted
-
-
 def clamp03(x): 
     return max(0.0, min(3.0, x))
 
@@ -195,6 +202,7 @@ def clamp01(x):
     return max(0.0, min(1.0, x))
 
 def s_boost(w, s_tags, name):
+    """Compatibility between a user's 5S priorities and item memberships."""
     tags = s_tags.get(name, {})
     tot = sum(tags.values())
     if tot == 0:
@@ -202,10 +210,191 @@ def s_boost(w, s_tags, name):
     return sum(w.get(k, 0.0) * v for k, v in tags.items()) / tot
 
 
-def stage_boost(stage, tags, name, max_gain=0.8): 
-    return clamp01(tags.get(name,{}).get(stage,0.0))*max_gain
+def stage_boost(stage, tags, name, max_gain=None):
+    """Lifecycle membership, scaled by the explicit stage-gain parameter."""
+    if max_gain is None:
+        max_gain = st.session_state.get("stage_gain", 0.8)
+    membership = clamp01(tags.get(name, {}).get(stage, 0.0))
+    return clamp01(membership * max_gain)
 
-def score_matrix(base_map, matrix, w5s, stage):
+
+# =====================================================
+#        ZERO-ORDER SUGENO FUZZY INFERENCE ENGINE
+# =====================================================
+# Evidence basis for the rule base:
+# - Configuration-sensitive baselines: BASE_CORE, BASE_KPIS, BASE_DRIVERS.
+# - 5S associations: S_TAGS_* (Social, Sustainable, Sensing, Smart, Safe).
+# - Lifecycle associations: STAGE_TAGS_*.
+# - Domain framing in the manuscript: Lambert (2008), Garetti et al. (2012),
+#   Molina et al. (2021, 2024), and the Supply Chain Development framework.
+#
+# The references justify the constructs and directional relationships. The
+# membership breakpoints and cross-construct rules below are an explicit
+# design-science synthesis and must be calibrated/validated with experts.
+
+FUZZY_MEMBERSHIP_PARAMETERS = {
+    "Low": (0.0, 0.0, 0.20, 0.50),       # trapezoidal shoulder
+    "Medium": (0.20, 0.50, 0.80),        # triangular
+    "High": (0.50, 0.80, 1.0, 1.0),     # trapezoidal shoulder
+}
+
+SUGENO_CONSEQUENTS = {
+    "Low": 0.5,
+    "Medium": 1.5,
+    "High": 2.5,
+}
+
+FUZZY_RULE_BASE_VERSION = "1.0-provisional"
+FUZZY_RULE_PROVENANCE = {
+    "baseline_relevance": {
+        "source_keys": ["lambert2008supply", "gunasekaran2004framework"],
+        "role": "configuration-sensitive process and KPI relevance",
+    },
+    "5s_associations": {
+        "source_keys": ["molina2021sensing", "molina2024comprehensive", "supplychaingdev"],
+        "role": "Social, Sustainable, Sensing, Smart, and Safe alignment",
+    },
+    "lifecycle_associations": {
+        "source_keys": ["garetti2012sustainable", "supplychaingdev"],
+        "role": "lifecycle-dependent relevance",
+    },
+    "resilience_logic": {
+        "source_keys": ["ivanov2020viability", "wong2024empirical"],
+        "role": "buffers, diversification, multisourcing, and ecosystem response",
+    },
+    "combination_rules": {
+        "type": "author-designed design-science synthesis",
+        "status": "requires structured expert elicitation and sensitivity calibration",
+    },
+}
+
+# Antecedents are (baseline relevance, 5S alignment, lifecycle relevance).
+# The 27 rules are intentionally explicit for auditability and replication.
+SUGENO_RULES = {
+    ("Low", "Low", "Low"): "Low",
+    ("Low", "Low", "Medium"): "Low",
+    ("Low", "Low", "High"): "Low",
+    ("Low", "Medium", "Low"): "Low",
+    ("Low", "Medium", "Medium"): "Low",
+    ("Low", "Medium", "High"): "Medium",
+    ("Low", "High", "Low"): "Low",
+    ("Low", "High", "Medium"): "Medium",
+    ("Low", "High", "High"): "Medium",
+
+    ("Medium", "Low", "Low"): "Low",
+    ("Medium", "Low", "Medium"): "Medium",
+    ("Medium", "Low", "High"): "Medium",
+    ("Medium", "Medium", "Low"): "Medium",
+    ("Medium", "Medium", "Medium"): "Medium",
+    ("Medium", "Medium", "High"): "Medium",
+    ("Medium", "High", "Low"): "Medium",
+    ("Medium", "High", "Medium"): "High",
+    ("Medium", "High", "High"): "High",
+
+    ("High", "Low", "Low"): "Medium",
+    ("High", "Low", "Medium"): "Medium",
+    ("High", "Low", "High"): "High",
+    ("High", "Medium", "Low"): "Medium",
+    ("High", "Medium", "Medium"): "High",
+    ("High", "Medium", "High"): "High",
+    ("High", "High", "Low"): "High",
+    ("High", "High", "Medium"): "High",
+    ("High", "High", "High"): "High",
+}
+
+
+def trimf(x, a, b, c):
+    """Triangular membership function with safe boundary handling."""
+    x = float(x)
+    if x <= a or x >= c:
+        return 0.0
+    if x == b:
+        return 1.0
+    if x < b:
+        return (x - a) / (b - a)
+    return (c - x) / (c - b)
+
+
+def trapmf(x, a, b, c, d):
+    """Trapezoidal membership function, including left/right shoulders."""
+    x = float(x)
+    if b <= x <= c:
+        return 1.0
+    if a < x < b:
+        return (x - a) / (b - a)
+    if c < x < d:
+        return (d - x) / (d - c)
+    return 0.0
+
+
+def fuzzify_unit(x):
+    """Map a bounded [0,1] input to Low/Medium/High memberships."""
+    x = clamp01(float(x))
+    low = FUZZY_MEMBERSHIP_PARAMETERS["Low"]
+    medium = FUZZY_MEMBERSHIP_PARAMETERS["Medium"]
+    high = FUZZY_MEMBERSHIP_PARAMETERS["High"]
+    return {
+        "Low": trapmf(x, *low),
+        "Medium": trimf(x, *medium),
+        "High": trapmf(x, *high),
+    }
+
+
+def sugeno_fuzzy_score(base, s_alignment, lifecycle_relevance, epsilon=1e-12):
+    """Return a score in [0,3] and a complete fuzzy-inference trace."""
+    inputs = {
+        "baseline": clamp01(float(base) / 3.0),
+        "5s_alignment": clamp01(s_alignment),
+        "lifecycle_relevance": clamp01(lifecycle_relevance),
+    }
+    memberships = {name: fuzzify_unit(value) for name, value in inputs.items()}
+
+    activated_rules = []
+    weighted_sum = 0.0
+    firing_sum = 0.0
+    for antecedents, output_label in SUGENO_RULES.items():
+        b_label, s_label, l_label = antecedents
+        # Product t-norm yields a smooth zero-order Sugeno response surface.
+        firing = (
+            memberships["baseline"][b_label]
+            * memberships["5s_alignment"][s_label]
+            * memberships["lifecycle_relevance"][l_label]
+        )
+        if firing <= 0.0:
+            continue
+        consequent = SUGENO_CONSEQUENTS[output_label]
+        weighted_sum += firing * consequent
+        firing_sum += firing
+        activated_rules.append({
+            "if": {
+                "baseline": b_label,
+                "5s_alignment": s_label,
+                "lifecycle_relevance": l_label,
+            },
+            "then": output_label,
+            "firing_strength": round(float(firing), 6),
+            "consequent": consequent,
+        })
+
+    score = weighted_sum / (firing_sum + epsilon)
+    if firing_sum <= epsilon:
+        score = float(base)
+    score = clamp03(score)
+    trace = {
+        "rule_base_version": FUZZY_RULE_BASE_VERSION,
+        "inputs": inputs,
+        "memberships": memberships,
+        "activated_rules": activated_rules,
+        "firing_sum": float(firing_sum),
+        "epsilon": epsilon,
+        "defuzzification": "zero-order Sugeno weighted average",
+        "antecedent_operator": "product t-norm",
+        "score": round(float(score), 6),
+    }
+    return score, trace
+
+
+def score_matrix(base_map, matrix, w5s, stage, trace_out=None):
     out = {}
     for item, cols in base_map.items():
         out[item] = {}
@@ -220,28 +409,38 @@ def score_matrix(base_map, matrix, w5s, stage):
                                           else STAGE_TAGS_CORE if matrix=="core_processes"
                                           else STAGE_TAGS_DRIVERS, item)
 
-            total_inf = clamp01((s_influence + stage_influence) / 2)
-            λ = st.session_state.get("λ", 1.2)
-            α = st.session_state.get("α", 0.5)
-            β = st.session_state.get("β", 0.5)
-            stage_gain = st.session_state.get("stage_gain", 0.8)
-            
-            contrast = λ
-            penalty  = (α - total_inf) * contrast
-            score    = clamp03(base * (1 - penalty) + 3 * total_inf * β)
+            score, trace = sugeno_fuzzy_score(
+                base=base,
+                s_alignment=s_influence,
+                lifecycle_relevance=stage_influence,
+            )
 
             out[item][system] = round(score, 3)
+            if trace_out is not None:
+                trace_out.setdefault(matrix, {}).setdefault(item, {})[system] = trace
     return out
 
-def score_all(w5s, stage):
-    return {
-        "core_processes": score_matrix(BASE_CORE, "core_processes", w5s, stage),
-        "kpis": score_matrix(BASE_KPIS, "kpis", w5s, stage),
-        "drivers": score_matrix(BASE_DRIVERS, "drivers", w5s, stage),
+def score_all(w5s, stage, return_trace=False):
+    trace = {} if return_trace else None
+    scored = {
+        "core_processes": score_matrix(BASE_CORE, "core_processes", w5s, stage, trace),
+        "kpis": score_matrix(BASE_KPIS, "kpis", w5s, stage, trace),
+        "drivers": score_matrix(BASE_DRIVERS, "drivers", w5s, stage, trace),
     }
+    return (scored, trace) if return_trace else scored
+
+# The standalone modules are the authoritative reproducible implementation.
+# Re-bind the names after the embedded explanatory definitions above so the
+# interactive app and command-line replication use exactly the same engine.
+from decision_model import s_boost, score_all, stage_boost
+from fuzzy_engine import (
+    EPSILON, FUZZY_MEMBERSHIP_PARAMETERS, FUZZY_RULE_BASE_VERSION,
+    FUZZY_RULE_PROVENANCE, SUGENO_CONSEQUENTS, SUGENO_RULES,
+    sugeno_fuzzy_score, validate_engine,
+)
 
 # =====================================================
-#  HELPERS (LLM + formatting)
+#  HELPERS (LLM + deterministic formatting)
 # =====================================================
 def _json_default(o):
     import numpy as _np, pandas as _pd
@@ -273,13 +472,26 @@ def compact_dict(d, max_items=10):
 def clean_numbers(text: str) -> str:
     return re.sub(r"\s*\(\d+(\.\d+)?\)", "", text)
 
-def safe_llm_call(prompt: str, payload: dict, temp=0.35, max_toks=400, retries=2):
+GROUNDING_CONSTRAINTS = """
+You are a non-authoritative language renderer for a deterministic fuzzy DSS.
+Use only the supplied evidence. Never calculate or modify scores, rankings,
+membership values, rule activations, or benchmark values. Never introduce a
+number, causal claim, industrial-validation claim, or recommendation that is
+not explicitly supported by the evidence. Preserve the reported ordering. If
+evidence is missing, say so. The fuzzy engine, not the language model, is the
+decision authority.
+""".strip()
+
+
+def safe_llm_call(prompt: str, payload: dict, temp=0.0, max_toks=400, retries=2, fallback=""):
+    if client is None:
+        return fallback
     for _ in range(retries):
         try:
             r = client.chat.completions.create(
                 model=LLM_MODEL,
                 messages=[
-                    {"role": "system", "content": prompt},
+                    {"role": "system", "content": f"{GROUNDING_CONSTRAINTS}\n\n{prompt}"},
                     {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=_json_default)},
                 ],
                 extra_headers=OPENROUTER_HEADERS,
@@ -288,10 +500,24 @@ def safe_llm_call(prompt: str, payload: dict, temp=0.35, max_toks=400, retries=2
             )
             out = r.choices[0].message.content.strip()
             if out:
+                # openrouter/free may select a different free model per request.
+                # Persist the actual model returned for run-level traceability.
+                actual_model = getattr(r, "model", LLM_MODEL)
+                st.session_state["last_llm_model"] = actual_model
+                prompt_hash = hashlib.sha256(
+                    (prompt + json.dumps(payload, sort_keys=True, default=_json_default)).encode()
+                ).hexdigest()[:10]
+                st.session_state.setdefault("llm_model_log", []).append({
+                    "prompt_hash": prompt_hash,
+                    "router": LLM_MODEL,
+                    "actual_model": actual_model,
+                    "temperature": temp,
+                    "max_tokens": max_toks,
+                })
                 return out
         except Exception as e:
-            st.warning(f"⚠️ LLM call failed: {e}")
-    return ""
+            st.session_state["last_llm_error"] = str(e)
+    return fallback
 # =====================================================
 #  CONVERT NUMERIC SCORES TO QUALITATIVE LABELS
 # =====================================================
@@ -313,6 +539,81 @@ def describe_real_5s(weights):
         label = "High" if v >= 0.75 else "Medium" if v >= 0.5 else "Low"
         desc[s] = f"{label} ({v:.2f})"
     return desc
+
+
+def build_canonical_evidence(results, system, stage):
+    """Create the immutable evidence object consumed by every explanation."""
+    scored = results.get("scored", {})
+    traces = results.get("fuzzy_trace", {})
+    categories = {}
+    for matrix, items in scored.items():
+        rows = []
+        for item, system_values in items.items():
+            score = float(system_values.get(system, 0.0))
+            trace = traces.get(matrix, {}).get(item, {}).get(system, {})
+            rules = trace.get("activated_rules", [])
+            dominant = max(rules, key=lambda rule: rule.get("firing_strength", 0.0)) if rules else {}
+            rows.append({
+                "item": item,
+                "score": round(score, 3),
+                "label": "High" if score >= 2 else "Medium" if score >= 1 else "Low",
+                "normalized_inputs": trace.get("inputs", {}),
+                "dominant_rule": dominant,
+            })
+        categories[matrix] = sorted(rows, key=lambda row: (-row["score"], row["item"]))
+    return {
+        "system": system,
+        "lce_stage": stage,
+        "weights_5s": results.get("weights_5s", {}),
+        "categories": categories,
+        "method": "zero-order Sugeno",
+        "rule_base_version": FUZZY_RULE_BASE_VERSION,
+    }
+
+
+def deterministic_category_explanation(evidence, matrix, title):
+    """Render a factual explanation without an API or generative model."""
+    rows = evidence.get("categories", {}).get(matrix, [])
+    if not rows:
+        return f"No {title.lower()} evidence is available for this run."
+    details = []
+    for row in rows[:3]:
+        inputs = row.get("normalized_inputs", {})
+        rule = row.get("dominant_rule", {})
+        rule_id = rule.get("rule_id", "no active rule")
+        details.append(
+            f"{row['item']} (score {row['score']:.3f}, {row['label']}; "
+            f"baseline {inputs.get('baseline', 0.0):.3f}, 5S alignment "
+            f"{inputs.get('5s_alignment', 0.0):.3f}, lifecycle relevance "
+            f"{inputs.get('lifecycle_relevance', 0.0):.3f}; dominant {rule_id})"
+        )
+    return (
+        f"For {evidence['system']} at the {evidence['lce_stage']} stage, the "
+        f"highest-priority {title.lower()} are " + "; ".join(details) + ". "
+        "The ordering is generated exclusively by the deterministic fuzzy engine."
+    )
+
+
+def deterministic_interpretations(results, system, stage):
+    evidence = build_canonical_evidence(results, system, stage)
+    return {
+        "core": deterministic_category_explanation(evidence, "core_processes", "core processes"),
+        "kpi": deterministic_category_explanation(evidence, "kpis", "KPIs"),
+        "drivers": deterministic_category_explanation(evidence, "drivers", "resilience drivers"),
+    }, evidence
+
+
+def deterministic_comparison(results, selected_system):
+    statements = []
+    for matrix, title in (("core_processes", "core processes"), ("kpis", "KPIs"), ("drivers", "drivers")):
+        frame = pd.DataFrame(results["scored"][matrix]).T
+        means = frame.mean(axis=0).sort_values(ascending=False)
+        statements.append(
+            f"For {title}, the mean priority ordering is "
+            + " > ".join(f"{name} ({value:.3f})" for name, value in means.items())
+            + "."
+        )
+    return " ".join(statements) + f" The selected view is {selected_system}; no LLM was used."
 # =====================================================
 #                SIDEBAR CONFIGURATION
 # =====================================================
@@ -351,6 +652,8 @@ with st.sidebar:
 
     # --- Industry + role ---
     st.selectbox("Industry", ["Automotive","Electronics","Medical Devices","Consumer Goods","Other"], index=1, key="industry")
+    if st.session_state.get("industry") == "Other":
+        st.text_input("Specify industry", value="Other", key="industry_other")
     roles = ["Design Engineer","Process Engineer","Manufacturing Engineer",
              "Safety Supervisor","Sustainability Manager","Supply Chain Analyst",
              "Manager/Decision Maker","Other"]
@@ -367,6 +670,18 @@ with st.sidebar:
 
     st.toggle("Compare all systems (view)", value=False, key="compare_all")
 
+    st.header("Explanation Layer")
+    explanation_options = ["Deterministic trace", "Optional LLM narrative"]
+    st.radio(
+        "Explanation mode",
+        explanation_options,
+        index=0,
+        key="explanation_mode",
+        help="Scores and rankings are always generated by the same deterministic fuzzy engine.",
+    )
+    if st.session_state.get("explanation_mode") == "Optional LLM narrative" and client is None:
+        st.info("No API key detected. The app will use the deterministic explanation fallback.")
+
     # --- Transparency note ---
     st.caption("""
     Benchmarks represent industry-average KPI ranges compiled from sources 
@@ -381,20 +696,37 @@ with st.sidebar:
 # =====================================================
 weights_5s = {s: st.session_state.get(f"s5_{s}", 0.5) for s in FIVE_S}
 lce_stage  = st.session_state.get("lce_stage", "Operation")
-st.session_state["matrices_live"] = score_all(weights_5s, lce_stage)
+stage_gain_live = st.session_state.get("stage_gain", 0.8)
+matrices_live, fuzzy_trace_live = score_all(
+    weights_5s, lce_stage, stage_gain=stage_gain_live, return_trace=True
+)
+st.session_state["matrices_live"] = matrices_live
+st.session_state["fuzzy_trace_live"] = fuzzy_trace_live
 
 st.title("Supply-Chain Strategy Agent (LCE + 5S)")
 st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
+st.caption(
+    "Decision authority: deterministic zero-order Sugeno engine. "
+    "The optional LLM can only render the frozen evidence in natural language."
+)
 
 # Single analyze button: freeze state & trigger LLM on tabs 2–3
 if st.button("Analyze", use_container_width=True):
     st.session_state["results"] = {
         "scored": st.session_state["matrices_live"],
+        "fuzzy_trace": st.session_state["fuzzy_trace_live"],
         "weights_5s": weights_5s,
+        "system": st.session_state.get("selected_system", "Product Transfer"),
+        "lce_stage": lce_stage,
+        "stage_gain": stage_gain_live,
+        "explanation_mode": st.session_state.get("explanation_mode", "Deterministic trace"),
         "elapsed": 0.0,
     }
     st.session_state["analyzed"] = True
     st.session_state["llm_done"] = False
+    st.session_state["llm_model_log"] = []
+    st.session_state.pop("llm_interpretations", None)
+    st.session_state.pop("compare_analysis", None)
 
 # =====================================================
 #  HELPER: DISPLAY MATRIX WITH LABEL COLORS
@@ -440,9 +772,15 @@ def show_matrix(title, df_dict):
 # -----------------------------------------------------
 # Generate a unique, reproducible run hash
 # -----------------------------------------------------
-def compute_run_hash(weights_5s, lce_stage, system):
+def compute_run_hash(weights_5s, lce_stage, system, stage_gain=0.8):
     payload = json.dumps(
-        {"weights_5s": weights_5s, "lce_stage": lce_stage, "system": system},
+        {
+            "weights_5s": weights_5s,
+            "lce_stage": lce_stage,
+            "system": system,
+            "stage_gain": stage_gain,
+            "rule_base_version": FUZZY_RULE_BASE_VERSION,
+        },
         sort_keys=True,
     )
     return hashlib.sha256(payload.encode()).hexdigest()[:10]
@@ -463,13 +801,27 @@ def dominance_test(scored):
 # Simple MCDA baseline (TOPSIS-style)
 # -----------------------------------------------------
 def topsis_compare(matrix):
+    """Standard benefit-criterion TOPSIS with equal criterion weights.
+
+    Rows are decision items (KPIs) and columns are manufacturing-system views.
+    This setup must be stated explicitly when the benchmark is reported.
+    """
     df = pd.DataFrame(matrix).T
     df = df.fillna(0)
-    norm = df / np.sqrt((df**2).sum())
-    weights = np.ones(len(df.columns)) / len(df.columns)
-    score = (norm * weights).sum(axis=1)
-    return score.rank(ascending=False)
-def ahp_compare(matrix):
+    denominators = np.sqrt((df ** 2).sum(axis=0)).replace(0, np.finfo(float).eps)
+    normalized = df / denominators
+    weights = pd.Series(1.0 / len(df.columns), index=df.columns)
+    weighted = normalized * weights
+    ideal_best = weighted.max(axis=0)
+    ideal_worst = weighted.min(axis=0)
+    distance_best = np.sqrt(((weighted - ideal_best) ** 2).sum(axis=1))
+    distance_worst = np.sqrt(((weighted - ideal_worst) ** 2).sum(axis=1))
+    closeness = distance_worst / (distance_best + distance_worst + np.finfo(float).eps)
+    return closeness.rank(ascending=False, method="average")
+
+
+def weighted_sum_compare(matrix):
+    """Equal-weight normalized-sum baseline; this is not AHP."""
     df = pd.DataFrame(matrix).T.fillna(0)
     col_sums = df.sum().replace(0, np.finfo(float).eps)
     weights  = df / col_sums
@@ -479,7 +831,9 @@ def ahp_compare(matrix):
 def promethee_compare(matrix):
     """Simplified PROMETHEE preference flow (linear preference function)."""
     df = pd.DataFrame(matrix).T.fillna(0)
-    pref = pd.DataFrame(0, index=df.index, columns=df.index)
+    # Pandas 2.2+/3.0 rejects assigning decimal preference values into an
+    # integer-typed DataFrame. Initialise the preference matrix as float.
+    pref = pd.DataFrame(0.0, index=df.index, columns=df.index, dtype=float)
     for i in df.index:
         for j in df.index:
             if i != j:
@@ -489,11 +843,52 @@ def promethee_compare(matrix):
 # -----------------------------------------------------
 # Sensitivity / robustness test
 # -----------------------------------------------------
-def perturb_weights(weights, delta=0.2):
+def perturb_weights(weights, delta=0.2, seed=42):
+    """Multiplicative U(-delta,+delta) perturbation with reproducible seed."""
+    rng = random.Random(seed)
     return {
-        k: min(1.0, max(0.0, v + random.uniform(-delta, delta)))
+        k: min(1.0, max(0.0, v * (1.0 + rng.uniform(-delta, delta))))
         for k, v in weights.items()
     }
+
+
+def monte_carlo_robustness(weights, stage, system, delta=0.2, repetitions=1000, seed=42, stage_gain=0.8):
+    """Reproducible multiplicative U(-delta,+delta) robustness experiment."""
+    rng = np.random.default_rng(seed)
+    base_scores = score_all(weights, stage, stage_gain=stage_gain)["kpis"]
+    base_series = pd.DataFrame(base_scores).T[system]
+    base_rank = base_series.rank(ascending=False, method="average")
+    base_top3 = set(base_series.nlargest(3).index)
+    records = []
+    for run in range(repetitions):
+        perturbed = {
+            key: float(np.clip(value * (1.0 + rng.uniform(-delta, delta)), 0.0, 1.0))
+            for key, value in weights.items()
+        }
+        new_scores = score_all(perturbed, stage, stage_gain=stage_gain)["kpis"]
+        new_series = pd.DataFrame(new_scores).T[system]
+        tau_result = kendalltau(base_rank, new_series.rank(ascending=False, method="average"))
+        top3_retention = len(base_top3.intersection(set(new_series.nlargest(3).index))) / 3.0
+        records.append({
+            "iteration": run + 1,
+            "kendall_tau_b": float(tau_result.statistic) if not pd.isna(tau_result.statistic) else np.nan,
+            "p_value": float(tau_result.pvalue) if not pd.isna(tau_result.pvalue) else np.nan,
+            "top3_retention": top3_retention,
+        })
+    frame = pd.DataFrame(records)
+    valid_tau = frame["kendall_tau_b"].dropna()
+    summary = {
+        "distribution": f"multiplicative Uniform(-{delta}, +{delta}) independently per 5S priority",
+        "repetitions": repetitions,
+        "seed": seed,
+        "mean_tau_b": float(valid_tau.mean()) if len(valid_tau) else None,
+        "tau_b_95pct_interval": (
+            [float(valid_tau.quantile(0.025)), float(valid_tau.quantile(0.975))]
+            if len(valid_tau) else [None, None]
+        ),
+        "mean_top3_retention": float(frame["top3_retention"].mean()),
+    }
+    return summary, frame
 
 def compare_matrices(base, new):
     """Compute correlation between base and perturbed average scores."""
@@ -576,17 +971,30 @@ def show_chat(tab_id: str):
             }
 
             system_prompt = (
-                "You are the Strategy Agent, a supply-chain advisor. "
-                "Base every answer on the user's 5S weights, scored matrices, "
-                "qualitative interpretations, and comparative summary. "
-                "Stay consistent with previous analyses. "
-                "Explain reasoning clearly and give actionable guidance "
-                "for trade-offs, prioritization, and system design."
+                f"{GROUNDING_CONSTRAINTS} Answer questions only about the frozen run evidence."
             )
 
             ctx_compact = compact_dict(ctx, max_items=5)
+            deterministic_text, canonical = deterministic_interpretations(
+                res,
+                res.get("system", sel_sys),
+                res.get("lce_stage", lce_stage),
+            )
+            ctx_compact["canonical_evidence"] = compact_dict(canonical, max_items=20)
+            use_llm_chat = (
+                res.get("explanation_mode") == "Optional LLM narrative"
+                and client is not None
+            )
 
-            try:
+            if not use_llm_chat:
+                reply = (
+                    "Deterministic mode does not generate open-ended advice. "
+                    + deterministic_text["core"] + " "
+                    + deterministic_text["kpi"] + " "
+                    + deterministic_text["drivers"]
+                )
+            else:
+              try:
                 r = client.chat.completions.create(
                     model=LLM_MODEL,
                     messages=[
@@ -595,15 +1003,26 @@ def show_chat(tab_id: str):
                         {"role": "user", "content": user_q},
                     ],
                     extra_headers=OPENROUTER_HEADERS,
-                    temperature=0.4,
+                    temperature=0.0,
                     max_tokens=700,
                 )
                 reply = r.choices[0].message.content.strip() or "No response generated — please try rephrasing."
-            except Exception as e:
-                reply = f"⚠️ LLM error: {e}"
-
-        reply = re.sub(r"\b\d+(\.\d+)?\b", "", reply)
-        reply = re.sub(r"\(\s*\)", "", reply).strip()
+                actual_model = getattr(r, "model", LLM_MODEL)
+                st.session_state["last_llm_model"] = actual_model
+                st.session_state.setdefault("llm_model_log", []).append({
+                    "prompt_hash": hashlib.sha256(user_q.encode()).hexdigest()[:10],
+                    "router": LLM_MODEL,
+                    "actual_model": actual_model,
+                    "temperature": 0.0,
+                    "max_tokens": 700,
+                })
+              except Exception:
+                reply = (
+                    "The optional language service is unavailable. "
+                    + deterministic_text["core"] + " "
+                    + deterministic_text["kpi"] + " "
+                    + deterministic_text["drivers"]
+                )
 
         st.session_state["chat"].append({"role": "assistant", "content": reply})
         with st.chat_message("assistant"):
@@ -615,6 +1034,18 @@ with tabs[1]:
     with sub_tabs[0]:
         if "results" in st.session_state:
             res = st.session_state["results"]
+            frozen_system = res.get("system", "Product Transfer")
+            frozen_stage = res.get("lce_stage", "Operation")
+            deterministic_text, canonical_evidence = deterministic_interpretations(
+                res, frozen_system, frozen_stage
+            )
+            use_llm = (
+                res.get("explanation_mode") == "Optional LLM narrative"
+                and client is not None
+            )
+            if not use_llm:
+                st.session_state["llm_interpretations"] = deterministic_text
+                st.session_state["llm_done"] = True
     
             # --- funciones auxiliares locales ---
             def qual_5s_weights(w5s):
@@ -644,11 +1075,11 @@ with tabs[1]:
             if not st.session_state.get("llm_done", False):
                 st.info("Generating qualitative interpretations with the LLM...")
     
-                sel_sys = st.session_state.get("selected_system", "Product Transfer")
+                sel_sys = frozen_system
                 role = st.session_state.get("user_role", "")
                 industry = st.session_state.get("industry", "")
                 objective = st.session_state.get("objective", "")
-                lce_stage = st.session_state.get("lce_stage", "Operation")
+                lce_stage = frozen_stage
                 w5s = res["weights_5s"]
                 w5s_desc = describe_real_5s(w5s)
     
@@ -659,6 +1090,7 @@ with tabs[1]:
                 core_stage = {k: item_contrib_lce(k, "core_processes", lce_stage) for k in core_labels}
     
                 core_payload = {
+                    "canonical_evidence": canonical_evidence["categories"]["core_processes"],
                     "core_labels": core_labels,
                     "w5s_desc": w5s_desc,
                     "top_5s_per_item": core_topS,
@@ -674,11 +1106,14 @@ with tabs[1]:
                 For each High or Medium process, refer to the dominant 5S dimensions that drove it 
                 (see 'top_5s_per_item') and consider how the current LCE stage '{lce_stage}' 
                 influences that priority. 
-                Provide a concise, 5S-aware qualitative explanation on which processes to strengthen,
-                simplify, or maintain to achieve "{objective}". Avoid numbers or parentheses.
+                Explain the reported ordering using only the canonical evidence. Preserve and cite
+                the exact scores and dominant rule identifiers. Do not create new actions.
                 Limit to 170 words.
                 """
-                core_expl = safe_llm_call(prompt_core, core_payload)
+                core_expl = safe_llm_call(
+                    prompt_core, core_payload, temp=0.0,
+                    fallback=deterministic_text["core"]
+                )
     
                 # ---- KPIs ----
                 kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
@@ -687,6 +1122,7 @@ with tabs[1]:
                 kpi_stage = {k: item_contrib_lce(k, "kpis", lce_stage) for k in kpi_labels}
     
                 kpi_payload = {
+                    "canonical_evidence": canonical_evidence["categories"]["kpis"],
                     "kpi_labels": kpi_labels,
                     "w5s_desc": w5s_desc,
                     "top_5s_per_item": kpi_topS,
@@ -710,13 +1146,16 @@ with tabs[1]:
                 
                 OUTPUT REQUIREMENTS
                 - Start with a one-sentence assessment of current KPI strengths.
-                - Then explain 1–2 weaknesses and the most realistic actions to lift them to high maturity (no numbers).
+                - Then explain 1–2 lower priorities without inventing actions or targets.
                 - Tie recommendations explicitly to the dominant 5S dimensions and current LCE stage (“{lce_stage}”).
                 - End with a single prescriptive sentence.
                 - No bullet points. No lists. No questions. Declarative voice only.
                 """
                 
-                kpi_expl = safe_llm_call(prompt_kpi, kpi_payload)
+                kpi_expl = safe_llm_call(
+                    prompt_kpi, kpi_payload, temp=0.0,
+                    fallback=deterministic_text["kpi"]
+                )
     
                 # ---- DRIVERS ----
                 driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
@@ -725,6 +1164,7 @@ with tabs[1]:
                 driver_stage = {k: item_contrib_lce(k, "drivers", lce_stage) for k in driver_labels}
     
                 driver_payload = {
+                    "canonical_evidence": canonical_evidence["categories"]["drivers"],
                     "driver_labels": driver_labels,
                     "w5s_desc": w5s_desc,
                     "top_5s_per_item": driver_topS,
@@ -739,21 +1179,29 @@ with tabs[1]:
                 {json.dumps(driver_labels, indent=2)}.
                 Use the 5S profile ('top_5s_per_item') and the LCE stage '{lce_stage}' to reason 
                 which drivers reinforce stability, enhance flexibility, or need rethinking.
-                Align the explanation with "{objective}" and write it 5S-aware, prescriptive,
-                analytical, and concise (≤170 words, no numbers or parentheses).
+                Preserve the reported ordering and cite exact scores and dominant rule identifiers.
+                Do not create new actions. Keep the explanation analytical and concise (≤170 words).
                 """
-                driver_expl = safe_llm_call(prompt_drv, driver_payload)
+                driver_expl = safe_llm_call(
+                    prompt_drv, driver_payload, temp=0.0,
+                    fallback=deterministic_text["drivers"]
+                )
     
                 # --- store ---
                 st.session_state["llm_interpretations"] = {
-                    "core": clean_numbers(core_expl),
-                    "kpi": clean_numbers(kpi_expl),
-                    "drivers": clean_numbers(driver_expl)
+                    "core": core_expl,
+                    "kpi": kpi_expl,
+                    "drivers": driver_expl,
                 }
                 st.session_state["llm_done"] = True
     
             # --- render ---
             inter = st.session_state["llm_interpretations"]
+            actual_model = st.session_state.get("last_llm_model") if use_llm else None
+            if actual_model:
+                st.caption(f"OpenRouter free router selected: `{actual_model}`")
+            else:
+                st.caption("Deterministic explanation generated without an external model.")
             st.markdown("### Core Processes Interpretation")
             st.write(inter["core"])
             st.markdown("### KPI Interpretation")
@@ -768,8 +1216,9 @@ with tabs[1]:
     with sub_tabs[1]:
         if "results" in st.session_state:
             if st.session_state.get("compare_all", False):
-                res = st.session_state["results"]["scored"]
-                sel_sys = st.session_state.get("selected_system", "Product Transfer")
+                frozen_results = st.session_state["results"]
+                res = frozen_results["scored"]
+                sel_sys = frozen_results.get("system", "Product Transfer")
                 objective = st.session_state.get("objective", "")
                 role = st.session_state.get("user_role", "")
                 industry = st.session_state.get("industry", "")
@@ -782,6 +1231,7 @@ with tabs[1]:
     
                     # Use cached value if exists
                     if "compare_analysis" not in st.session_state:
+                        deterministic_compare = deterministic_comparison(frozen_results, sel_sys)
                         compare_payload = compact_dict({
                             "selected_system": sel_sys,
                             "other_systems": other_systems,
@@ -798,13 +1248,24 @@ with tabs[1]:
                         Explain relative strengths and weaknesses from the lens of a {role} aiming to achieve "{objective}".
                         Highlight where {sel_sys} outperforms and where the others offer advantages, and indicate complementarities.
                         Conclude with one actionable recommendation to balance synergy, resilience, and innovation.
-                        Keep tone analytical and concise (≤180 words). Avoid numeric values or parentheses.
+                        Preserve the fuzzy scores and ordering exactly. Do not introduce actions or
+                        claims absent from the evidence. Keep the tone analytical and concise (≤180 words).
                         """
     
-                        st.info("Generating comparative interpretation (first run only)...")
-                        compare_expl = safe_llm_call(compare_prompt, compare_payload,
-                                                     temp=0.35, max_toks=450)
-                        st.session_state["compare_analysis"] = clean_numbers(compare_expl)
+                        use_llm_compare = (
+                            frozen_results.get("explanation_mode") == "Optional LLM narrative"
+                            and client is not None
+                        )
+                        if use_llm_compare:
+                            st.info("Generating optional grounded narrative...")
+                            compare_expl = safe_llm_call(
+                                compare_prompt, compare_payload,
+                                temp=0.0, max_toks=450,
+                                fallback=deterministic_compare,
+                            )
+                        else:
+                            compare_expl = deterministic_compare
+                        st.session_state["compare_analysis"] = compare_expl
                     else:
                         compare_expl = st.session_state["compare_analysis"]
     
@@ -832,13 +1293,15 @@ with tabs[2]:
         else:
             results = st.session_state["results"]
             weights_5s = results["weights_5s"]
-            stage = st.session_state["lce_stage"]
-            system = st.session_state.get("selected_system", "Product Transfer")
+            stage = results.get("lce_stage", "Operation")
+            system = results.get("system", "Product Transfer")
     
             # -------------------------------------------------
             # Compute and display run hash
             # -------------------------------------------------
-            run_hash = compute_run_hash(weights_5s, stage, system)
+            run_hash = compute_run_hash(
+                weights_5s, stage, system, results.get("stage_gain", 0.8)
+            )
             st.caption(f"Run ID: `{run_hash}`")
     
             # -------------------------------------------------
@@ -846,11 +1309,17 @@ with tabs[2]:
             # -------------------------------------------------
             st.subheader("Internal Consistency Checks")
             dom_fails = dominance_test(results["scored"])
+            engine_checks = validate_engine()
             if dom_fails:
                 st.warning(f"{len(dom_fails)} inconsistencies detected")
                 st.dataframe(dom_fails)
             else:
                 st.success("All scores within [0,3] and consistent across matrices.")
+            if engine_checks["passed"]:
+                st.success("Fuzzy-engine coverage, rule-count, range, and monotonicity checks passed.")
+            else:
+                st.error("One or more fuzzy-engine checks failed.")
+                st.json(engine_checks)
     
             # -------------------------------------------------
             # 2️Save / Load reproducible JSON
@@ -861,8 +1330,39 @@ with tabs[2]:
                 "system": system,
                 "lce_stage": stage,
                 "weights_5s": weights_5s,
+                "stage_gain": results.get("stage_gain", 0.8),
                 "scores": results["scored"],
+                "fuzzy_trace": results.get("fuzzy_trace", {}),
+                "fuzzy_method": "zero-order Sugeno",
+                "membership_parameters": FUZZY_MEMBERSHIP_PARAMETERS,
+                "sugeno_consequents": SUGENO_CONSEQUENTS,
+                "rule_base_version": FUZZY_RULE_BASE_VERSION,
+                "rule_provenance": FUZZY_RULE_PROVENANCE,
+                "canonical_evidence": build_canonical_evidence(results, system, stage),
+                "engine_validation": engine_checks,
+                "decision_authority": "deterministic fuzzy engine",
+                "llm_role": "optional non-authoritative language renderer",
+                "llm_router": LLM_MODEL,
+                "llm_actual_model": st.session_state.get("last_llm_model"),
+                "llm_calls": st.session_state.get("llm_model_log", []),
             }
+
+            fuzzy_trace = results.get("fuzzy_trace", {})
+            if fuzzy_trace:
+                with st.expander("Inspect fuzzy inference trace"):
+                    trace_matrix = st.selectbox(
+                        "Matrix class",
+                        list(fuzzy_trace.keys()),
+                        key="trace_matrix",
+                    )
+                    trace_item = st.selectbox(
+                        "Decision item",
+                        list(fuzzy_trace[trace_matrix].keys()),
+                        key="trace_item",
+                    )
+                    trace_systems = fuzzy_trace[trace_matrix][trace_item]
+                    trace_system = system if system in trace_systems else next(iter(trace_systems))
+                    st.json(trace_systems[trace_system], expanded=False)
     
             json_bytes = io.BytesIO(json.dumps(run_data, indent=2).encode("utf-8"))
             st.download_button(
@@ -877,7 +1377,12 @@ with tabs[2]:
                 loaded = json.load(uploaded_run)
                 st.session_state["results"] = {
                     "scored": loaded["scores"],
+                    "fuzzy_trace": loaded.get("fuzzy_trace", {}),
                     "weights_5s": loaded["weights_5s"],
+                    "system": loaded.get("system", "Product Transfer"),
+                    "lce_stage": loaded.get("lce_stage", "Operation"),
+                    "stage_gain": loaded.get("stage_gain", 0.8),
+                    "explanation_mode": "Deterministic trace",
                 }
                 st.success(f"Run {loaded.get('hash','?')} reloaded successfully.")
     
@@ -885,19 +1390,15 @@ with tabs[2]:
             # Sensitivity / Robustness Sandbox
             # -------------------------------------------------
 
-            st.subheader("Hyperparameter Sensitivity (λ, α, β, stage_boost)")
-            λ          = st.slider("λ (fuzzy spread)",  0.1, 2.0, 1.2, 0.1)
-            α          = st.slider("α (penalty weight)",0.1, 1.0, 0.5, 0.05)
-            β          = st.slider("β (boost gain)",    0.1, 1.0, 0.5, 0.05)
+            st.subheader("Sugeno Fuzzy Sensitivity")
             stage_gain = st.slider("stage_boost scaling",0.0,1.0,0.8,0.05)
-            
-            st.session_state["λ"] = λ
-            st.session_state["α"] = α
-            st.session_state["β"] = β
             st.session_state["stage_gain"] = stage_gain
-    
-            
-            delta = st.slider("Perturbation (±%)", 0.0, 1.0, 0.2, 0.05)
+
+            st.caption(
+                "Membership breakpoints and the 27-rule Sugeno base are fixed "
+                "for reproducibility; calibrate them through expert validation."
+            )
+            delta = st.slider("Multiplicative perturbation (± proportion)", 0.0, 1.0, 0.2, 0.05)
             
             # Initialize variable outside to avoid NameError
             corr = None  
@@ -905,7 +1406,7 @@ with tabs[2]:
             if st.button("Run Sensitivity Test"):
                 perturbed = perturb_weights(weights_5s, delta)
                 st.json(perturbed, expanded=False)
-                scored_pert = score_all(perturbed, stage)
+                scored_pert = score_all(perturbed, stage, stage_gain=stage_gain)
             
                 df_base = pd.DataFrame(results["scored"]["kpis"]).T
                 if system not in df_base.columns:
@@ -930,6 +1431,32 @@ with tabs[2]:
     
             if corr is None:
                 st.info("Adjust the perturbation slider and click **Run Sensitivity Test** to compute robustness.")
+
+            repetitions = st.select_slider(
+                "Monte Carlo repetitions", options=[100, 500, 1000, 5000], value=1000
+            )
+            if st.button("Run Monte Carlo Robustness"):
+                mc_summary, mc_runs = monte_carlo_robustness(
+                    weights_5s,
+                    stage,
+                    system,
+                    delta=delta,
+                    repetitions=repetitions,
+                    seed=42,
+                    stage_gain=stage_gain,
+                )
+                st.session_state["mc_summary"] = mc_summary
+                st.session_state["mc_runs"] = mc_runs.to_dict(orient="records")
+            if "mc_summary" in st.session_state:
+                mc_summary = st.session_state["mc_summary"]
+                low_ci, high_ci = mc_summary["tau_b_95pct_interval"]
+                c1, c2 = st.columns(2)
+                c1.metric("Mean Kendall τb", f"{mc_summary['mean_tau_b']:.3f}")
+                c2.metric("Mean top-3 retention", f"{100 * mc_summary['mean_top3_retention']:.1f}%")
+                st.caption(
+                    f"Empirical 95% interval for τb: [{low_ci:.3f}, {high_ci:.3f}]. "
+                    f"{mc_summary['distribution']}; seed {mc_summary['seed']}."
+                )
             
 
 # -------------------------------------------------
@@ -945,7 +1472,7 @@ with tabs[2]:
             
             # 2) Baseline methods (already return per-KPI ranks)
             rank_topsis = topsis_compare(kpi_matrix)   # index = KPI
-            rank_ahp    = ahp_compare(kpi_matrix)      # index = KPI
+            rank_wsm    = weighted_sum_compare(kpi_matrix)  # index = KPI
             rank_prom   = promethee_compare(kpi_matrix)# index = KPI
             
             # 3) Align indexes safely
@@ -956,18 +1483,19 @@ with tabs[2]:
             def safe_kendall(a, b):
                 a2, b2 = align(a, b)
                 if len(a2) < 2:
-                    return np.nan
-                return a2.corr(b2, method="kendall")
+                    return np.nan, np.nan
+                result = kendalltau(a2, b2)
+                return float(result.statistic), float(result.pvalue)
             
-            tau_topsis = safe_kendall(rank_custom, rank_topsis)
-            tau_ahp    = safe_kendall(rank_custom, rank_ahp)
-            tau_prom   = safe_kendall(rank_custom, rank_prom)
+            tau_topsis, p_topsis = safe_kendall(rank_custom, rank_topsis)
+            tau_wsm, p_wsm       = safe_kendall(rank_custom, rank_wsm)
+            tau_prom, p_prom     = safe_kendall(rank_custom, rank_prom)
             
             # 4) Debug/diagnostic: show aligned ranks so you can see they’re non-empty
             rk = pd.DataFrame({
                 "custom":    rank_custom,
                 "topsis":    rank_topsis.reindex(rank_custom.index),
-                "ahp":       rank_ahp.reindex(rank_custom.index),
+                "weighted_sum": rank_wsm.reindex(rank_custom.index),
                 "promethee": rank_prom.reindex(rank_custom.index),
             }).dropna()
             with st.expander("See aligned ranks (per KPI)"):
@@ -976,11 +1504,11 @@ with tabs[2]:
             # 5) Display
             fmt = lambda x: ("—" if pd.isna(x) else f"{float(x):.2f}")
             col1, col2, col3 = st.columns(3)
-            col1.metric("Kendall τ vs TOPSIS",    fmt(tau_topsis))
-            col2.metric("Kendall τ vs AHP",       fmt(tau_ahp))
-            col3.metric("Kendall τ vs PROMETHEE", fmt(tau_prom))
+            col1.metric("Kendall τb vs TOPSIS", fmt(tau_topsis), f"p={fmt(p_topsis)}")
+            col2.metric("Kendall τb vs weighted sum", fmt(tau_wsm), f"p={fmt(p_wsm)}")
+            col3.metric("Kendall τb vs PROMETHEE", fmt(tau_prom), f"p={fmt(p_prom)}")
             
-            vals = [v for v in [tau_topsis, tau_ahp, tau_prom] if pd.notna(v)]
+            vals = [v for v in [tau_topsis, tau_wsm, tau_prom] if pd.notna(v)]
             if len(vals) and min(vals) >= 0.7:
                 st.success("High alignment with MCDA baselines — consistent prioritization across methods.")
             elif len(vals) and max(vals) >= 0.5:
@@ -1030,7 +1558,7 @@ with tabs[2]:
             - **System:** `{system}`  
             - **Dominance tests:** {'Pass' if not dom_fails else 'Fail'}  
             - **Robustness (KPI corr):** {corr_val}  
-            - **Baseline alignment (Kendall τ):** {min(tau_topsis, tau_ahp, tau_prom):.2f}
+            - **Baseline alignment (Kendall τ):** {min(tau_topsis, tau_wsm, tau_prom):.2f}
             """)
     with sub_tabs[1]:
         st.header("🤔 What-If Scenarios")
@@ -1059,22 +1587,25 @@ with tabs[2]:
                     out[item] = {}
                     for sys, base in cols.items():
                         base = float(base)
-                        s_infl = 0.0 if "5S Weighting" in disabled else s_boost(
+                        # A disabled fuzzy component is set to the neutral midpoint,
+                        # not to zero (which would mean explicitly Low relevance).
+                        s_infl = 0.5 if "5S Weighting" in disabled else s_boost(
                             w5s,
                             S_TAGS_KPI if matrix=="kpis"
                             else S_TAGS_CORE if matrix=="core_processes"
                             else S_TAGS_DRIVERS, item
                         )
-                        stage_infl = 0.0 if "LCE Influence" in disabled else stage_boost(
+                        stage_infl = 0.5 if "LCE Influence" in disabled else stage_boost(
                             stage,
                             STAGE_TAGS_KPI if matrix=="kpis"
                             else STAGE_TAGS_CORE if matrix=="core_processes"
                             else STAGE_TAGS_DRIVERS, item
                         )
-                        total = clamp01((s_infl + stage_infl) / 2)
-                        contrast = 1.2
-                        penalty = (0.5 - total) * contrast
-                        score = clamp03(base * (1 - penalty) + 3 * total * 0.5)
+                        score, _ = sugeno_fuzzy_score(
+                            base=base,
+                            s_alignment=s_infl,
+                            lifecycle_relevance=stage_infl,
+                        )
                         out[item][sys] = round(score, 3)
                 return out
 
@@ -1085,8 +1616,9 @@ with tabs[2]:
                     "drivers": recompute(BASE_DRIVERS, "drivers", weights_5s, stage),
                 }
 
-                base_df = pd.DataFrame(results["scored"]["kpis"]).T.mean()
-                new_df = pd.DataFrame(scored_new["kpis"]).T.mean()
+                frozen_system = results.get("system", "Product Transfer")
+                base_df = pd.DataFrame(results["scored"]["kpis"]).T[frozen_system]
+                new_df = pd.DataFrame(scored_new["kpis"]).T[frozen_system]
                 corr = base_df.corr(new_df)
                 
 
@@ -1099,7 +1631,7 @@ with tabs[2]:
                     st.warning("Significant change — these components strongly shape outcomes.")
 
                 # ---- Compact visualization ----
-                df_kpi = pd.DataFrame(scored_new["kpis"]).T.mean(axis=1).reset_index()
+                df_kpi = pd.DataFrame(scored_new["kpis"]).T[frozen_system].reset_index()
                 df_kpi.columns = ["KPI", "Score"]
                 df_kpi = df_kpi.sort_values("Score", ascending=True)
 
@@ -1110,6 +1642,13 @@ with tabs[2]:
 
                 top_kpis = df_kpi.tail(3)["KPI"].tolist()
                 st.markdown(f"**Top 3 most resilient KPIs:** {', '.join(top_kpis)}")
+                deterministic_whatif = (
+                    f"For {frozen_system}, the scenario disabled "
+                    f"{', '.join(disabled) or 'no components'}. The KPI-score correlation "
+                    f"with the full fuzzy model is {corr:.3f}. The three highest resulting "
+                    f"KPI priorities are {', '.join(top_kpis)}. No LLM was used to compute "
+                    "or rank these results."
+                )
                 
                 # ---- LLM interpretation of What-If Scenario ----
                 if (
@@ -1126,7 +1665,8 @@ with tabs[2]:
                     User's 5S weights: {json.dumps(w5s_desc, indent=2)}
                     Explain how the current 5S emphasis and the disabled components
                     affect overall system stability and strategy priorities.
-                    Be concise, no numbers or parentheses.
+                    Preserve the correlation, KPI names, scores, and ordering exactly. Do not
+                    introduce recommendations or claims absent from the supplied evidence.
                     """
                     payload = {
                         "disabled": disabled,
@@ -1134,15 +1674,25 @@ with tabs[2]:
                         "top_kpis": top_kpis,
                         "weights_5s": w5s_desc
                     }
-                    expl = safe_llm_call(prompt_whatif, payload, temp=0.35, max_toks=350)
-                    st.session_state["llm_whatif"] = clean_numbers(expl)
+                    use_llm_whatif = (
+                        results.get("explanation_mode") == "Optional LLM narrative"
+                        and client is not None
+                    )
+                    expl = safe_llm_call(
+                        prompt_whatif,
+                        payload,
+                        temp=0.0,
+                        max_toks=350,
+                        fallback=deterministic_whatif,
+                    ) if use_llm_whatif else deterministic_whatif
+                    st.session_state["llm_whatif"] = expl
                     st.session_state["last_disabled"] = disabled
                     st.session_state["last_weights"] = weights_5s
               
                 
                 if "llm_whatif" in st.session_state:
-                    st.markdown("### 🧠 LLM Interpretation")
-                    st.write(clean_numbers(st.session_state["llm_whatif"]))
+                    st.markdown("### Scenario Explanation")
+                    st.write(st.session_state["llm_whatif"])
     
 
                 st.download_button(
@@ -1173,7 +1723,6 @@ with tabs[3]:
         st.dataframe(df_bench, use_container_width=True)
     else:
         st.warning("No benchmark data loaded for this system.")
-
 
 
 
