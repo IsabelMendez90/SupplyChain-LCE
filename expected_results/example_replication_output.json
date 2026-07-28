@@ -1,5 +1,5 @@
 {
-  "run_id": "4222d6d46200",
+  "run_id": "267ac1ad201f",
   "scenario": {
     "system": "Product Transfer",
     "lce_stage": "Operation",
@@ -14,151 +14,153 @@
   },
   "engine_validation": {
     "rule_count": 27,
+    "membership_partition_count": 3,
     "coverage_failures": [],
     "range_failures": [],
     "monotonicity_failures": [],
+    "applicability_failures": [],
     "passed": true
   },
   "scores": {
     "core_processes": {
       "Customer Driven Design": {
-        "Product Transfer": 0.944,
-        "Technology Transfer": 1.5,
-        "Facility Design": 1.5
+        "Product Transfer": 0.94,
+        "Technology Transfer": 2.25,
+        "Facility Design": 2.25
       },
       "CRM": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 1.5,
-        "Facility Design": 1.5
+        "Product Transfer": 2.06,
+        "Technology Transfer": 2.06,
+        "Facility Design": 2.25
       },
       "Co-Engineering": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 0.944,
-        "Facility Design": 0.944
+        "Product Transfer": 2.25,
+        "Technology Transfer": 0.94,
+        "Facility Design": 0.94
       },
       "SRM": {
-        "Product Transfer": 2.433,
-        "Technology Transfer": 2.433,
-        "Facility Design": 0.944
+        "Product Transfer": 2.25,
+        "Technology Transfer": 2.25,
+        "Facility Design": 0.94
       },
       "NPD": {
-        "Product Transfer": 0.944,
-        "Technology Transfer": 1.5,
-        "Facility Design": 1.5
+        "Product Transfer": 0.94,
+        "Technology Transfer": 2.06,
+        "Facility Design": 2.06
       },
       "Obtain Customer Commit.": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 1.5,
-        "Facility Design": 1.5
+        "Product Transfer": 2.06,
+        "Technology Transfer": 2.06,
+        "Facility Design": 2.06
       },
       "Order Fulfillment": {
-        "Product Transfer": 2.5,
-        "Technology Transfer": 2.5,
-        "Facility Design": 2.5
+        "Product Transfer": 2.25,
+        "Technology Transfer": 2.25,
+        "Facility Design": 2.25
       },
       "Customer Service": {
-        "Product Transfer": 1.056,
-        "Technology Transfer": 1.056,
-        "Facility Design": 2.5
+        "Product Transfer": 0.94,
+        "Technology Transfer": 0.94,
+        "Facility Design": 2.25
       }
     },
     "kpis": {
       "Supplier on-time delivery": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 0.5,
-        "Facility Design": 0.5
+        "Product Transfer": 2.25,
+        "Technology Transfer": 0.0,
+        "Facility Design": 0.0
       },
       "Incoming defect rate": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 0.5,
-        "Facility Design": 0.5
+        "Product Transfer": 2.25,
+        "Technology Transfer": 0.0,
+        "Facility Design": 0.0
       },
       "Assembly cost per unit": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 0.5,
-        "Facility Design": 0.5
+        "Product Transfer": 2.25,
+        "Technology Transfer": 0.0,
+        "Facility Design": 0.0
       },
       "Logistics lead time": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 0.5,
-        "Facility Design": 0.5
+        "Product Transfer": 2.25,
+        "Technology Transfer": 0.0,
+        "Facility Design": 0.0
       },
       "Ramp-up time": {
-        "Product Transfer": 0.5,
-        "Technology Transfer": 1.5,
-        "Facility Design": 0.5
+        "Product Transfer": 0.0,
+        "Technology Transfer": 2.25,
+        "Facility Design": 0.0
       },
       "First-pass yield": {
-        "Product Transfer": 0.5,
-        "Technology Transfer": 2.167,
-        "Facility Design": 0.5
+        "Product Transfer": 0.0,
+        "Technology Transfer": 2.25,
+        "Facility Design": 0.0
       },
       "Learning-curve productivity": {
-        "Product Transfer": 0.5,
-        "Technology Transfer": 1.9,
-        "Facility Design": 0.5
+        "Product Transfer": 0.0,
+        "Technology Transfer": 2.25,
+        "Facility Design": 0.0
       },
       "% revenue from new products": {
-        "Product Transfer": 0.5,
-        "Technology Transfer": 1.5,
-        "Facility Design": 0.5
+        "Product Transfer": 0.0,
+        "Technology Transfer": 2.25,
+        "Facility Design": 0.0
       },
       "OEE": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 1.5,
-        "Facility Design": 2.5
+        "Product Transfer": 0.0,
+        "Technology Transfer": 0.0,
+        "Facility Design": 2.25
       },
       "OTIF": {
-        "Product Transfer": 0.7,
-        "Technology Transfer": 0.7,
-        "Facility Design": 2.5
+        "Product Transfer": 0.0,
+        "Technology Transfer": 0.0,
+        "Facility Design": 2.25
       },
       "Lifecycle cost": {
-        "Product Transfer": 0.5,
-        "Technology Transfer": 0.5,
-        "Facility Design": 1.9
+        "Product Transfer": 0.0,
+        "Technology Transfer": 0.0,
+        "Facility Design": 2.25
       },
       "ESG index": {
-        "Product Transfer": 0.5,
-        "Technology Transfer": 0.5,
-        "Facility Design": 2.167
+        "Product Transfer": 0.0,
+        "Technology Transfer": 0.0,
+        "Facility Design": 2.25
       },
       "Safety incidents": {
-        "Product Transfer": 0.5,
-        "Technology Transfer": 0.5,
-        "Facility Design": 1.5
+        "Product Transfer": 0.0,
+        "Technology Transfer": 0.0,
+        "Facility Design": 2.25
       }
     },
     "drivers": {
       "Inventory/Capacity Buffers": {
-        "Product Transfer": 1.056,
-        "Technology Transfer": 2.5,
-        "Facility Design": 2.5
+        "Product Transfer": 0.94,
+        "Technology Transfer": 2.25,
+        "Facility Design": 2.25
       },
       "Network Diversification": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 1.5,
-        "Facility Design": 0.944
+        "Product Transfer": 2.25,
+        "Technology Transfer": 2.25,
+        "Facility Design": 0.94
       },
       "Multisourcing": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 0.944,
-        "Facility Design": 0.944
+        "Product Transfer": 2.25,
+        "Technology Transfer": 0.94,
+        "Facility Design": 0.94
       },
       "Nearshoring": {
-        "Product Transfer": 1.722,
-        "Technology Transfer": 1.722,
-        "Facility Design": 1.722
+        "Product Transfer": 2.06,
+        "Technology Transfer": 2.06,
+        "Facility Design": 2.06
       },
       "Platform/Plant Harmonization": {
-        "Product Transfer": 1.056,
-        "Technology Transfer": 1.056,
-        "Facility Design": 2.5
+        "Product Transfer": 0.94,
+        "Technology Transfer": 0.94,
+        "Facility Design": 2.25
       },
       "Ecosystem Partnerships": {
-        "Product Transfer": 1.5,
-        "Technology Transfer": 1.5,
-        "Facility Design": 0.944
+        "Product Transfer": 2.25,
+        "Technology Transfer": 2.25,
+        "Facility Design": 0.94
       }
     }
   },
@@ -166,7 +168,14 @@
     "core_processes": {
       "Customer Driven Design": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -174,8 +183,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -198,8 +207,10 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Low",
-              "firing_strength": 0.555556,
-              "consequent": 0.5
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 0.75
             },
             {
               "rule_id": "R13",
@@ -209,18 +220,28 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960786,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 0.944444
+          "score": 0.940299
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -251,19 +272,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -294,21 +325,31 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         }
       },
       "CRM": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -317,8 +358,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -340,7 +381,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             },
             {
@@ -350,19 +393,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.555556,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960782,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.059701
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -371,8 +424,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -394,7 +447,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             },
             {
@@ -404,19 +459,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.555556,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960782,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.059701
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -447,21 +512,31 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         }
       },
       "Co-Engineering": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -492,19 +567,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -512,8 +597,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -536,8 +621,10 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Low",
-              "firing_strength": 0.555556,
-              "consequent": 0.5
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 0.75
             },
             {
               "rule_id": "R13",
@@ -547,18 +634,28 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960786,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 0.944444
+          "score": 0.940299
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -566,8 +663,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -590,8 +687,10 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Low",
-              "firing_strength": 0.555556,
-              "consequent": 0.5
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 0.75
             },
             {
               "rule_id": "R13",
@@ -601,20 +700,30 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960786,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 0.944444
+          "score": 0.940299
         }
       },
       "SRM": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.48
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -632,23 +741,12 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.06666666666666674,
+              "Low": 0.0,
               "Medium": 0.9333333333333332,
               "High": 0.0
             }
           },
           "activated_rules": [
-            {
-              "rule_id": "R22",
-              "if": {
-                "baseline": "High",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Medium",
-              "firing_strength": 0.066667,
-              "consequent": 1.5
-            },
             {
               "rule_id": "R23",
               "if": {
@@ -657,18 +755,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.933333,
+              "rule_confidence": 1.0,
               "firing_strength": 0.933333,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.9333333333333332,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.433333
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.48
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -686,23 +794,12 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.06666666666666674,
+              "Low": 0.0,
               "Medium": 0.9333333333333332,
               "High": 0.0
             }
           },
           "activated_rules": [
-            {
-              "rule_id": "R22",
-              "if": {
-                "baseline": "High",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Medium",
-              "firing_strength": 0.066667,
-              "consequent": 1.5
-            },
             {
               "rule_id": "R23",
               "if": {
@@ -711,18 +808,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.933333,
+              "rule_confidence": 1.0,
               "firing_strength": 0.933333,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.9333333333333332,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.433333
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.48
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -730,8 +837,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -740,23 +847,12 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.06666666666666674,
+              "Low": 0.0,
               "Medium": 0.9333333333333332,
               "High": 0.0
             }
           },
           "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 0.037037,
-              "consequent": 0.5
-            },
             {
               "rule_id": "R05",
               "if": {
@@ -765,19 +861,10 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Low",
-              "firing_strength": 0.518519,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R13",
-              "if": {
-                "baseline": "Medium",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Medium",
-              "firing_strength": 0.02963,
-              "consequent": 1.5
+              "raw_firing_strength": 0.915033,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.915033,
+              "consequent": 0.75
             },
             {
               "rule_id": "R14",
@@ -787,20 +874,30 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Medium",
-              "firing_strength": 0.414815,
+              "raw_firing_strength": 0.311111,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.311111,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.2261437908496733,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 0.944444
+          "score": 0.940299
         }
       },
       "NPD": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -808,8 +905,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -832,8 +929,10 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Low",
-              "firing_strength": 0.555556,
-              "consequent": 0.5
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 0.75
             },
             {
               "rule_id": "R13",
@@ -843,18 +942,28 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960786,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 0.944444
+          "score": 0.940299
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -863,8 +972,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -886,7 +995,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             },
             {
@@ -896,19 +1007,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.555556,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960782,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.059701
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -917,8 +1038,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -940,7 +1061,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             },
             {
@@ -950,21 +1073,31 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.555556,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960782,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.059701
         }
       },
       "Obtain Customer Commit.": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -973,8 +1106,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -996,7 +1129,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             },
             {
@@ -1006,19 +1141,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.555556,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960782,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.059701
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -1027,8 +1172,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -1050,7 +1195,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             },
             {
@@ -1060,19 +1207,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.555556,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960782,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.059701
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -1081,8 +1238,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -1104,7 +1261,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             },
             {
@@ -1114,21 +1273,31 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.555556,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960782,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.059701
         }
       },
       "Order Fulfillment": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.7200000000000001
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -1148,7 +1317,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.2666666666666665,
-              "High": 0.7333333333333335
+              "High": 0.4800000000000004
             }
           },
           "activated_rules": [
@@ -1160,8 +1329,10 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.266667,
+              "rule_confidence": 1.0,
               "firing_strength": 0.266667,
-              "consequent": 2.5
+              "consequent": 2.25
             },
             {
               "rule_id": "R24",
@@ -1171,18 +1342,28 @@
                 "lifecycle_relevance": "High"
               },
               "then": "High",
-              "firing_strength": 0.733333,
-              "consequent": 2.5
+              "raw_firing_strength": 0.48,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.48,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.7466666666666669,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.5
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.7200000000000001
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -1202,7 +1383,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.2666666666666665,
-              "High": 0.7333333333333335
+              "High": 0.4800000000000004
             }
           },
           "activated_rules": [
@@ -1214,8 +1395,10 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.266667,
+              "rule_confidence": 1.0,
               "firing_strength": 0.266667,
-              "consequent": 2.5
+              "consequent": 2.25
             },
             {
               "rule_id": "R24",
@@ -1225,18 +1408,28 @@
                 "lifecycle_relevance": "High"
               },
               "then": "High",
-              "firing_strength": 0.733333,
-              "consequent": 2.5
+              "raw_firing_strength": 0.48,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.48,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.7466666666666669,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.5
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.7200000000000001
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -1256,7 +1449,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.2666666666666665,
-              "High": 0.7333333333333335
+              "High": 0.4800000000000004
             }
           },
           "activated_rules": [
@@ -1268,8 +1461,10 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.266667,
+              "rule_confidence": 1.0,
               "firing_strength": 0.266667,
-              "consequent": 2.5
+              "consequent": 2.25
             },
             {
               "rule_id": "R24",
@@ -1279,20 +1474,30 @@
                 "lifecycle_relevance": "High"
               },
               "then": "High",
-              "firing_strength": 0.733333,
-              "consequent": 2.5
+              "raw_firing_strength": 0.48,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.48,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.7466666666666669,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.5
+          "score": 2.25
         }
       },
       "Customer Service": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -1300,8 +1505,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -1312,7 +1517,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -1324,19 +1529,10 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Low",
-              "firing_strength": 0.444444,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R06",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.111111,
-              "consequent": 1.5
+              "raw_firing_strength": 0.784314,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.784314,
+              "consequent": 0.75
             },
             {
               "rule_id": "R14",
@@ -1346,29 +1542,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Medium",
-              "firing_strength": 0.355556,
-              "consequent": 1.5
-            },
-            {
-              "rule_id": "R15",
-              "if": {
-                "baseline": "Medium",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.088889,
+              "raw_firing_strength": 0.266667,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.266667,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.0509803921568632,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.055556
+          "score": 0.940299
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -1376,8 +1571,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -1388,7 +1583,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -1400,19 +1595,10 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Low",
-              "firing_strength": 0.444444,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R06",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.111111,
-              "consequent": 1.5
+              "raw_firing_strength": 0.784314,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.784314,
+              "consequent": 0.75
             },
             {
               "rule_id": "R14",
@@ -1422,29 +1608,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Medium",
-              "firing_strength": 0.355556,
-              "consequent": 1.5
-            },
-            {
-              "rule_id": "R15",
-              "if": {
-                "baseline": "Medium",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.088889,
+              "raw_firing_strength": 0.266667,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.266667,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.0509803921568632,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.055556
+          "score": 0.940299
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -1464,7 +1649,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -1476,33 +1661,32 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.8,
+              "rule_confidence": 1.0,
               "firing_strength": 0.8,
-              "consequent": 2.5
-            },
-            {
-              "rule_id": "R24",
-              "if": {
-                "baseline": "High",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "High",
-              "firing_strength": 0.2,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.8000000000000003,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.5
+          "score": 2.25
         }
       }
     },
     "kpis": {
       "Supplier on-time delivery": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -1533,107 +1717,69 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         }
       },
       "Incoming defect rate": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -1664,107 +1810,69 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         }
       },
       "Assembly cost per unit": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -1795,107 +1903,69 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         }
       },
       "Logistics lead time": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -1926,150 +1996,88 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         }
       },
       "Ramp-up time": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -2100,118 +2108,69 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         }
       },
       "First-pass yield": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.4
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.33333333333333326,
-              "Medium": 0.6666666666666667,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 0.333333,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.666667,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.4
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -2229,23 +2188,12 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.33333333333333326,
+              "Low": 0.0,
               "Medium": 0.6666666666666667,
               "High": 0.0
             }
           },
           "activated_rules": [
-            {
-              "rule_id": "R22",
-              "if": {
-                "baseline": "High",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Medium",
-              "firing_strength": 0.333333,
-              "consequent": 1.5
-            },
             {
               "rule_id": "R23",
               "if": {
@@ -2254,128 +2202,68 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.666667,
+              "rule_confidence": 1.0,
               "firing_strength": 0.666667,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.6666666666666667,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.166667
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.4
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.33333333333333326,
-              "Medium": 0.6666666666666667,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 0.333333,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.666667,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         }
       },
       "Learning-curve productivity": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.32000000000000006
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.5999999999999999,
-              "Medium": 0.4000000000000002,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 0.6,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.4,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.32000000000000006
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -2393,7 +2281,7 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.5999999999999999,
+              "Low": 0.31999999999999984,
               "Medium": 0.4000000000000002,
               "High": 0.0
             }
@@ -2406,9 +2294,11 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.6,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.32,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.32,
+              "consequent": 2.25
             },
             {
               "rule_id": "R23",
@@ -2418,117 +2308,68 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.4,
+              "rule_confidence": 1.0,
               "firing_strength": 0.4,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.72,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.9
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.32000000000000006
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.5999999999999999,
-              "Medium": 0.4000000000000002,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 0.6,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.4,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         }
       },
       "% revenue from new products": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -2559,150 +2400,88 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         }
       },
       "OEE": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.8
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.0,
-              "Medium": 0.0,
-              "High": 1.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R06",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 1.0,
-              "consequent": 1.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.8
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.0,
-              "Medium": 0.0,
-              "High": 1.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R06",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 1.0,
-              "consequent": 1.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.8
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -2722,7 +2501,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.0,
-              "High": 1.0
+              "High": 0.8000000000000003
             }
           },
           "activated_rules": [
@@ -2734,128 +2513,68 @@
                 "lifecycle_relevance": "High"
               },
               "then": "High",
-              "firing_strength": 1.0,
-              "consequent": 2.5
+              "raw_firing_strength": 0.8,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.8,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.8000000000000003,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.5
+          "score": 2.25
         }
       },
       "OTIF": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.5599999999999999
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.0,
-              "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.8,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R06",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.2,
-              "consequent": 1.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.7
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.5599999999999999
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.0,
-              "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.8,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R06",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.2,
-              "consequent": 1.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.7
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -2875,7 +2594,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -2887,139 +2606,68 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.8,
+              "rule_confidence": 1.0,
               "firing_strength": 0.8,
-              "consequent": 2.5
-            },
-            {
-              "rule_id": "R24",
-              "if": {
-                "baseline": "High",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "High",
-              "firing_strength": 0.2,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.8000000000000003,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.5
+          "score": 2.25
         }
       },
       "Lifecycle cost": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.32000000000000006
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.5999999999999999,
-              "Medium": 0.4000000000000002,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 0.6,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.4,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.32000000000000006
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.5999999999999999,
-              "Medium": 0.4000000000000002,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 0.6,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.4,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.32000000000000006
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -3037,7 +2685,7 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.5999999999999999,
+              "Low": 0.31999999999999984,
               "Medium": 0.4000000000000002,
               "High": 0.0
             }
@@ -3050,9 +2698,11 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.6,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.32,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.32,
+              "consequent": 2.25
             },
             {
               "rule_id": "R23",
@@ -3062,128 +2712,68 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.4,
+              "rule_confidence": 1.0,
               "firing_strength": 0.4,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.72,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.9
+          "score": 2.25
         }
       },
       "ESG index": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.4
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.33333333333333326,
-              "Medium": 0.6666666666666667,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 0.333333,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.666667,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.4
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 0.33333333333333326,
-              "Medium": 0.6666666666666667,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 0.333333,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R05",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Medium"
-              },
-              "then": "Low",
-              "firing_strength": 0.666667,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.4
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -3201,23 +2791,12 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.33333333333333326,
+              "Low": 0.0,
               "Medium": 0.6666666666666667,
               "High": 0.0
             }
           },
           "activated_rules": [
-            {
-              "rule_id": "R22",
-              "if": {
-                "baseline": "High",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Medium",
-              "firing_strength": 0.333333,
-              "consequent": 1.5
-            },
             {
               "rule_id": "R23",
               "if": {
@@ -3226,106 +2805,68 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.666667,
+              "rule_confidence": 1.0,
               "firing_strength": 0.666667,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.6666666666666667,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.166667
+          "score": 2.25
         }
       },
       "Safety incidents": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
-          "inputs": {
-            "baseline": 0.0,
+          "rule_base_version": "2.0-provisional",
+          "applicable": false,
+          "structural_gate": "not applicable",
+          "raw_inputs": {
+            "baseline": null,
             "5s_alignment": 0.5,
             "lifecycle_relevance": 0.0
           },
-          "memberships": {
-            "baseline": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            },
-            "5s_alignment": {
-              "Low": 0.0,
-              "Medium": 1.0,
-              "High": 0.0
-            },
-            "lifecycle_relevance": {
-              "Low": 1.0,
-              "Medium": 0.0,
-              "High": 0.0
-            }
-          },
-          "activated_rules": [
-            {
-              "rule_id": "R04",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "Low"
-              },
-              "then": "Low",
-              "firing_strength": 1.0,
-              "consequent": 0.5
-            }
-          ],
-          "firing_sum": 1.0,
+          "inputs": null,
+          "memberships": {},
+          "activated_rules": [],
+          "firing_sum": 0.0,
           "epsilon": 1e-12,
-          "defuzzification": "zero-order Sugeno weighted average",
-          "antecedent_operator": "product t-norm",
-          "score": 0.5
+          "alpha_cuts_used": false,
+          "defuzzification": "not executed",
+          "antecedent_operator": "not executed",
+          "score": 0.0
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -3356,23 +2897,33 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         }
       }
     },
     "drivers": {
       "Inventory/Capacity Buffers": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -3380,8 +2931,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -3392,7 +2943,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -3404,19 +2955,10 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Low",
-              "firing_strength": 0.444444,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R06",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.111111,
-              "consequent": 1.5
+              "raw_firing_strength": 0.784314,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.784314,
+              "consequent": 0.75
             },
             {
               "rule_id": "R14",
@@ -3426,29 +2968,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Medium",
-              "firing_strength": 0.355556,
-              "consequent": 1.5
-            },
-            {
-              "rule_id": "R15",
-              "if": {
-                "baseline": "Medium",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.088889,
+              "raw_firing_strength": 0.266667,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.266667,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.0509803921568632,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.055556
+          "score": 0.940299
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -3468,7 +3009,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -3480,29 +3021,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.8,
+              "rule_confidence": 1.0,
               "firing_strength": 0.8,
-              "consequent": 2.5
-            },
-            {
-              "rule_id": "R24",
-              "if": {
-                "baseline": "High",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "High",
-              "firing_strength": 0.2,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.8000000000000003,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.5
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -3522,7 +3062,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -3534,31 +3074,30 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.8,
+              "rule_confidence": 1.0,
               "firing_strength": 0.8,
-              "consequent": 2.5
-            },
-            {
-              "rule_id": "R24",
-              "if": {
-                "baseline": "High",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "High",
-              "firing_strength": 0.2,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.8000000000000003,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.5
+          "score": 2.25
         }
       },
       "Network Diversification": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -3589,19 +3128,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -3632,19 +3181,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -3652,8 +3211,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -3676,8 +3235,10 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Low",
-              "firing_strength": 0.555556,
-              "consequent": 0.5
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 0.75
             },
             {
               "rule_id": "R13",
@@ -3687,20 +3248,30 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960786,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 0.944444
+          "score": 0.940299
         }
       },
       "Multisourcing": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -3731,19 +3302,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -3751,8 +3332,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -3775,8 +3356,10 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Low",
-              "firing_strength": 0.555556,
-              "consequent": 0.5
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 0.75
             },
             {
               "rule_id": "R13",
@@ -3786,18 +3369,28 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960786,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 0.944444
+          "score": 0.940299
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -3805,8 +3398,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -3829,8 +3422,10 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Low",
-              "firing_strength": 0.555556,
-              "consequent": 0.5
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 0.75
             },
             {
               "rule_id": "R13",
@@ -3840,20 +3435,30 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960786,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 0.944444
+          "score": 0.940299
         }
       },
       "Nearshoring": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.32000000000000006
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -3862,8 +3467,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -3871,7 +3476,7 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.5999999999999999,
+              "Low": 0.31999999999999984,
               "Medium": 0.4000000000000002,
               "High": 0.0
             }
@@ -3885,7 +3490,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.266667,
+              "raw_firing_strength": 0.106667,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.106667,
               "consequent": 1.5
             },
             {
@@ -3896,7 +3503,9 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Medium",
-              "firing_strength": 0.177778,
+              "raw_firing_strength": 0.133333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.133333,
               "consequent": 1.5
             },
             {
@@ -3906,9 +3515,11 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.333333,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.313725,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.313725,
+              "consequent": 2.25
             },
             {
               "rule_id": "R23",
@@ -3918,18 +3529,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
-              "firing_strength": 0.222222,
-              "consequent": 2.5
+              "raw_firing_strength": 0.392157,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.392157,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.9458823529411762,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.722222
+          "score": 2.059701
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.32000000000000006
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -3938,8 +3559,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -3947,7 +3568,7 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.5999999999999999,
+              "Low": 0.31999999999999984,
               "Medium": 0.4000000000000002,
               "High": 0.0
             }
@@ -3961,7 +3582,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.266667,
+              "raw_firing_strength": 0.106667,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.106667,
               "consequent": 1.5
             },
             {
@@ -3972,7 +3595,9 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Medium",
-              "firing_strength": 0.177778,
+              "raw_firing_strength": 0.133333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.133333,
               "consequent": 1.5
             },
             {
@@ -3982,9 +3607,11 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.333333,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.313725,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.313725,
+              "consequent": 2.25
             },
             {
               "rule_id": "R23",
@@ -3994,18 +3621,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
-              "firing_strength": 0.222222,
-              "consequent": 2.5
+              "raw_firing_strength": 0.392157,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.392157,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.9458823529411762,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.722222
+          "score": 2.059701
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 2.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.32000000000000006
+          },
           "inputs": {
             "baseline": 0.6666666666666666,
             "5s_alignment": 0.5,
@@ -4014,8 +3651,8 @@
           "memberships": {
             "baseline": {
               "Low": 0.0,
-              "Medium": 0.44444444444444464,
-              "High": 0.5555555555555554
+              "Medium": 0.3333333333333335,
+              "High": 0.9803921568627446
             },
             "5s_alignment": {
               "Low": 0.0,
@@ -4023,7 +3660,7 @@
               "High": 0.0
             },
             "lifecycle_relevance": {
-              "Low": 0.5999999999999999,
+              "Low": 0.31999999999999984,
               "Medium": 0.4000000000000002,
               "High": 0.0
             }
@@ -4037,7 +3674,9 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.266667,
+              "raw_firing_strength": 0.106667,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.106667,
               "consequent": 1.5
             },
             {
@@ -4048,7 +3687,9 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Medium",
-              "firing_strength": 0.177778,
+              "raw_firing_strength": 0.133333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.133333,
               "consequent": 1.5
             },
             {
@@ -4058,9 +3699,11 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
-              "firing_strength": 0.333333,
-              "consequent": 1.5
+              "then": "High",
+              "raw_firing_strength": 0.313725,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.313725,
+              "consequent": 2.25
             },
             {
               "rule_id": "R23",
@@ -4070,20 +3713,30 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
-              "firing_strength": 0.222222,
-              "consequent": 2.5
+              "raw_firing_strength": 0.392157,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.392157,
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.9458823529411762,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.722222
+          "score": 2.059701
         }
       },
       "Platform/Plant Harmonization": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -4091,8 +3744,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -4103,7 +3756,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -4115,19 +3768,10 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Low",
-              "firing_strength": 0.444444,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R06",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.111111,
-              "consequent": 1.5
+              "raw_firing_strength": 0.784314,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.784314,
+              "consequent": 0.75
             },
             {
               "rule_id": "R14",
@@ -4137,29 +3781,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Medium",
-              "firing_strength": 0.355556,
-              "consequent": 1.5
-            },
-            {
-              "rule_id": "R15",
-              "if": {
-                "baseline": "Medium",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.088889,
+              "raw_firing_strength": 0.266667,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.266667,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.0509803921568632,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.055556
+          "score": 0.940299
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -4167,8 +3810,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -4179,7 +3822,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -4191,19 +3834,10 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Low",
-              "firing_strength": 0.444444,
-              "consequent": 0.5
-            },
-            {
-              "rule_id": "R06",
-              "if": {
-                "baseline": "Low",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.111111,
-              "consequent": 1.5
+              "raw_firing_strength": 0.784314,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.784314,
+              "consequent": 0.75
             },
             {
               "rule_id": "R14",
@@ -4213,29 +3847,28 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "Medium",
-              "firing_strength": 0.355556,
-              "consequent": 1.5
-            },
-            {
-              "rule_id": "R15",
-              "if": {
-                "baseline": "Medium",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "Medium",
-              "firing_strength": 0.088889,
+              "raw_firing_strength": 0.266667,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.266667,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.0509803921568632,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.055556
+          "score": 0.940299
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.5599999999999999
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -4255,7 +3888,7 @@
             "lifecycle_relevance": {
               "Low": 0.0,
               "Medium": 0.8000000000000003,
-              "High": 0.1999999999999998
+              "High": 0.0
             }
           },
           "activated_rules": [
@@ -4267,31 +3900,30 @@
                 "lifecycle_relevance": "Medium"
               },
               "then": "High",
+              "raw_firing_strength": 0.8,
+              "rule_confidence": 1.0,
               "firing_strength": 0.8,
-              "consequent": 2.5
-            },
-            {
-              "rule_id": "R24",
-              "if": {
-                "baseline": "High",
-                "5s_alignment": "Medium",
-                "lifecycle_relevance": "High"
-              },
-              "then": "High",
-              "firing_strength": 0.2,
-              "consequent": 2.5
+              "consequent": 2.25
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 0.8000000000000003,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 2.5
+          "score": 2.25
         }
       },
       "Ecosystem Partnerships": {
         "Product Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -4322,19 +3954,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 3.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 1.0,
             "5s_alignment": 0.5,
@@ -4365,19 +4007,29 @@
                 "5s_alignment": "Medium",
                 "lifecycle_relevance": "Low"
               },
-              "then": "Medium",
+              "then": "High",
+              "raw_firing_strength": 1.0,
+              "rule_confidence": 1.0,
               "firing_strength": 1.0,
-              "consequent": 1.5
+              "consequent": 2.25
             }
           ],
           "firing_sum": 1.0,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 1.5
+          "score": 2.25
         },
         "Facility Design": {
-          "rule_base_version": "1.0-provisional",
+          "rule_base_version": "2.0-provisional",
+          "applicable": true,
+          "structural_gate": "passed",
+          "raw_inputs": {
+            "baseline": 1.0,
+            "5s_alignment": 0.5,
+            "lifecycle_relevance": 0.0
+          },
           "inputs": {
             "baseline": 0.3333333333333333,
             "5s_alignment": 0.5,
@@ -4385,8 +4037,8 @@
           },
           "memberships": {
             "baseline": {
-              "Low": 0.5555555555555557,
-              "Medium": 0.44444444444444436,
+              "Low": 0.9803921568627453,
+              "Medium": 0.33333333333333326,
               "High": 0.0
             },
             "5s_alignment": {
@@ -4409,8 +4061,10 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Low",
-              "firing_strength": 0.555556,
-              "consequent": 0.5
+              "raw_firing_strength": 0.980392,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.980392,
+              "consequent": 0.75
             },
             {
               "rule_id": "R13",
@@ -4420,15 +4074,18 @@
                 "lifecycle_relevance": "Low"
               },
               "then": "Medium",
-              "firing_strength": 0.444444,
+              "raw_firing_strength": 0.333333,
+              "rule_confidence": 1.0,
+              "firing_strength": 0.333333,
               "consequent": 1.5
             }
           ],
-          "firing_sum": 1.0,
+          "firing_sum": 1.3137254901960786,
           "epsilon": 1e-12,
+          "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
-          "score": 0.944444
+          "score": 0.940299
         }
       }
     }

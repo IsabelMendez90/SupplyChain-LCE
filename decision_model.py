@@ -39,19 +39,21 @@ BASE_CORE = {
     "Customer Service": {"Product Transfer": 1, "Technology Transfer": 1, "Facility Design": 3},
 }
 BASE_KPIS = {
-    "Supplier on-time delivery": {"Product Transfer": 3, "Technology Transfer": 0, "Facility Design": 0},
-    "Incoming defect rate": {"Product Transfer": 3, "Technology Transfer": 0, "Facility Design": 0},
-    "Assembly cost per unit": {"Product Transfer": 3, "Technology Transfer": 0, "Facility Design": 0},
-    "Logistics lead time": {"Product Transfer": 3, "Technology Transfer": 0, "Facility Design": 0},
-    "Ramp-up time": {"Product Transfer": 0, "Technology Transfer": 3, "Facility Design": 0},
-    "First-pass yield": {"Product Transfer": 0, "Technology Transfer": 3, "Facility Design": 0},
-    "Learning-curve productivity": {"Product Transfer": 0, "Technology Transfer": 3, "Facility Design": 0},
-    "% revenue from new products": {"Product Transfer": 0, "Technology Transfer": 3, "Facility Design": 0},
-    "OEE": {"Product Transfer": 0, "Technology Transfer": 0, "Facility Design": 3},
-    "OTIF": {"Product Transfer": 0, "Technology Transfer": 0, "Facility Design": 3},
-    "Lifecycle cost": {"Product Transfer": 0, "Technology Transfer": 0, "Facility Design": 3},
-    "ESG index": {"Product Transfer": 0, "Technology Transfer": 0, "Facility Design": 3},
-    "Safety incidents": {"Product Transfer": 0, "Technology Transfer": 0, "Facility Design": 3},
+    # ``None`` means structurally not applicable to that configuration. It is
+    # deliberately different from a numeric baseline of 0 (very low relevance).
+    "Supplier on-time delivery": {"Product Transfer": 3, "Technology Transfer": None, "Facility Design": None},
+    "Incoming defect rate": {"Product Transfer": 3, "Technology Transfer": None, "Facility Design": None},
+    "Assembly cost per unit": {"Product Transfer": 3, "Technology Transfer": None, "Facility Design": None},
+    "Logistics lead time": {"Product Transfer": 3, "Technology Transfer": None, "Facility Design": None},
+    "Ramp-up time": {"Product Transfer": None, "Technology Transfer": 3, "Facility Design": None},
+    "First-pass yield": {"Product Transfer": None, "Technology Transfer": 3, "Facility Design": None},
+    "Learning-curve productivity": {"Product Transfer": None, "Technology Transfer": 3, "Facility Design": None},
+    "% revenue from new products": {"Product Transfer": None, "Technology Transfer": 3, "Facility Design": None},
+    "OEE": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
+    "OTIF": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
+    "Lifecycle cost": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
+    "ESG index": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
+    "Safety incidents": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
 }
 BASE_DRIVERS = {
     "Inventory/Capacity Buffers": {"Product Transfer": 1, "Technology Transfer": 3, "Facility Design": 3},
@@ -144,16 +146,35 @@ def stage_boost(stage, tags, name, max_gain=0.8):
     return clamp01(membership * max_gain)
 
 
-def score_matrix(base_map, matrix, weights_5s, stage, stage_gain=0.8, trace_out=None):
+def is_applicable(matrix, item, system):
+    """Return whether an item belongs to the selected system configuration."""
+    if matrix not in MATRIX_CONFIGURATION:
+        raise KeyError(f"Unknown decision matrix: {matrix}")
+    base_map, _, _ = MATRIX_CONFIGURATION[matrix]
+    return base_map[item][system] is not None
+
+
+def score_matrix(
+    base_map,
+    matrix,
+    weights_5s,
+    stage,
+    stage_gain=0.8,
+    trace_out=None,
+    membership_parameters=None,
+):
     _, s_tags, stage_tags = MATRIX_CONFIGURATION[matrix]
     output = {}
     for item, systems in base_map.items():
         output[item] = {}
         for system, base in systems.items():
+            applicable = base is not None
             score, trace = sugeno_fuzzy_score(
-                base=float(base),
+                base=float(base) if applicable else None,
                 s_alignment=s_boost(weights_5s, s_tags, item),
                 lifecycle_relevance=stage_boost(stage, stage_tags, item, stage_gain),
+                applicable=applicable,
+                membership_parameters=membership_parameters,
             )
             output[item][system] = round(score, 3)
             if trace_out is not None:
@@ -161,10 +182,24 @@ def score_matrix(base_map, matrix, weights_5s, stage, stage_gain=0.8, trace_out=
     return output
 
 
-def score_all(weights_5s, stage, stage_gain=0.8, return_trace=False):
+def score_all(
+    weights_5s,
+    stage,
+    stage_gain=0.8,
+    return_trace=False,
+    membership_parameters=None,
+):
     trace = {} if return_trace else None
     scored = {
-        matrix: score_matrix(base_map, matrix, weights_5s, stage, stage_gain, trace)
+        matrix: score_matrix(
+            base_map,
+            matrix,
+            weights_5s,
+            stage,
+            stage_gain,
+            trace,
+            membership_parameters,
+        )
         for matrix, (base_map, _, _) in MATRIX_CONFIGURATION.items()
     }
     return (scored, trace) if return_trace else scored

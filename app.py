@@ -17,12 +17,13 @@ from decision_model import (
     BASE_CORE, BASE_DRIVERS, BASE_KPIS, COMPETITIVE, FIVE_S, LCE,
     PROD_SERVICE, S_TAGS_CORE, S_TAGS_DRIVERS, S_TAGS_KPI,
     STAGE_TAGS_CORE, STAGE_TAGS_DRIVERS, STAGE_TAGS_KPI, SYSTEMS,
-    VALUE_CHAIN, s_boost, score_all, stage_boost,
+    VALUE_CHAIN, is_applicable, s_boost, score_all, stage_boost,
 )
 from fuzzy_engine import (
     EPSILON, FUZZY_MEMBERSHIP_PARAMETERS, FUZZY_RULE_BASE_VERSION,
-    FUZZY_RULE_PROVENANCE, SUGENO_CONSEQUENTS, SUGENO_RULES,
-    sugeno_fuzzy_score, validate_engine,
+    FUZZY_RULE_PROVENANCE, RULE_DESIGN_WEIGHTS, SUGENO_CONSEQUENTS,
+    SUGENO_RULE_CONFIDENCES, SUGENO_RULES,
+    shifted_membership_parameters, sugeno_fuzzy_score, validate_engine,
 )
 
 # =====================================================
@@ -84,360 +85,12 @@ OPENROUTER_HEADERS = {
 # request, so safe_llm_call() records the actual model returned by OpenRouter.
 LLM_MODEL = "openrouter/free"
 
-# =====================================================
-#                CANONICAL VOCAB
-# =====================================================
-SYSTEMS = ["Product Transfer","Technology Transfer","Facility Design"]
-LCE = ["Ideation","Basic Development","Advanced Development","Launch","Operation","End-of-Life"]
-FIVE_S = ["Social","Sustainable","Sensing","Smart","Safe"]
+# The canonical vocabulary, baselines, and association matrices are imported
+# from decision_model.py so they have one auditable source of truth.
 
-COMPETITIVE={"Product Transfer":"Operational Excellence","Technology Transfer":"Product Innovation","Facility Design":"Customer Focus/Intimacy"}
-VALUE_CHAIN={"Product Transfer":"Collaboration Networks","Technology Transfer":"Strategic Business Units","Facility Design":"Vertical Integration"}
-PROD_SERVICE={"Product Transfer":"Assemble to Order (ATO) + Catalogue of Services",
-              "Technology Transfer":"Make/Build to Order (MTO/BTO) + Configuration of Services",
-              "Facility Design":"Hybrid MTS + BTO + Design of Services"}
-
-# =====================================================
-#               BASELINES & TAGS (full)
-# =====================================================
-BASE_CORE = {
-    "Customer Driven Design":{"Product Transfer":1,"Technology Transfer":3,"Facility Design":3},
-    "CRM":{"Product Transfer":2,"Technology Transfer":2,"Facility Design":3},
-    "Co-Engineering":{"Product Transfer":3,"Technology Transfer":1,"Facility Design":1},
-    "SRM":{"Product Transfer":3,"Technology Transfer":3,"Facility Design":1},
-    "NPD":{"Product Transfer":1,"Technology Transfer":2,"Facility Design":2},
-    "Obtain Customer Commit.":{"Product Transfer":2,"Technology Transfer":2,"Facility Design":2},
-    "Order Fulfillment":{"Product Transfer":3,"Technology Transfer":3,"Facility Design":3},
-    "Customer Service":{"Product Transfer":1,"Technology Transfer":1,"Facility Design":3},
-}
-BASE_KPIS = {
-    "Supplier on-time delivery":{"Product Transfer":3,"Technology Transfer":0,"Facility Design":0},
-    "Incoming defect rate":{"Product Transfer":3,"Technology Transfer":0,"Facility Design":0},
-    "Assembly cost per unit":{"Product Transfer":3,"Technology Transfer":0,"Facility Design":0},
-    "Logistics lead time":{"Product Transfer":3,"Technology Transfer":0,"Facility Design":0},
-    "Ramp-up time":{"Product Transfer":0,"Technology Transfer":3,"Facility Design":0},
-    "First-pass yield":{"Product Transfer":0,"Technology Transfer":3,"Facility Design":0},
-    "Learning-curve productivity":{"Product Transfer":0,"Technology Transfer":3,"Facility Design":0},
-    "% revenue from new products":{"Product Transfer":0,"Technology Transfer":3,"Facility Design":0},
-    "OEE":{"Product Transfer":0,"Technology Transfer":0,"Facility Design":3},
-    "OTIF":{"Product Transfer":0,"Technology Transfer":0,"Facility Design":3},
-    "Lifecycle cost":{"Product Transfer":0,"Technology Transfer":0,"Facility Design":3},
-    "ESG index":{"Product Transfer":0,"Technology Transfer":0,"Facility Design":3},
-    "Safety incidents":{"Product Transfer":0,"Technology Transfer":0,"Facility Design":3},
-}
-BASE_DRIVERS = {
-    "Inventory/Capacity Buffers":{"Product Transfer":1,"Technology Transfer":3,"Facility Design":3},
-    "Network Diversification":{"Product Transfer":3,"Technology Transfer":3,"Facility Design":1},
-    "Multisourcing":{"Product Transfer":3,"Technology Transfer":1,"Facility Design":1},
-    "Nearshoring":{"Product Transfer":2,"Technology Transfer":2,"Facility Design":2},
-    "Platform/Plant Harmonization":{"Product Transfer":1,"Technology Transfer":1,"Facility Design":3},
-    "Ecosystem Partnerships":{"Product Transfer":3,"Technology Transfer":3,"Facility Design":1},
-}
-
-S_TAGS_KPI = {
-    "Supplier on-time delivery": {"Social": 0.6, "Sustainable": 0.2},
-    "Incoming defect rate": {"Smart": 0.4, "Sensing": 0.6},
-    "Assembly cost per unit": {"Smart": 0.4, "Sustainable": 0.4},
-    "Logistics lead time": {"Social": 0.6, "Smart": 0.2},
-    "Ramp-up time": {"Smart": 0.6, "Safe": 0.3},
-    "First-pass yield": {"Smart": 0.4, "Sensing": 0.4},
-    "Learning-curve productivity": {"Smart": 0.5, "Social": 0.3},
-    "% revenue from new products": {"Sustainable": 0.6, "Smart": 0.4},
-    "OEE": {"Smart": 0.4, "Sensing": 0.4, "Safe": 0.2},
-    "OTIF": {"Social": 0.5, "Safe": 0.3},
-    "Lifecycle cost": {"Sustainable": 0.8, "Smart": 0.2},
-    "ESG index": {"Sustainable": 1.0},
-    "Safety incidents": {"Safe": 1.0, "Social": 0.2},
-}
-
-S_TAGS_CORE = {
-    "Customer Driven Design": {"Smart": 0.4, "Social": 0.4, "Sustainable": 0.2},
-    "CRM": {"Social": 0.8, "Smart": 0.2},
-    "Co-Engineering": {"Social": 0.6, "Smart": 0.3, "Sensing": 0.2},
-    "SRM": {"Social": 0.8, "Sustainable": 0.3},
-    "NPD": {"Smart": 0.6, "Sustainable": 0.4},
-    "Obtain Customer Commit.": {"Social": 0.7, "Smart": 0.3},
-    "Order Fulfillment": {"Social": 0.8, "Smart": 0.2, "Safe": 0.2},
-    "Customer Service": {"Social": 0.8, "Safe": 0.3, "Sustainable": 0.2},
-}
-
-S_TAGS_DRIVERS = {
-    "Inventory/Capacity Buffers": {"Safe": 0.6, "Sustainable": 0.3},
-    "Network Diversification": {"Social": 0.5, "Safe": 0.3, "Sustainable": 0.3},
-    "Multisourcing": {"Sustainable": 0.4, "Social": 0.4, "Safe": 0.2},
-    "Nearshoring": {"Sustainable": 0.6, "Safe": 0.2, "Social": 0.2},
-    "Platform/Plant Harmonization": {"Smart": 0.5, "Sensing": 0.3, "Safe": 0.2},
-    "Ecosystem Partnerships": {"Social": 0.6, "Sustainable": 0.4, "Smart": 0.2},
-}
-
-STAGE_TAGS_KPI = {
-    "Ramp-up time":{"Launch":1.0,"Advanced Development":0.6},
-    "First-pass yield":{"Launch":0.7,"Operation":0.5},
-    "Learning-curve productivity":{"Launch":0.6,"Operation":0.4},
-    "OEE":{"Operation":1.0},
-    "OTIF":{"Operation":0.7},
-    "Lifecycle cost":{"End-of-Life":0.6,"Operation":0.4},
-    "ESG index":{"End-of-Life":0.9,"Operation":0.5}
-}
-STAGE_TAGS_CORE = {
-    "Co-Engineering":{"Ideation":0.8,"Basic Development":0.6},
-    "NPD":{"Advanced Development":0.8,"Launch":0.5},
-    "Order Fulfillment":{"Operation":0.9},
-    "Customer Service":{"Operation":0.7},
-    "SRM":{"Operation":0.6}
-}
-STAGE_TAGS_DRIVERS = {
-    "Inventory/Capacity Buffers":{"Operation":0.7},
-    "Platform/Plant Harmonization":{"Operation":0.7,"Launch":0.4},
-    "Nearshoring":{"Operation":0.4,"End-of-Life":0.4}
-}
-
-# =====================================================
-#                  CORE SCORING FUNCTIONS
-# =====================================================
-def clamp03(x): 
-    return max(0.0, min(3.0, x))
-
-def clamp01(x): 
-    return max(0.0, min(1.0, x))
-
-def s_boost(w, s_tags, name):
-    """Compatibility between a user's 5S priorities and item memberships."""
-    tags = s_tags.get(name, {})
-    tot = sum(tags.values())
-    if tot == 0:
-        return 0.0
-    return sum(w.get(k, 0.0) * v for k, v in tags.items()) / tot
-
-
-def stage_boost(stage, tags, name, max_gain=None):
-    """Lifecycle membership, scaled by the explicit stage-gain parameter."""
-    if max_gain is None:
-        max_gain = st.session_state.get("stage_gain", 0.8)
-    membership = clamp01(tags.get(name, {}).get(stage, 0.0))
-    return clamp01(membership * max_gain)
-
-
-# =====================================================
-#        ZERO-ORDER SUGENO FUZZY INFERENCE ENGINE
-# =====================================================
-# Evidence basis for the rule base:
-# - Configuration-sensitive baselines: BASE_CORE, BASE_KPIS, BASE_DRIVERS.
-# - 5S associations: S_TAGS_* (Social, Sustainable, Sensing, Smart, Safe).
-# - Lifecycle associations: STAGE_TAGS_*.
-# - Domain framing in the manuscript: Lambert (2008), Garetti et al. (2012),
-#   Molina et al. (2021, 2024), and the Supply Chain Development framework.
-#
-# The references justify the constructs and directional relationships. The
-# membership breakpoints and cross-construct rules below are an explicit
-# design-science synthesis and must be calibrated/validated with experts.
-
-FUZZY_MEMBERSHIP_PARAMETERS = {
-    "Low": (0.0, 0.0, 0.20, 0.50),       # trapezoidal shoulder
-    "Medium": (0.20, 0.50, 0.80),        # triangular
-    "High": (0.50, 0.80, 1.0, 1.0),     # trapezoidal shoulder
-}
-
-SUGENO_CONSEQUENTS = {
-    "Low": 0.5,
-    "Medium": 1.5,
-    "High": 2.5,
-}
-
-FUZZY_RULE_BASE_VERSION = "1.0-provisional"
-FUZZY_RULE_PROVENANCE = {
-    "baseline_relevance": {
-        "source_keys": ["lambert2008supply", "gunasekaran2004framework"],
-        "role": "configuration-sensitive process and KPI relevance",
-    },
-    "5s_associations": {
-        "source_keys": ["molina2021sensing", "molina2024comprehensive", "supplychaingdev"],
-        "role": "Social, Sustainable, Sensing, Smart, and Safe alignment",
-    },
-    "lifecycle_associations": {
-        "source_keys": ["garetti2012sustainable", "supplychaingdev"],
-        "role": "lifecycle-dependent relevance",
-    },
-    "resilience_logic": {
-        "source_keys": ["ivanov2020viability", "wong2024empirical"],
-        "role": "buffers, diversification, multisourcing, and ecosystem response",
-    },
-    "combination_rules": {
-        "type": "author-designed design-science synthesis",
-        "status": "requires structured expert elicitation and sensitivity calibration",
-    },
-}
-
-# Antecedents are (baseline relevance, 5S alignment, lifecycle relevance).
-# The 27 rules are intentionally explicit for auditability and replication.
-SUGENO_RULES = {
-    ("Low", "Low", "Low"): "Low",
-    ("Low", "Low", "Medium"): "Low",
-    ("Low", "Low", "High"): "Low",
-    ("Low", "Medium", "Low"): "Low",
-    ("Low", "Medium", "Medium"): "Low",
-    ("Low", "Medium", "High"): "Medium",
-    ("Low", "High", "Low"): "Low",
-    ("Low", "High", "Medium"): "Medium",
-    ("Low", "High", "High"): "Medium",
-
-    ("Medium", "Low", "Low"): "Low",
-    ("Medium", "Low", "Medium"): "Medium",
-    ("Medium", "Low", "High"): "Medium",
-    ("Medium", "Medium", "Low"): "Medium",
-    ("Medium", "Medium", "Medium"): "Medium",
-    ("Medium", "Medium", "High"): "Medium",
-    ("Medium", "High", "Low"): "Medium",
-    ("Medium", "High", "Medium"): "High",
-    ("Medium", "High", "High"): "High",
-
-    ("High", "Low", "Low"): "Medium",
-    ("High", "Low", "Medium"): "Medium",
-    ("High", "Low", "High"): "High",
-    ("High", "Medium", "Low"): "Medium",
-    ("High", "Medium", "Medium"): "High",
-    ("High", "Medium", "High"): "High",
-    ("High", "High", "Low"): "High",
-    ("High", "High", "Medium"): "High",
-    ("High", "High", "High"): "High",
-}
-
-
-def trimf(x, a, b, c):
-    """Triangular membership function with safe boundary handling."""
-    x = float(x)
-    if x <= a or x >= c:
-        return 0.0
-    if x == b:
-        return 1.0
-    if x < b:
-        return (x - a) / (b - a)
-    return (c - x) / (c - b)
-
-
-def trapmf(x, a, b, c, d):
-    """Trapezoidal membership function, including left/right shoulders."""
-    x = float(x)
-    if b <= x <= c:
-        return 1.0
-    if a < x < b:
-        return (x - a) / (b - a)
-    if c < x < d:
-        return (d - x) / (d - c)
-    return 0.0
-
-
-def fuzzify_unit(x):
-    """Map a bounded [0,1] input to Low/Medium/High memberships."""
-    x = clamp01(float(x))
-    low = FUZZY_MEMBERSHIP_PARAMETERS["Low"]
-    medium = FUZZY_MEMBERSHIP_PARAMETERS["Medium"]
-    high = FUZZY_MEMBERSHIP_PARAMETERS["High"]
-    return {
-        "Low": trapmf(x, *low),
-        "Medium": trimf(x, *medium),
-        "High": trapmf(x, *high),
-    }
-
-
-def sugeno_fuzzy_score(base, s_alignment, lifecycle_relevance, epsilon=1e-12):
-    """Return a score in [0,3] and a complete fuzzy-inference trace."""
-    inputs = {
-        "baseline": clamp01(float(base) / 3.0),
-        "5s_alignment": clamp01(s_alignment),
-        "lifecycle_relevance": clamp01(lifecycle_relevance),
-    }
-    memberships = {name: fuzzify_unit(value) for name, value in inputs.items()}
-
-    activated_rules = []
-    weighted_sum = 0.0
-    firing_sum = 0.0
-    for antecedents, output_label in SUGENO_RULES.items():
-        b_label, s_label, l_label = antecedents
-        # Product t-norm yields a smooth zero-order Sugeno response surface.
-        firing = (
-            memberships["baseline"][b_label]
-            * memberships["5s_alignment"][s_label]
-            * memberships["lifecycle_relevance"][l_label]
-        )
-        if firing <= 0.0:
-            continue
-        consequent = SUGENO_CONSEQUENTS[output_label]
-        weighted_sum += firing * consequent
-        firing_sum += firing
-        activated_rules.append({
-            "if": {
-                "baseline": b_label,
-                "5s_alignment": s_label,
-                "lifecycle_relevance": l_label,
-            },
-            "then": output_label,
-            "firing_strength": round(float(firing), 6),
-            "consequent": consequent,
-        })
-
-    score = weighted_sum / (firing_sum + epsilon)
-    if firing_sum <= epsilon:
-        score = float(base)
-    score = clamp03(score)
-    trace = {
-        "rule_base_version": FUZZY_RULE_BASE_VERSION,
-        "inputs": inputs,
-        "memberships": memberships,
-        "activated_rules": activated_rules,
-        "firing_sum": float(firing_sum),
-        "epsilon": epsilon,
-        "defuzzification": "zero-order Sugeno weighted average",
-        "antecedent_operator": "product t-norm",
-        "score": round(float(score), 6),
-    }
-    return score, trace
-
-
-def score_matrix(base_map, matrix, w5s, stage, trace_out=None):
-    out = {}
-    for item, cols in base_map.items():
-        out[item] = {}
-        for system, base in cols.items():
-            base = float(base)
-            s_influence = s_boost(w5s, 
-                                  S_TAGS_KPI if matrix=="kpis"
-                                  else S_TAGS_CORE if matrix=="core_processes"
-                                  else S_TAGS_DRIVERS, item)
-            stage_influence = stage_boost(stage,
-                                          STAGE_TAGS_KPI if matrix=="kpis"
-                                          else STAGE_TAGS_CORE if matrix=="core_processes"
-                                          else STAGE_TAGS_DRIVERS, item)
-
-            score, trace = sugeno_fuzzy_score(
-                base=base,
-                s_alignment=s_influence,
-                lifecycle_relevance=stage_influence,
-            )
-
-            out[item][system] = round(score, 3)
-            if trace_out is not None:
-                trace_out.setdefault(matrix, {}).setdefault(item, {})[system] = trace
-    return out
-
-def score_all(w5s, stage, return_trace=False):
-    trace = {} if return_trace else None
-    scored = {
-        "core_processes": score_matrix(BASE_CORE, "core_processes", w5s, stage, trace),
-        "kpis": score_matrix(BASE_KPIS, "kpis", w5s, stage, trace),
-        "drivers": score_matrix(BASE_DRIVERS, "drivers", w5s, stage, trace),
-    }
-    return (scored, trace) if return_trace else scored
-
-# The standalone modules are the authoritative reproducible implementation.
-# Re-bind the names after the embedded explanatory definitions above so the
-# interactive app and command-line replication use exactly the same engine.
-from decision_model import s_boost, score_all, stage_boost
-from fuzzy_engine import (
-    EPSILON, FUZZY_MEMBERSHIP_PARAMETERS, FUZZY_RULE_BASE_VERSION,
-    FUZZY_RULE_PROVENANCE, SUGENO_CONSEQUENTS, SUGENO_RULES,
-    sugeno_fuzzy_score, validate_engine,
-)
+# Scientific scoring is imported from decision_model.py and fuzzy_engine.py.
+# Keeping one authoritative implementation prevents the interactive app and
+# command-line replication from silently diverging.
 
 # =====================================================
 #  HELPERS (LLM + deterministic formatting)
@@ -563,7 +216,13 @@ def qualitative_scores(scored_dict):
     for category, items in scored_dict.items():
         qualitative[category] = {
             name: {
-                sys: ("High" if val >= 2 else "Medium" if val >= 1 else "Low")
+                sys: (
+                    "N/A"
+                    if not is_applicable(category, name, sys)
+                    else "High" if val >= 2
+                    else "Medium" if val >= 1
+                    else "Low"
+                )
                 for sys, val in sysvals.items()
             }
             for name, sysvals in items.items()
@@ -586,6 +245,8 @@ def build_canonical_evidence(results, system, stage):
     for matrix, items in scored.items():
         rows = []
         for item, system_values in items.items():
+            if not is_applicable(matrix, item, system):
+                continue
             score = float(system_values.get(system, 0.0))
             trace = traces.get(matrix, {}).get(item, {}).get(system, {})
             rules = trace.get("activated_rules", [])
@@ -787,10 +448,28 @@ def show_matrix(title, df_dict):
     # Make sure values are numeric
     df = df.apply(pd.to_numeric, errors="coerce").fillna(0)
 
-    # pandas 3 compatible replacement for applymap
-    df_label = df.map(lambda x: "Low" if x < 1 else "Medium" if x < 2 else "High")
+    matrix_name = {
+        "Core Processes × System": "core_processes",
+        "KPIs × System": "kpis",
+        "Resilience Drivers × System": "drivers",
+    }[title]
+
+    # Preserve the distinction between a low fuzzy score and an item that is
+    # structurally outside a manufacturing-system configuration.
+    df_label = df.astype(object)
+    for item in df.index:
+        for system_name in df.columns:
+            value = float(df.loc[item, system_name])
+            df_label.loc[item, system_name] = (
+                "N/A"
+                if not is_applicable(matrix_name, item, system_name)
+                else "Low" if value < 1
+                else "Medium" if value < 2
+                else "High"
+            )
 
     color_map = {
+        "N/A": "#e9ecef",
         "Low": "#f8d7da",
         "Medium": "#fff3cd",
         "High": "#d4edda"
@@ -815,6 +494,17 @@ def compute_run_hash(weights_5s, lce_stage, system, stage_gain=0.8):
             "system": system,
             "stage_gain": stage_gain,
             "rule_base_version": FUZZY_RULE_BASE_VERSION,
+            "membership_parameters": FUZZY_MEMBERSHIP_PARAMETERS,
+            "consequents": SUGENO_CONSEQUENTS,
+            "rules": [
+                [*antecedents, output]
+                for antecedents, output in SUGENO_RULES.items()
+            ],
+            "baselines": {
+                "core_processes": BASE_CORE,
+                "kpis": BASE_KPIS,
+                "drivers": BASE_DRIVERS,
+            },
         },
         sort_keys=True,
     )
@@ -891,7 +581,10 @@ def monte_carlo_robustness(weights, stage, system, delta=0.2, repetitions=1000, 
     """Reproducible multiplicative U(-delta,+delta) robustness experiment."""
     rng = np.random.default_rng(seed)
     base_scores = score_all(weights, stage, stage_gain=stage_gain)["kpis"]
-    base_series = pd.DataFrame(base_scores).T[system]
+    applicable_items = [
+        item for item in base_scores if is_applicable("kpis", item, system)
+    ]
+    base_series = pd.DataFrame(base_scores).T.loc[applicable_items, system]
     base_rank = base_series.rank(ascending=False, method="average")
     base_top3 = set(base_series.nlargest(3).index)
     records = []
@@ -901,7 +594,7 @@ def monte_carlo_robustness(weights, stage, system, delta=0.2, repetitions=1000, 
             for key, value in weights.items()
         }
         new_scores = score_all(perturbed, stage, stage_gain=stage_gain)["kpis"]
-        new_series = pd.DataFrame(new_scores).T[system]
+        new_series = pd.DataFrame(new_scores).T.loc[applicable_items, system]
         tau_result = kendalltau(base_rank, new_series.rank(ascending=False, method="average"))
         top3_retention = len(base_top3.intersection(set(new_series.nlargest(3).index))) / 3.0
         records.append({
@@ -924,6 +617,59 @@ def monte_carlo_robustness(weights, stage, system, delta=0.2, repetitions=1000, 
         "mean_top3_retention": float(frame["top3_retention"].mean()),
     }
     return summary, frame
+
+
+def membership_threshold_sensitivity(
+    weights, stage, system, delta=0.05, stage_gain=0.8
+):
+    """Compare KPI rankings after global ±delta membership-threshold shifts."""
+    base_scores = score_all(weights, stage, stage_gain=stage_gain)["kpis"]
+    applicable_items = [
+        item for item in base_scores if is_applicable("kpis", item, system)
+    ]
+    base_series = pd.DataFrame(base_scores).T.loc[applicable_items, system]
+    base_rank = base_series.rank(ascending=False, method="average")
+    base_top3 = set(base_series.nlargest(3).index)
+    rows = []
+    for shift in (-float(delta), float(delta)):
+        parameters = shifted_membership_parameters(shift)
+        shifted_scores = score_all(
+            weights,
+            stage,
+            stage_gain=stage_gain,
+            membership_parameters=parameters,
+        )["kpis"]
+        shifted_series = (
+            pd.DataFrame(shifted_scores).T.loc[applicable_items, system]
+        )
+        tau_result = kendalltau(
+            base_rank,
+            shifted_series.rank(ascending=False, method="average"),
+        )
+        rows.append(
+            {
+                "threshold_shift": shift,
+                "kendall_tau_b": (
+                    float(tau_result.statistic)
+                    if not pd.isna(tau_result.statistic)
+                    else np.nan
+                ),
+                "p_value": (
+                    float(tau_result.pvalue)
+                    if not pd.isna(tau_result.pvalue)
+                    else np.nan
+                ),
+                "top3_retention": (
+                    len(
+                        base_top3.intersection(
+                            set(shifted_series.nlargest(3).index)
+                        )
+                    )
+                    / 3.0
+                ),
+            }
+        )
+    return pd.DataFrame(rows)
 
 def compare_matrices(base, new):
     """Compute correlation between base and perturbed average scores."""
@@ -1159,7 +905,11 @@ with tabs[1]:
                 )
     
                 # ---- KPIs ----
-                kpi_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["kpis"].items()}
+                kpi_scores = {
+                    k: float(v.get(sel_sys, 0))
+                    for k, v in res["scored"]["kpis"].items()
+                    if is_applicable("kpis", k, sel_sys)
+                }
                 kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
                 kpi_topS = {k: item_contrib_5s(k, "kpis", w5s) for k in kpi_labels}
                 kpi_stage = {k: item_contrib_lce(k, "kpis", lce_stage) for k in kpi_labels}
@@ -1364,7 +1114,10 @@ with tabs[2]:
             else:
                 st.success("All scores within [0,3] and consistent across matrices.")
             if engine_checks["passed"]:
-                st.success("Fuzzy-engine coverage, rule-count, range, and monotonicity checks passed.")
+                st.success(
+                    "Fuzzy-engine coverage, 27-rule completeness, range, "
+                    "structural applicability, and monotonicity checks passed."
+                )
             else:
                 st.error("One or more fuzzy-engine checks failed.")
                 st.json(engine_checks)
@@ -1384,6 +1137,8 @@ with tabs[2]:
                 "fuzzy_method": "zero-order Sugeno",
                 "membership_parameters": FUZZY_MEMBERSHIP_PARAMETERS,
                 "sugeno_consequents": SUGENO_CONSEQUENTS,
+                "rule_design_weights": RULE_DESIGN_WEIGHTS,
+                "rule_confidences": SUGENO_RULE_CONFIDENCES,
                 "rule_base_version": FUZZY_RULE_BASE_VERSION,
                 "rule_provenance": FUZZY_RULE_PROVENANCE,
                 "canonical_evidence": build_canonical_evidence(results, system, stage),
@@ -1443,9 +1198,32 @@ with tabs[2]:
             st.session_state["stage_gain"] = stage_gain
 
             st.caption(
-                "Membership breakpoints and the 27-rule Sugeno base are fixed "
-                "for reproducibility; calibrate them through expert validation."
+                "Input-specific membership breakpoints, five Sugeno singleton "
+                "levels, and the 27-rule base are fixed for reproducibility; "
+                "calibrate them through structured expert validation."
             )
+            breakpoint_delta = st.slider(
+                "Membership-threshold shift (±)",
+                0.01,
+                0.10,
+                0.05,
+                0.01,
+            )
+            if st.button("Run Membership-Threshold Sensitivity"):
+                breakpoint_results = membership_threshold_sensitivity(
+                    weights_5s,
+                    stage,
+                    system,
+                    delta=breakpoint_delta,
+                    stage_gain=stage_gain,
+                )
+                st.dataframe(breakpoint_results, use_container_width=True)
+                st.caption(
+                    "All interior Low/Medium/High breakpoints are shifted "
+                    "together by the declared ± amount; endpoints remain at "
+                    "0 and 1. Kendall tau-b, p-value, and top-three retention "
+                    "are computed only over applicable KPIs."
+                )
             delta = st.slider("Multiplicative perturbation (± proportion)", 0.0, 1.0, 0.2, 0.05)
             
             # Initialize variable outside to avoid NameError
@@ -1462,8 +1240,16 @@ with tabs[2]:
                     base_series = df_base.mean(axis=1)
                     new_series  = pd.DataFrame(scored_pert["kpis"]).T.mean(axis=1)
                 else:
-                    base_series = df_base[system]
-                    new_series  = pd.DataFrame(scored_pert["kpis"]).T[system]
+                    applicable_items = [
+                        item
+                        for item in df_base.index
+                        if is_applicable("kpis", item, system)
+                    ]
+                    base_series = df_base.loc[applicable_items, system]
+                    new_series = (
+                        pd.DataFrame(scored_pert["kpis"])
+                        .T.loc[applicable_items, system]
+                    )
                 
                 corr = base_series.corr(new_series, method="pearson")
                 

@@ -5,18 +5,50 @@ computationally reproducible core of the DSS.
 """
 
 from itertools import product
+from math import floor
 
 
 EPSILON = 1e-12
-FUZZY_RULE_BASE_VERSION = "1.0-provisional"
+FUZZY_RULE_BASE_VERSION = "2.0-provisional"
+LINGUISTIC_LEVELS = ("Low", "Medium", "High")
 
+# The three antecedents represent different constructs and therefore use
+# separately declared partitions. All coordinates are on a normalized [0, 1]
+# universe. Low/High are shoulder trapezoids and Medium is triangular.
 FUZZY_MEMBERSHIP_PARAMETERS = {
-    "Low": (0.0, 0.0, 0.20, 0.50),
-    "Medium": (0.20, 0.50, 0.80),
-    "High": (0.50, 0.80, 1.0, 1.0),
+    "baseline": {
+        "Low": {"type": "trapezoidal", "points": (0.0, 0.0, 0.33, 0.50)},
+        "Medium": {"type": "triangular", "points": (0.25, 0.50, 0.75)},
+        "High": {"type": "trapezoidal", "points": (0.50, 0.67, 1.0, 1.0)},
+    },
+    "5s_alignment": {
+        "Low": {"type": "trapezoidal", "points": (0.0, 0.0, 0.20, 0.45)},
+        "Medium": {"type": "triangular", "points": (0.20, 0.50, 0.80)},
+        "High": {"type": "trapezoidal", "points": (0.55, 0.80, 1.0, 1.0)},
+    },
+    "lifecycle_relevance": {
+        "Low": {"type": "trapezoidal", "points": (0.0, 0.0, 0.15, 0.40)},
+        "Medium": {"type": "triangular", "points": (0.20, 0.50, 0.80)},
+        "High": {"type": "trapezoidal", "points": (0.60, 0.85, 1.0, 1.0)},
+    },
 }
 
-SUGENO_CONSEQUENTS = {"Low": 0.5, "Medium": 1.5, "High": 2.5}
+# Five singletons use the full declared [0, 3] priority range and reduce ties.
+SUGENO_CONSEQUENTS = {
+    "Very Low": 0.0,
+    "Low": 0.75,
+    "Medium": 1.50,
+    "High": 2.25,
+    "Very High": 3.0,
+}
+
+# These weights define the transparent construction of the 27-rule table; they
+# are not silently re-applied during inference.
+RULE_DESIGN_WEIGHTS = {
+    "baseline": 0.50,
+    "5s_alignment": 0.30,
+    "lifecycle_relevance": 0.20,
+}
 
 FUZZY_RULE_PROVENANCE = {
     "baseline_relevance": {
@@ -36,40 +68,37 @@ FUZZY_RULE_PROVENANCE = {
         "role": "buffers, diversification, multisourcing, and ecosystem response",
     },
     "combination_rules": {
-        "type": "author-designed design-science synthesis",
+        "type": "author-designed monotonic design-science synthesis",
+        "rule_design_weights": RULE_DESIGN_WEIGHTS,
         "status": "provisional pending structured expert elicitation and calibration",
     },
 }
 
+
+def _round_half_up(value):
+    return int(floor(float(value) + 0.5))
+
+
+def _rule_output(baseline_label, s_label, lifecycle_label):
+    """Map an antecedent combination to one of five ordered consequents."""
+    ordinal = {"Low": 0, "Medium": 1, "High": 2}
+    combined = (
+        RULE_DESIGN_WEIGHTS["baseline"] * ordinal[baseline_label]
+        + RULE_DESIGN_WEIGHTS["5s_alignment"] * ordinal[s_label]
+        + RULE_DESIGN_WEIGHTS["lifecycle_relevance"] * ordinal[lifecycle_label]
+    )
+    output_index = max(0, min(4, _round_half_up(2.0 * combined)))
+    return tuple(SUGENO_CONSEQUENTS)[output_index]
+
+
 # Antecedent order: baseline relevance, 5S alignment, lifecycle relevance.
+# The insertion order fixes stable rule identifiers R01-R27.
 SUGENO_RULES = {
-    ("Low", "Low", "Low"): "Low",
-    ("Low", "Low", "Medium"): "Low",
-    ("Low", "Low", "High"): "Low",
-    ("Low", "Medium", "Low"): "Low",
-    ("Low", "Medium", "Medium"): "Low",
-    ("Low", "Medium", "High"): "Medium",
-    ("Low", "High", "Low"): "Low",
-    ("Low", "High", "Medium"): "Medium",
-    ("Low", "High", "High"): "Medium",
-    ("Medium", "Low", "Low"): "Low",
-    ("Medium", "Low", "Medium"): "Medium",
-    ("Medium", "Low", "High"): "Medium",
-    ("Medium", "Medium", "Low"): "Medium",
-    ("Medium", "Medium", "Medium"): "Medium",
-    ("Medium", "Medium", "High"): "Medium",
-    ("Medium", "High", "Low"): "Medium",
-    ("Medium", "High", "Medium"): "High",
-    ("Medium", "High", "High"): "High",
-    ("High", "Low", "Low"): "Medium",
-    ("High", "Low", "Medium"): "Medium",
-    ("High", "Low", "High"): "High",
-    ("High", "Medium", "Low"): "Medium",
-    ("High", "Medium", "Medium"): "High",
-    ("High", "Medium", "High"): "High",
-    ("High", "High", "Low"): "High",
-    ("High", "High", "Medium"): "High",
-    ("High", "High", "High"): "High",
+    antecedents: _rule_output(*antecedents)
+    for antecedents in product(LINGUISTIC_LEVELS, repeat=3)
+}
+SUGENO_RULE_CONFIDENCES = {
+    f"R{number:02d}": 1.0 for number in range(1, len(SUGENO_RULES) + 1)
 }
 
 
@@ -101,35 +130,141 @@ def trapmf(x, a, b, c, d):
     return 0.0
 
 
-def fuzzify_unit(value):
-    """Map an input in [0, 1] to Low/Medium/High memberships."""
+def fuzzify_input(input_name, value, parameters=None):
+    """Map one normalized antecedent to Low/Medium/High memberships."""
+    parameters = parameters or FUZZY_MEMBERSHIP_PARAMETERS
+    if input_name not in parameters:
+        raise KeyError(f"Unknown fuzzy input: {input_name}")
     x = clamp(value, 0.0, 1.0)
+    result = {}
+    for label, specification in parameters[input_name].items():
+        points = specification["points"]
+        if specification["type"] == "triangular":
+            result[label] = trimf(x, *points)
+        elif specification["type"] == "trapezoidal":
+            result[label] = trapmf(x, *points)
+        else:
+            raise ValueError(
+                f"Unsupported membership type for {input_name}/{label}: "
+                f"{specification['type']}"
+            )
+    return result
+
+
+def fuzzify_unit(value, input_name="5s_alignment"):
+    """Backward-compatible helper for fuzzifying a normalized input."""
+    return fuzzify_input(input_name, value)
+
+
+def shifted_membership_parameters(delta):
+    """Return a threshold-location sensitivity case.
+
+    Every interior breakpoint is shifted by the same declared amount while
+    fixed domain endpoints remain at 0 and 1. The supported ±0.10 interval
+    preserves the ordering of the provisional partitions.
+    """
+    delta = float(delta)
+    if not -0.10 <= delta <= 0.10:
+        raise ValueError("Membership-threshold shift must be in [-0.10, 0.10].")
+    shifted = {}
+    for input_name, labels in FUZZY_MEMBERSHIP_PARAMETERS.items():
+        shifted[input_name] = {}
+        for label, specification in labels.items():
+            points = tuple(
+                point if point in (0.0, 1.0) else clamp(point + delta, 0.0, 1.0)
+                for point in specification["points"]
+            )
+            if tuple(sorted(points)) != points:
+                raise ValueError(
+                    f"Shift {delta} invalidates {input_name}/{label}: {points}"
+                )
+            shifted[input_name][label] = {
+                "type": specification["type"],
+                "points": points,
+            }
+    return shifted
+
+
+def _not_applicable_trace(base, s_alignment, lifecycle_relevance, epsilon):
     return {
-        "Low": trapmf(x, *FUZZY_MEMBERSHIP_PARAMETERS["Low"]),
-        "Medium": trimf(x, *FUZZY_MEMBERSHIP_PARAMETERS["Medium"]),
-        "High": trapmf(x, *FUZZY_MEMBERSHIP_PARAMETERS["High"]),
+        "rule_base_version": FUZZY_RULE_BASE_VERSION,
+        "applicable": False,
+        "structural_gate": "not applicable",
+        "raw_inputs": {
+            "baseline": base,
+            "5s_alignment": float(s_alignment),
+            "lifecycle_relevance": float(lifecycle_relevance),
+        },
+        "inputs": None,
+        "memberships": {},
+        "activated_rules": [],
+        "firing_sum": 0.0,
+        "epsilon": epsilon,
+        "alpha_cuts_used": False,
+        "defuzzification": "not executed",
+        "antecedent_operator": "not executed",
+        "score": 0.0,
     }
 
 
-def sugeno_fuzzy_score(base, s_alignment, lifecycle_relevance, epsilon=EPSILON):
-    """Return a priority score in [0, 3] and a complete inference trace."""
+def sugeno_fuzzy_score(
+    base,
+    s_alignment,
+    lifecycle_relevance,
+    epsilon=EPSILON,
+    applicable=True,
+    rule_confidences=None,
+    membership_parameters=None,
+):
+    """Return a priority score in [0, 3] and a complete inference trace.
+
+    ``applicable=False`` is a structural gate and is distinct from a baseline
+    value of zero. Rule confidences default to one and are exposed so that a
+    documented expert elicitation can later calibrate individual rules.
+    """
+    if not applicable:
+        return 0.0, _not_applicable_trace(
+            base, s_alignment, lifecycle_relevance, epsilon
+        )
+    if base is None:
+        raise ValueError("An applicable item requires a numeric baseline in [0, 3].")
+
+    parameters = membership_parameters or FUZZY_MEMBERSHIP_PARAMETERS
+    confidences = dict(SUGENO_RULE_CONFIDENCES)
+    if rule_confidences:
+        confidences.update(rule_confidences)
+    invalid_confidences = {
+        key: value
+        for key, value in confidences.items()
+        if not 0.0 <= float(value) <= 1.0
+    }
+    if invalid_confidences:
+        raise ValueError(f"Rule confidences must be in [0, 1]: {invalid_confidences}")
+
     inputs = {
         "baseline": clamp(float(base) / 3.0, 0.0, 1.0),
         "5s_alignment": clamp(s_alignment, 0.0, 1.0),
         "lifecycle_relevance": clamp(lifecycle_relevance, 0.0, 1.0),
     }
-    memberships = {key: fuzzify_unit(value) for key, value in inputs.items()}
+    memberships = {
+        key: fuzzify_input(key, value, parameters) for key, value in inputs.items()
+    }
 
     activated_rules = []
     weighted_sum = 0.0
     firing_sum = 0.0
-    for rule_number, (antecedents, output_label) in enumerate(SUGENO_RULES.items(), start=1):
+    for rule_number, (antecedents, output_label) in enumerate(
+        SUGENO_RULES.items(), start=1
+    ):
         baseline_label, s_label, lifecycle_label = antecedents
-        firing = (
+        raw_firing = (
             memberships["baseline"][baseline_label]
             * memberships["5s_alignment"][s_label]
             * memberships["lifecycle_relevance"][lifecycle_label]
         )
+        rule_id = f"R{rule_number:02d}"
+        confidence = float(confidences[rule_id])
+        firing = raw_firing * confidence
         if firing <= 0.0:
             continue
         consequent = SUGENO_CONSEQUENTS[output_label]
@@ -137,27 +272,40 @@ def sugeno_fuzzy_score(base, s_alignment, lifecycle_relevance, epsilon=EPSILON):
         firing_sum += firing
         activated_rules.append(
             {
-                "rule_id": f"R{rule_number:02d}",
+                "rule_id": rule_id,
                 "if": {
                     "baseline": baseline_label,
                     "5s_alignment": s_label,
                     "lifecycle_relevance": lifecycle_label,
                 },
                 "then": output_label,
+                "raw_firing_strength": round(float(raw_firing), 6),
+                "rule_confidence": confidence,
                 "firing_strength": round(float(firing), 6),
                 "consequent": consequent,
             }
         )
 
-    score = float(base) if firing_sum <= epsilon else weighted_sum / (firing_sum + epsilon)
-    score = clamp(score, 0.0, 3.0)
+    if firing_sum <= epsilon:
+        raise RuntimeError(
+            "No fuzzy rule fired for an applicable item; check membership coverage."
+        )
+    score = clamp(weighted_sum / (firing_sum + epsilon), 0.0, 3.0)
     trace = {
         "rule_base_version": FUZZY_RULE_BASE_VERSION,
+        "applicable": True,
+        "structural_gate": "passed",
+        "raw_inputs": {
+            "baseline": float(base),
+            "5s_alignment": float(s_alignment),
+            "lifecycle_relevance": float(lifecycle_relevance),
+        },
         "inputs": inputs,
         "memberships": memberships,
         "activated_rules": activated_rules,
         "firing_sum": float(firing_sum),
         "epsilon": epsilon,
+        "alpha_cuts_used": False,
         "defuzzification": "zero-order Sugeno weighted average",
         "antecedent_operator": "product t-norm",
         "score": round(score, 6),
@@ -165,30 +313,81 @@ def sugeno_fuzzy_score(base, s_alignment, lifecycle_relevance, epsilon=EPSILON):
     return score, trace
 
 
-def validate_engine(grid=(0.0, 0.25, 0.5, 0.75, 1.0)):
-    """Run deterministic coverage, range, and diagonal-monotonicity checks."""
-    coverage_failures = [x for x in grid if sum(fuzzify_unit(x).values()) <= 0.0]
+def validate_engine(grid=None):
+    """Run rule, coverage, range, applicability, and monotonicity checks."""
+    if grid is None:
+        grid = tuple(step / 20.0 for step in range(21))
+
+    coverage_failures = []
+    for input_name in FUZZY_MEMBERSHIP_PARAMETERS:
+        for value in grid:
+            if sum(fuzzify_input(input_name, value).values()) <= 0.0:
+                coverage_failures.append((input_name, value))
+
     range_failures = []
-    for baseline, s_value, lifecycle in product((0.0, 1.5, 3.0), grid, grid):
+    for baseline, s_value, lifecycle in product(
+        (0.0, 1.5, 3.0), grid, grid
+    ):
         score, _ = sugeno_fuzzy_score(baseline, s_value, lifecycle)
         if not 0.0 <= score <= 3.0:
             range_failures.append((baseline, s_value, lifecycle, score))
 
-    diagonal_scores = [sugeno_fuzzy_score(3.0 * x, x, x)[0] for x in grid]
-    monotonicity_failures = [
-        (grid[i - 1], grid[i], diagonal_scores[i - 1], diagonal_scores[i])
-        for i in range(1, len(grid))
-        if diagonal_scores[i] + 1e-12 < diagonal_scores[i - 1]
-    ]
+    monotonicity_failures = []
+    dense_grid = tuple(step / 10.0 for step in range(11))
+    axes = ("baseline", "5s_alignment", "lifecycle_relevance")
+    for axis in axes:
+        for fixed_a, fixed_b in product(dense_grid, repeat=2):
+            axis_scores = []
+            for varying in dense_grid:
+                values = {
+                    "baseline": fixed_a,
+                    "5s_alignment": fixed_b,
+                    "lifecycle_relevance": fixed_b,
+                }
+                values[axis] = varying
+                remaining = [name for name in axes if name != axis]
+                values[remaining[0]] = fixed_a
+                values[remaining[1]] = fixed_b
+                axis_scores.append(
+                    sugeno_fuzzy_score(
+                        3.0 * values["baseline"],
+                        values["5s_alignment"],
+                        values["lifecycle_relevance"],
+                    )[0]
+                )
+            for index in range(1, len(axis_scores)):
+                if axis_scores[index] + 1e-10 < axis_scores[index - 1]:
+                    monotonicity_failures.append(
+                        {
+                            "axis": axis,
+                            "fixed": (fixed_a, fixed_b),
+                            "interval": (dense_grid[index - 1], dense_grid[index]),
+                            "scores": (axis_scores[index - 1], axis_scores[index]),
+                        }
+                    )
+
+    not_applicable_score, not_applicable_trace = sugeno_fuzzy_score(
+        None, 1.0, 1.0, applicable=False
+    )
+    applicability_failures = []
+    if not_applicable_score != 0.0 or not not_applicable_trace.get(
+        "structural_gate"
+    ):
+        applicability_failures.append("structural gate failed")
+
     return {
         "rule_count": len(SUGENO_RULES),
+        "membership_partition_count": len(FUZZY_MEMBERSHIP_PARAMETERS),
         "coverage_failures": coverage_failures,
         "range_failures": range_failures,
         "monotonicity_failures": monotonicity_failures,
+        "applicability_failures": applicability_failures,
         "passed": (
             len(SUGENO_RULES) == 27
+            and len(SUGENO_CONSEQUENTS) == 5
             and not coverage_failures
             and not range_failures
             and not monotonicity_failures
+            and not applicability_failures
         ),
     }
