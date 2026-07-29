@@ -12,6 +12,7 @@ from decision_model import (
     SYSTEMS,
     is_applicable,
     score_all,
+    scored_catalog_issues,
 )
 from fuzzy_engine import (
     FUZZY_MEMBERSHIP_PARAMETERS,
@@ -95,6 +96,25 @@ class FuzzyEngineTests(unittest.TestCase):
         for matrix in scores.values():
             for item in matrix.values():
                 self.assertEqual(set(item), set(SYSTEMS))
+
+    def test_current_score_catalog_is_compatible(self):
+        weights = {name: 0.5 for name in FIVE_S}
+        scores = score_all(weights, "Operation")
+        self.assertEqual(scored_catalog_issues(scores), [])
+
+    def test_obsolete_score_item_is_rejected_without_key_lookup(self):
+        weights = {name: 0.5 for name in FIVE_S}
+        scores = score_all(weights, "Operation")
+        scores["kpis"]["Incoming defect rate"] = scores["kpis"].pop(
+            "Supplier quality defect rate"
+        )
+        issues = scored_catalog_issues(scores)
+        self.assertTrue(
+            any("obsolete or unknown item: Incoming defect rate" in x for x in issues)
+        )
+        self.assertTrue(
+            any("missing item: Supplier quality defect rate" in x for x in issues)
+        )
 
     def test_all_30_kpis_are_applicable_and_traced(self):
         weights = {name: 0.5 for name in FIVE_S}

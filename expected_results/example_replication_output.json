@@ -1,6 +1,7 @@
 {
   "run_id": "15b82a3e853b",
   "decision_model_version": "2.1-provisional",
+  "rule_base_version": "2.1-provisional",
   "scenario": {
     "system": "Product Transfer",
     "lce_stage": "Operation",

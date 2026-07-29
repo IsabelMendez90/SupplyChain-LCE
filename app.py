@@ -19,7 +19,8 @@ from decision_model import (
     KPI_BASELINE_PROTOCOL, KPI_PRIMARY_SYSTEM, PROD_SERVICE,
     S_TAGS_CORE, S_TAGS_DRIVERS, S_TAGS_KPI,
     STAGE_TAGS_CORE, STAGE_TAGS_DRIVERS, STAGE_TAGS_KPI, SYSTEMS,
-    VALUE_CHAIN, is_applicable, s_boost, score_all, stage_boost,
+    VALUE_CHAIN, is_applicable, s_boost, score_all, scored_catalog_issues,
+    stage_boost,
 )
 from fuzzy_engine import (
     EPSILON, FUZZY_MEMBERSHIP_PARAMETERS, FUZZY_RULE_BASE_VERSION,
@@ -255,14 +256,44 @@ def build_canonical_evidence(results, system, stage):
     """Create the immutable evidence object consumed by every explanation."""
     scored = results.get("scored", {})
     traces = results.get("fuzzy_trace", {})
+    if not isinstance(scored, dict):
+        scored = {}
+    if not isinstance(traces, dict):
+        traces = {}
+    if system not in SYSTEMS:
+        system = SYSTEMS[0]
+    if stage not in LCE:
+        stage = "Operation"
     categories = {}
-    for matrix, items in scored.items():
+    canonical_catalog = {
+        "core_processes": BASE_CORE,
+        "kpis": BASE_KPIS,
+        "drivers": BASE_DRIVERS,
+    }
+    for matrix, catalog_items in canonical_catalog.items():
         rows = []
-        for item, system_values in items.items():
+        supplied_items = scored.get(matrix, {})
+        if not isinstance(supplied_items, dict):
+            supplied_items = {}
+        for item in catalog_items:
+            system_values = supplied_items.get(item)
+            if not isinstance(system_values, dict) or system not in system_values:
+                continue
             if not is_applicable(matrix, item, system):
                 continue
-            score = float(system_values.get(system, 0.0))
-            trace = traces.get(matrix, {}).get(item, {}).get(system, {})
+            try:
+                score = float(system_values[system])
+            except (TypeError, ValueError):
+                continue
+            matrix_traces = traces.get(matrix, {})
+            if not isinstance(matrix_traces, dict):
+                matrix_traces = {}
+            item_traces = matrix_traces.get(item, {})
+            if not isinstance(item_traces, dict):
+                item_traces = {}
+            trace = item_traces.get(system, {})
+            if not isinstance(trace, dict):
+                trace = {}
             rules = trace.get("activated_rules", [])
             dominant = max(rules, key=lambda rule: rule.get("firing_strength", 0.0)) if rules else {}
             rows.append({
@@ -421,12 +452,39 @@ matrices_live, fuzzy_trace_live = score_all(
 st.session_state["matrices_live"] = matrices_live
 st.session_state["fuzzy_trace_live"] = fuzzy_trace_live
 
+# Streamlit can retain session state across a code redeploy. Invalidate frozen
+# results from another scientific model version or catalog before any tab
+# attempts to interpret them.
+existing_results = st.session_state.get("results")
+if existing_results:
+    compatibility_issues = []
+    if existing_results.get("decision_model_version") != DECISION_MODEL_VERSION:
+        compatibility_issues.append("decision-model version mismatch")
+    if existing_results.get("rule_base_version") != FUZZY_RULE_BASE_VERSION:
+        compatibility_issues.append("fuzzy-rule version mismatch")
+    compatibility_issues.extend(
+        scored_catalog_issues(existing_results.get("scored"))
+    )
+    if compatibility_issues:
+        st.session_state.pop("results", None)
+        st.session_state.pop("llm_interpretations", None)
+        st.session_state.pop("compare_analysis", None)
+        st.session_state["stale_results_notice"] = (
+            "A frozen run from an earlier model version was cleared. "
+            "Click Analyze to generate a compatible v2.1 run."
+        )
+
 st.title("Supply-Chain Strategy Agent (LCE + 5S)")
 st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 st.caption(
     "Decision authority: deterministic zero-order Sugeno engine. "
     "The optional LLM can only render the frozen evidence in natural language."
 )
+if st.session_state.pop("stale_results_notice", None):
+    st.info(
+        "A frozen run from an earlier model version was cleared. "
+        "Click **Analyze** to generate a compatible v2.1 run."
+    )
 
 # Single analyze button: freeze state & trigger LLM on tabs 2–3
 if st.button("Analyze", use_container_width=True):
@@ -438,6 +496,8 @@ if st.button("Analyze", use_container_width=True):
         "lce_stage": lce_stage,
         "stage_gain": stage_gain_live,
         "explanation_mode": st.session_state.get("explanation_mode", "Deterministic trace"),
+        "decision_model_version": DECISION_MODEL_VERSION,
+        "rule_base_version": FUZZY_RULE_BASE_VERSION,
         "elapsed": 0.0,
     }
     st.session_state["analyzed"] = True
@@ -1256,17 +1316,47 @@ with tabs[2]:
     
             uploaded_run = st.file_uploader("📤 Reload run.json", type="json")
             if uploaded_run:
-                loaded = json.load(uploaded_run)
-                st.session_state["results"] = {
-                    "scored": loaded["scores"],
-                    "fuzzy_trace": loaded.get("fuzzy_trace", {}),
-                    "weights_5s": loaded["weights_5s"],
-                    "system": loaded.get("system", "Product Transfer"),
-                    "lce_stage": loaded.get("lce_stage", "Operation"),
-                    "stage_gain": loaded.get("stage_gain", 0.8),
-                    "explanation_mode": "Deterministic trace",
-                }
-                st.success(f"Run {loaded.get('hash','?')} reloaded successfully.")
+                try:
+                    loaded = json.load(uploaded_run)
+                    upload_issues = []
+                    if loaded.get("decision_model_version") != DECISION_MODEL_VERSION:
+                        upload_issues.append(
+                            "decision-model version does not match "
+                            f"{DECISION_MODEL_VERSION}"
+                        )
+                    if loaded.get("rule_base_version") != FUZZY_RULE_BASE_VERSION:
+                        upload_issues.append(
+                            "fuzzy-rule version does not match "
+                            f"{FUZZY_RULE_BASE_VERSION}"
+                        )
+                    upload_issues.extend(
+                        scored_catalog_issues(loaded.get("scores"))
+                    )
+                    if upload_issues:
+                        st.error(
+                            "This run JSON is incompatible with the current "
+                            "scientific model. Generate a new run with v2.1. "
+                            f"First issue: {upload_issues[0]}"
+                        )
+                    else:
+                        st.session_state["results"] = {
+                            "scored": loaded["scores"],
+                            "fuzzy_trace": loaded.get("fuzzy_trace", {}),
+                            "weights_5s": loaded["weights_5s"],
+                            "system": loaded.get("system", "Product Transfer"),
+                            "lce_stage": loaded.get("lce_stage", "Operation"),
+                            "stage_gain": loaded.get("stage_gain", 0.8),
+                            "explanation_mode": "Deterministic trace",
+                            "decision_model_version": loaded[
+                                "decision_model_version"
+                            ],
+                            "rule_base_version": loaded["rule_base_version"],
+                        }
+                        st.success(
+                            f"Run {loaded.get('hash','?')} reloaded successfully."
+                        )
+                except (json.JSONDecodeError, KeyError, TypeError) as error:
+                    st.error(f"Invalid run JSON: {error}")
     
             # -------------------------------------------------
             # Sensitivity / Robustness Sandbox

@@ -122,6 +122,7 @@ def run(scenario):
     return {
         "run_id": run_id,
         "decision_model_version": DECISION_MODEL_VERSION,
+        "rule_base_version": FUZZY_RULE_BASE_VERSION,
         "scenario": scenario,
         "engine_validation": validate_engine(),
         "scores": scores,

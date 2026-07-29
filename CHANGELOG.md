@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.1 interface hotfix — 2026-07-28
+
+- Added strict catalog and version validation for frozen Streamlit results and
+  reloaded run JSON files.
+- Automatically clears stale session results after a model redeploy and asks
+  the user to run `Analyze` again.
+- Canonical evidence now iterates only over the authoritative current catalog,
+  so obsolete item names cannot reach strict scientific key lookup.
+- Added the fuzzy-rule version to command-line replication output.
+
 ## 2.1-provisional — 2026-07-28
 
 - Replaced the former 13-item, one-configuration-only KPI assignment with the

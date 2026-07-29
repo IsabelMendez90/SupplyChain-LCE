@@ -273,6 +273,56 @@ def is_applicable(matrix, item, system):
     return base_map[item][system] is not None
 
 
+def scored_catalog_issues(scored):
+    """Return structural incompatibilities in an externally supplied score set.
+
+    This protects the interface from stale Streamlit state and run JSON files
+    created with a different decision-model catalog. Scientific scoring keeps
+    strict key access; compatibility is checked explicitly at the boundary.
+    """
+    if not isinstance(scored, dict):
+        return ["scores must be a dictionary"]
+
+    issues = []
+    expected_matrices = set(MATRIX_CONFIGURATION)
+    actual_matrices = set(scored)
+    for matrix in sorted(expected_matrices - actual_matrices):
+        issues.append(f"missing matrix: {matrix}")
+    for matrix in sorted(actual_matrices - expected_matrices):
+        issues.append(f"unexpected matrix: {matrix}")
+
+    for matrix, (base_map, _, _) in MATRIX_CONFIGURATION.items():
+        actual_items = scored.get(matrix)
+        if not isinstance(actual_items, dict):
+            continue
+        expected_items = set(base_map)
+        supplied_items = set(actual_items)
+        for item in sorted(expected_items - supplied_items):
+            issues.append(f"{matrix}: missing item: {item}")
+        for item in sorted(supplied_items - expected_items):
+            issues.append(f"{matrix}: obsolete or unknown item: {item}")
+
+        for item in sorted(expected_items & supplied_items):
+            system_values = actual_items[item]
+            if not isinstance(system_values, dict):
+                issues.append(f"{matrix}/{item}: system scores must be a dictionary")
+                continue
+            supplied_systems = set(system_values)
+            expected_systems = set(SYSTEMS)
+            for system in sorted(expected_systems - supplied_systems):
+                issues.append(f"{matrix}/{item}: missing system: {system}")
+            for system in sorted(supplied_systems - expected_systems):
+                issues.append(f"{matrix}/{item}: unknown system: {system}")
+            for system in sorted(expected_systems & supplied_systems):
+                try:
+                    float(system_values[system])
+                except (TypeError, ValueError):
+                    issues.append(
+                        f"{matrix}/{item}/{system}: score must be numeric"
+                    )
+    return issues
+
+
 def score_matrix(
     base_map,
     matrix,
