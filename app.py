@@ -14,15 +14,17 @@ from openai import OpenAI
 from sklearn.feature_extraction.text import CountVectorizer  
 from scipy.stats import kendalltau
 from decision_model import (
-    BASE_CORE, BASE_DRIVERS, BASE_KPIS, COMPETITIVE, FIVE_S, LCE,
-    PROD_SERVICE, S_TAGS_CORE, S_TAGS_DRIVERS, S_TAGS_KPI,
+    BASE_CORE, BASE_DRIVERS, BASE_KPIS, COMPETITIVE,
+    DECISION_MODEL_VERSION, FIVE_S, LCE,
+    KPI_BASELINE_PROTOCOL, KPI_PRIMARY_SYSTEM, PROD_SERVICE,
+    S_TAGS_CORE, S_TAGS_DRIVERS, S_TAGS_KPI,
     STAGE_TAGS_CORE, STAGE_TAGS_DRIVERS, STAGE_TAGS_KPI, SYSTEMS,
     VALUE_CHAIN, is_applicable, s_boost, score_all, stage_boost,
 )
 from fuzzy_engine import (
     EPSILON, FUZZY_MEMBERSHIP_PARAMETERS, FUZZY_RULE_BASE_VERSION,
     FUZZY_RULE_PROVENANCE, RULE_DESIGN_WEIGHTS, SUGENO_CONSEQUENTS,
-    SUGENO_RULE_CONFIDENCES, SUGENO_RULES,
+    SUGENO_OUTPUT_BANDS, SUGENO_RULE_CONFIDENCES, SUGENO_RULES,
     shifted_membership_parameters, sugeno_fuzzy_score, validate_engine,
 )
 from llm_grounding import (
@@ -277,6 +279,7 @@ def build_canonical_evidence(results, system, stage):
         "weights_5s": results.get("weights_5s", {}),
         "categories": categories,
         "method": "zero-order Sugeno",
+        "decision_model_version": DECISION_MODEL_VERSION,
         "rule_base_version": FUZZY_RULE_BASE_VERSION,
     }
 
@@ -475,6 +478,13 @@ def show_matrix(title, df_dict):
         "KPIs × System": "kpis",
         "Resilience Drivers × System": "drivers",
     }[title]
+    if matrix_name == "kpis":
+        st.caption(
+            "All 30 manuscript KPIs are evaluated in every configuration. "
+            "Differences reflect gradual baseline relevance (0–3), 5S "
+            "alignment, and lifecycle relevance; N/A is not used in the "
+            "current provisional KPI matrix."
+        )
 
     # Preserve the distinction between a low fuzzy score and an item that is
     # structurally outside a manufacturing-system configuration.
@@ -516,6 +526,7 @@ def compute_run_hash(weights_5s, lce_stage, system, stage_gain=0.8):
             "system": system,
             "stage_gain": stage_gain,
             "rule_base_version": FUZZY_RULE_BASE_VERSION,
+            "decision_model_version": DECISION_MODEL_VERSION,
             "membership_parameters": FUZZY_MEMBERSHIP_PARAMETERS,
             "consequents": SUGENO_CONSEQUENTS,
             "rules": [
@@ -1194,10 +1205,14 @@ with tabs[2]:
                 "fuzzy_method": "zero-order Sugeno",
                 "membership_parameters": FUZZY_MEMBERSHIP_PARAMETERS,
                 "sugeno_consequents": SUGENO_CONSEQUENTS,
+                "sugeno_output_bands": SUGENO_OUTPUT_BANDS,
                 "rule_design_weights": RULE_DESIGN_WEIGHTS,
                 "rule_confidences": SUGENO_RULE_CONFIDENCES,
                 "rule_base_version": FUZZY_RULE_BASE_VERSION,
+                "decision_model_version": DECISION_MODEL_VERSION,
                 "rule_provenance": FUZZY_RULE_PROVENANCE,
+                "kpi_primary_configuration": KPI_PRIMARY_SYSTEM,
+                "kpi_baseline_protocol": KPI_BASELINE_PROTOCOL,
                 "canonical_evidence": build_canonical_evidence(results, system, stage),
                 "engine_validation": engine_checks,
                 "decision_authority": "deterministic fuzzy engine",
@@ -1262,8 +1277,9 @@ with tabs[2]:
             st.session_state["stage_gain"] = stage_gain
 
             st.caption(
-                "Input-specific membership breakpoints, five Sugeno singleton "
-                "levels, and the 27-rule base are fixed for reproducibility; "
+                "Input-specific membership breakpoints and 27 rule-specific "
+                "Sugeno singletons (19 unique values) are fixed for "
+                "reproducibility; "
                 "calibrate them through structured expert validation."
             )
             breakpoint_delta = st.slider(
@@ -1535,7 +1551,7 @@ with tabs[2]:
                 st.plotly_chart(fig, use_container_width=True)
 
                 top_kpis = df_kpi.tail(3)["KPI"].tolist()
-                st.markdown(f"**Top 3 most resilient KPIs:** {', '.join(top_kpis)}")
+                st.markdown(f"**Top 3 highest-priority KPIs:** {', '.join(top_kpis)}")
                 deterministic_whatif = (
                     f"For {frozen_system}, the scenario disabled "
                     f"{', '.join(disabled) or 'no components'}. The KPI-score correlation "
@@ -1554,7 +1570,7 @@ with tabs[2]:
                     prompt_whatif = f"""
                     Disabled components: {', '.join(disabled) or 'None'}
                     KPI correlation vs full model: {corr:.2f}
-                    Top resilient KPIs: {', '.join(top_kpis)}
+                    Highest-priority KPIs: {', '.join(top_kpis)}
                     User's 5S weights: {json.dumps(w5s_desc, indent=2)}
                     Describe only the reported What-If inputs, correlation, KPI
                     names, scores, and ordering. Do not convert correlation into

@@ -5,11 +5,10 @@ computationally reproducible core of the DSS.
 """
 
 from itertools import product
-from math import floor
 
 
 EPSILON = 1e-12
-FUZZY_RULE_BASE_VERSION = "2.0-provisional"
+FUZZY_RULE_BASE_VERSION = "2.1-provisional"
 LINGUISTIC_LEVELS = ("Low", "Medium", "High")
 
 # The three antecedents represent different constructs and therefore use
@@ -33,21 +32,20 @@ FUZZY_MEMBERSHIP_PARAMETERS = {
     },
 }
 
-# Five singletons use the full declared [0, 3] priority range and reduce ties.
-SUGENO_CONSEQUENTS = {
-    "Very Low": 0.0,
-    "Low": 0.75,
-    "Medium": 1.50,
-    "High": 2.25,
-    "Very High": 3.0,
-}
-
-# These weights define the transparent construction of the 27-rule table; they
-# are not silently re-applied during inference.
+# These weights define the transparent construction of the 27-rule singleton
+# consequents; they are not silently re-applied during inference.
 RULE_DESIGN_WEIGHTS = {
     "baseline": 0.50,
     "5s_alignment": 0.30,
     "lifecycle_relevance": 0.20,
+}
+
+SUGENO_OUTPUT_BANDS = {
+    "Very Low": (0.0, 0.375),
+    "Low": (0.375, 1.125),
+    "Medium": (1.125, 1.875),
+    "High": (1.875, 2.625),
+    "Very High": (2.625, 3.000001),
 }
 
 FUZZY_RULE_PROVENANCE = {
@@ -70,33 +68,40 @@ FUZZY_RULE_PROVENANCE = {
     "combination_rules": {
         "type": "author-designed monotonic design-science synthesis",
         "rule_design_weights": RULE_DESIGN_WEIGHTS,
+        "singleton_formula": (
+            "1.5 * (0.50*q_baseline + 0.30*q_5s + "
+            "0.20*q_lifecycle), q in {0,1,2}"
+        ),
         "status": "provisional pending structured expert elicitation and calibration",
     },
 }
 
 
-def _round_half_up(value):
-    return int(floor(float(value) + 0.5))
-
-
-def _rule_output(baseline_label, s_label, lifecycle_label):
-    """Map an antecedent combination to one of five ordered consequents."""
+def _rule_consequent(baseline_label, s_label, lifecycle_label):
+    """Map an antecedent combination to an explicit singleton in [0, 3]."""
     ordinal = {"Low": 0, "Medium": 1, "High": 2}
     combined = (
         RULE_DESIGN_WEIGHTS["baseline"] * ordinal[baseline_label]
         + RULE_DESIGN_WEIGHTS["5s_alignment"] * ordinal[s_label]
         + RULE_DESIGN_WEIGHTS["lifecycle_relevance"] * ordinal[lifecycle_label]
     )
-    output_index = max(0, min(4, _round_half_up(2.0 * combined)))
-    return tuple(SUGENO_CONSEQUENTS)[output_index]
+    return round(1.5 * combined, 6)
+
+
+def qualitative_consequent_label(consequent):
+    for label, (lower, upper) in SUGENO_OUTPUT_BANDS.items():
+        if lower <= float(consequent) < upper:
+            return label
+    raise ValueError(f"Consequent outside declared output bands: {consequent}")
 
 
 # Antecedent order: baseline relevance, 5S alignment, lifecycle relevance.
 # The insertion order fixes stable rule identifiers R01-R27.
 SUGENO_RULES = {
-    antecedents: _rule_output(*antecedents)
+    antecedents: _rule_consequent(*antecedents)
     for antecedents in product(LINGUISTIC_LEVELS, repeat=3)
 }
+SUGENO_CONSEQUENTS = tuple(sorted(set(SUGENO_RULES.values())))
 SUGENO_RULE_CONFIDENCES = {
     f"R{number:02d}": 1.0 for number in range(1, len(SUGENO_RULES) + 1)
 }
@@ -253,7 +258,7 @@ def sugeno_fuzzy_score(
     activated_rules = []
     weighted_sum = 0.0
     firing_sum = 0.0
-    for rule_number, (antecedents, output_label) in enumerate(
+    for rule_number, (antecedents, consequent) in enumerate(
         SUGENO_RULES.items(), start=1
     ):
         baseline_label, s_label, lifecycle_label = antecedents
@@ -267,7 +272,7 @@ def sugeno_fuzzy_score(
         firing = raw_firing * confidence
         if firing <= 0.0:
             continue
-        consequent = SUGENO_CONSEQUENTS[output_label]
+        output_label = qualitative_consequent_label(consequent)
         weighted_sum += firing * consequent
         firing_sum += firing
         activated_rules.append(
@@ -384,7 +389,7 @@ def validate_engine(grid=None):
         "applicability_failures": applicability_failures,
         "passed": (
             len(SUGENO_RULES) == 27
-            and len(SUGENO_CONSEQUENTS) == 5
+            and len(SUGENO_CONSEQUENTS) == 19
             and not coverage_failures
             and not range_failures
             and not monotonicity_failures

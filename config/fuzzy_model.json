@@ -1,6 +1,7 @@
 {
   "method": "zero-order Sugeno",
-  "rule_base_version": "2.0-provisional",
+  "decision_model_version": "2.1-provisional",
+  "rule_base_version": "2.1-provisional",
   "membership_functions": {
     "baseline": {
       "Low": {
@@ -87,12 +88,48 @@
       }
     }
   },
-  "consequents": {
-    "Very Low": 0.0,
-    "Low": 0.75,
-    "Medium": 1.5,
-    "High": 2.25,
-    "Very High": 3.0
+  "consequents": [
+    0.0,
+    0.3,
+    0.45,
+    0.6,
+    0.75,
+    0.9,
+    1.05,
+    1.2,
+    1.35,
+    1.5,
+    1.65,
+    1.8,
+    1.95,
+    2.1,
+    2.25,
+    2.4,
+    2.55,
+    2.7,
+    3.0
+  ],
+  "output_bands": {
+    "Very Low": [
+      0.0,
+      0.375
+    ],
+    "Low": [
+      0.375,
+      1.125
+    ],
+    "Medium": [
+      1.125,
+      1.875
+    ],
+    "High": [
+      1.875,
+      2.625
+    ],
+    "Very High": [
+      2.625,
+      3.000001
+    ]
   },
   "rule_design_weights": {
     "baseline": 0.5,
@@ -145,7 +182,7 @@
       "core_processes": {
         "Customer Driven Design": {
           "Product Transfer": 1,
-          "Technology Transfer": 3,
+          "Technology Transfer": 2,
           "Facility Design": 3
         },
         "CRM": {
@@ -155,23 +192,23 @@
         },
         "Co-Engineering": {
           "Product Transfer": 3,
-          "Technology Transfer": 1,
+          "Technology Transfer": 2,
           "Facility Design": 1
         },
         "SRM": {
           "Product Transfer": 3,
-          "Technology Transfer": 3,
+          "Technology Transfer": 2,
           "Facility Design": 1
         },
         "NPD": {
           "Product Transfer": 1,
-          "Technology Transfer": 2,
-          "Facility Design": 2
+          "Technology Transfer": 3,
+          "Facility Design": 3
         },
         "Obtain Customer Commit.": {
-          "Product Transfer": 2,
+          "Product Transfer": 3,
           "Technology Transfer": 2,
-          "Facility Design": 2
+          "Facility Design": 3
         },
         "Order Fulfillment": {
           "Product Transfer": 3,
@@ -179,108 +216,193 @@
           "Facility Design": 3
         },
         "Customer Service": {
-          "Product Transfer": 1,
-          "Technology Transfer": 1,
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
           "Facility Design": 3
         }
       },
       "kpis": {
         "Supplier on-time delivery": {
           "Product Transfer": 3,
-          "Technology Transfer": null,
-          "Facility Design": null
+          "Technology Transfer": 3,
+          "Facility Design": 1
         },
-        "Incoming defect rate": {
+        "Supplier quality defect rate": {
           "Product Transfer": 3,
-          "Technology Transfer": null,
-          "Facility Design": null
+          "Technology Transfer": 3,
+          "Facility Design": 2
         },
-        "Assembly cost per unit": {
-          "Product Transfer": 3,
-          "Technology Transfer": null,
-          "Facility Design": null
+        "Assembly cycle time": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
+          "Facility Design": 1
+        },
+        "Cost per assembled unit": {
+          "Product Transfer": 2,
+          "Technology Transfer": 1,
+          "Facility Design": 2
         },
         "Logistics lead time": {
           "Product Transfer": 3,
-          "Technology Transfer": null,
-          "Facility Design": null
+          "Technology Transfer": 2,
+          "Facility Design": 1
         },
-        "Ramp-up time": {
-          "Product Transfer": null,
-          "Technology Transfer": 3,
-          "Facility Design": null
-        },
-        "First-pass yield": {
-          "Product Transfer": null,
-          "Technology Transfer": 3,
-          "Facility Design": null
-        },
-        "Learning-curve productivity": {
-          "Product Transfer": null,
-          "Technology Transfer": 3,
-          "Facility Design": null
-        },
-        "% revenue from new products": {
-          "Product Transfer": null,
-          "Technology Transfer": 3,
-          "Facility Design": null
-        },
-        "OEE": {
-          "Product Transfer": null,
-          "Technology Transfer": null,
-          "Facility Design": 3
+        "Inventory turns": {
+          "Product Transfer": 2,
+          "Technology Transfer": 1,
+          "Facility Design": 2
         },
         "OTIF": {
-          "Product Transfer": null,
-          "Technology Transfer": null,
+          "Product Transfer": 3,
+          "Technology Transfer": 2,
+          "Facility Design": 2
+        },
+        "Order cycle time": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
+          "Facility Design": 2
+        },
+        "Forecast accuracy": {
+          "Product Transfer": 2,
+          "Technology Transfer": 1,
+          "Facility Design": 2
+        },
+        "Customer fill rate": {
+          "Product Transfer": 3,
+          "Technology Transfer": 1,
+          "Facility Design": 2
+        },
+        "Technology ramp-up time": {
+          "Product Transfer": 1,
+          "Technology Transfer": 3,
+          "Facility Design": 2
+        },
+        "First-pass yield": {
+          "Product Transfer": 2,
+          "Technology Transfer": 3,
           "Facility Design": 3
         },
-        "Lifecycle cost": {
-          "Product Transfer": null,
-          "Technology Transfer": null,
+        "Learning-curve productivity": {
+          "Product Transfer": 1,
+          "Technology Transfer": 2,
+          "Facility Design": 2
+        },
+        "Flexibility index": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
           "Facility Design": 3
         },
-        "ESG index": {
-          "Product Transfer": null,
-          "Technology Transfer": null,
+        "Revenue from new products (%)": {
+          "Product Transfer": 1,
+          "Technology Transfer": 2,
+          "Facility Design": 1
+        },
+        "Technology adoption cost": {
+          "Product Transfer": 1,
+          "Technology Transfer": 2,
+          "Facility Design": 2
+        },
+        "Plant utilization": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
           "Facility Design": 3
         },
-        "Safety incidents": {
-          "Product Transfer": null,
-          "Technology Transfer": null,
+        "Supplier on-time receipts": {
+          "Product Transfer": 3,
+          "Technology Transfer": 3,
+          "Facility Design": 2
+        },
+        "Supplier quality pass": {
+          "Product Transfer": 3,
+          "Technology Transfer": 3,
+          "Facility Design": 2
+        },
+        "Cycle time reduction": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
           "Facility Design": 3
+        },
+        "OEE": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
+          "Facility Design": 3
+        },
+        "Production lead time": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
+          "Facility Design": 2
+        },
+        "Customer fulfillment cycle time": {
+          "Product Transfer": 3,
+          "Technology Transfer": 2,
+          "Facility Design": 2
+        },
+        "Total lifecycle cost": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
+          "Facility Design": 3
+        },
+        "ESG performance index": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
+          "Facility Design": 3
+        },
+        "Workforce safety incident rate": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
+          "Facility Design": 3
+        },
+        "Service uptime": {
+          "Product Transfer": 2,
+          "Technology Transfer": 2,
+          "Facility Design": 3
+        },
+        "Planned maintenance ratio": {
+          "Product Transfer": 1,
+          "Technology Transfer": 2,
+          "Facility Design": 3
+        },
+        "Labor content accuracy": {
+          "Product Transfer": 1,
+          "Technology Transfer": 2,
+          "Facility Design": 2
+        },
+        "Closed-loop recovery rate": {
+          "Product Transfer": 1,
+          "Technology Transfer": 1,
+          "Facility Design": 2
         }
       },
       "drivers": {
         "Inventory/Capacity Buffers": {
           "Product Transfer": 1,
-          "Technology Transfer": 3,
+          "Technology Transfer": 2,
           "Facility Design": 3
         },
         "Network Diversification": {
           "Product Transfer": 3,
-          "Technology Transfer": 3,
+          "Technology Transfer": 2,
           "Facility Design": 1
         },
         "Multisourcing": {
           "Product Transfer": 3,
-          "Technology Transfer": 1,
+          "Technology Transfer": 3,
           "Facility Design": 1
         },
         "Nearshoring": {
           "Product Transfer": 2,
           "Technology Transfer": 2,
-          "Facility Design": 2
+          "Facility Design": 3
         },
         "Platform/Plant Harmonization": {
           "Product Transfer": 1,
-          "Technology Transfer": 1,
+          "Technology Transfer": 2,
           "Facility Design": 3
         },
         "Ecosystem Partnerships": {
           "Product Transfer": 3,
           "Technology Transfer": 3,
-          "Facility Design": 1
+          "Facility Design": 2
         }
       }
     },
@@ -325,55 +447,159 @@
       },
       "kpis": {
         "Supplier on-time delivery": {
-          "Social": 0.6,
-          "Sustainable": 0.2
+          "Social": 0.5,
+          "Sensing": 0.3,
+          "Smart": 0.2,
+          "Safe": 0.2
         },
-        "Incoming defect rate": {
-          "Smart": 0.4,
-          "Sensing": 0.6
+        "Supplier quality defect rate": {
+          "Safe": 0.5,
+          "Sensing": 0.4,
+          "Smart": 0.3
         },
-        "Assembly cost per unit": {
+        "Assembly cycle time": {
+          "Smart": 0.5,
+          "Sensing": 0.4,
+          "Social": 0.2
+        },
+        "Cost per assembled unit": {
+          "Sustainable": 0.4,
           "Smart": 0.4,
-          "Sustainable": 0.4
+          "Social": 0.2
         },
         "Logistics lead time": {
-          "Social": 0.6,
+          "Social": 0.4,
+          "Smart": 0.3,
+          "Sustainable": 0.3,
+          "Safe": 0.2
+        },
+        "Inventory turns": {
+          "Sustainable": 0.4,
+          "Smart": 0.3,
+          "Sensing": 0.3
+        },
+        "OTIF": {
+          "Social": 0.5,
+          "Safe": 0.3,
           "Smart": 0.2
         },
-        "Ramp-up time": {
-          "Smart": 0.6,
-          "Safe": 0.3
+        "Order cycle time": {
+          "Social": 0.4,
+          "Smart": 0.4,
+          "Sensing": 0.2
+        },
+        "Forecast accuracy": {
+          "Sensing": 0.6,
+          "Smart": 0.4
+        },
+        "Customer fill rate": {
+          "Social": 0.6,
+          "Smart": 0.2,
+          "Safe": 0.2
+        },
+        "Technology ramp-up time": {
+          "Smart": 0.5,
+          "Sensing": 0.3,
+          "Safe": 0.3,
+          "Social": 0.2
         },
         "First-pass yield": {
-          "Smart": 0.4,
-          "Sensing": 0.4
+          "Safe": 0.4,
+          "Sensing": 0.4,
+          "Smart": 0.4
         },
         "Learning-curve productivity": {
-          "Smart": 0.5,
-          "Social": 0.3
+          "Social": 0.5,
+          "Smart": 0.4,
+          "Safe": 0.2
         },
-        "% revenue from new products": {
-          "Sustainable": 0.6,
-          "Smart": 0.4
+        "Flexibility index": {
+          "Smart": 0.4,
+          "Social": 0.3,
+          "Sustainable": 0.2,
+          "Safe": 0.2
+        },
+        "Revenue from new products (%)": {
+          "Sustainable": 0.4,
+          "Smart": 0.4,
+          "Social": 0.2
+        },
+        "Technology adoption cost": {
+          "Smart": 0.5,
+          "Sustainable": 0.3
+        },
+        "Plant utilization": {
+          "Smart": 0.4,
+          "Sensing": 0.4,
+          "Sustainable": 0.3,
+          "Safe": 0.2
+        },
+        "Supplier on-time receipts": {
+          "Social": 0.4,
+          "Sensing": 0.3,
+          "Smart": 0.2,
+          "Safe": 0.2
+        },
+        "Supplier quality pass": {
+          "Safe": 0.5,
+          "Sensing": 0.4,
+          "Smart": 0.3
+        },
+        "Cycle time reduction": {
+          "Smart": 0.5,
+          "Sensing": 0.3,
+          "Sustainable": 0.2,
+          "Social": 0.2
         },
         "OEE": {
           "Smart": 0.4,
           "Sensing": 0.4,
+          "Safe": 0.3,
+          "Sustainable": 0.2
+        },
+        "Production lead time": {
+          "Smart": 0.4,
+          "Sensing": 0.3,
+          "Social": 0.2
+        },
+        "Customer fulfillment cycle time": {
+          "Social": 0.5,
+          "Smart": 0.3,
           "Safe": 0.2
         },
-        "OTIF": {
-          "Social": 0.5,
-          "Safe": 0.3
+        "Total lifecycle cost": {
+          "Sustainable": 0.6,
+          "Smart": 0.2,
+          "Safe": 0.2
         },
-        "Lifecycle cost": {
+        "ESG performance index": {
           "Sustainable": 0.8,
-          "Smart": 0.2
+          "Social": 0.2
         },
-        "ESG index": {
-          "Sustainable": 1.0
+        "Workforce safety incident rate": {
+          "Safe": 0.8,
+          "Social": 0.3,
+          "Sensing": 0.2
         },
-        "Safety incidents": {
-          "Safe": 1.0,
+        "Service uptime": {
+          "Safe": 0.5,
+          "Smart": 0.3,
+          "Sensing": 0.3
+        },
+        "Planned maintenance ratio": {
+          "Safe": 0.5,
+          "Sensing": 0.4,
+          "Smart": 0.3
+        },
+        "Labor content accuracy": {
+          "Social": 0.4,
+          "Smart": 0.3,
+          "Sensing": 0.3,
+          "Safe": 0.2
+        },
+        "Closed-loop recovery rate": {
+          "Sustainable": 0.7,
+          "Smart": 0.2,
           "Social": 0.2
         }
       },
@@ -430,31 +656,156 @@
         }
       },
       "kpis": {
-        "Ramp-up time": {
-          "Launch": 1.0,
-          "Advanced Development": 0.6
-        },
-        "First-pass yield": {
-          "Launch": 0.7,
-          "Operation": 0.5
-        },
-        "Learning-curve productivity": {
-          "Launch": 0.6,
-          "Operation": 0.4
-        },
-        "OEE": {
+        "Supplier on-time delivery": {
+          "Launch": 0.5,
           "Operation": 1.0
         },
-        "OTIF": {
-          "Operation": 0.7
+        "Supplier quality defect rate": {
+          "Advanced Development": 0.4,
+          "Launch": 0.7,
+          "Operation": 1.0
         },
-        "Lifecycle cost": {
-          "End-of-Life": 0.6,
+        "Assembly cycle time": {
+          "Advanced Development": 0.5,
+          "Launch": 0.8,
+          "Operation": 1.0
+        },
+        "Cost per assembled unit": {
+          "Launch": 0.6,
+          "Operation": 1.0
+        },
+        "Logistics lead time": {
+          "Launch": 0.6,
+          "Operation": 1.0
+        },
+        "Inventory turns": {
+          "Operation": 1.0,
+          "End-of-Life": 0.3
+        },
+        "OTIF": {
+          "Launch": 0.6,
+          "Operation": 1.0
+        },
+        "Order cycle time": {
+          "Launch": 0.5,
+          "Operation": 1.0
+        },
+        "Forecast accuracy": {
+          "Ideation": 0.3,
+          "Launch": 0.6,
+          "Operation": 1.0
+        },
+        "Customer fill rate": {
+          "Launch": 0.6,
+          "Operation": 1.0
+        },
+        "Technology ramp-up time": {
+          "Basic Development": 0.4,
+          "Advanced Development": 0.8,
+          "Launch": 1.0,
           "Operation": 0.4
         },
-        "ESG index": {
-          "End-of-Life": 0.9,
-          "Operation": 0.5
+        "First-pass yield": {
+          "Advanced Development": 0.6,
+          "Launch": 1.0,
+          "Operation": 0.8
+        },
+        "Learning-curve productivity": {
+          "Launch": 1.0,
+          "Operation": 0.8
+        },
+        "Flexibility index": {
+          "Ideation": 0.4,
+          "Basic Development": 0.6,
+          "Advanced Development": 0.8,
+          "Launch": 1.0,
+          "Operation": 0.8
+        },
+        "Revenue from new products (%)": {
+          "Ideation": 0.5,
+          "Advanced Development": 0.7,
+          "Launch": 1.0,
+          "Operation": 0.8
+        },
+        "Technology adoption cost": {
+          "Ideation": 0.4,
+          "Basic Development": 0.7,
+          "Advanced Development": 1.0,
+          "Launch": 0.8
+        },
+        "Plant utilization": {
+          "Launch": 0.7,
+          "Operation": 1.0
+        },
+        "Supplier on-time receipts": {
+          "Advanced Development": 0.5,
+          "Launch": 0.8,
+          "Operation": 1.0
+        },
+        "Supplier quality pass": {
+          "Advanced Development": 0.6,
+          "Launch": 0.9,
+          "Operation": 1.0
+        },
+        "Cycle time reduction": {
+          "Launch": 0.8,
+          "Operation": 1.0
+        },
+        "OEE": {
+          "Launch": 0.7,
+          "Operation": 1.0
+        },
+        "Production lead time": {
+          "Advanced Development": 0.4,
+          "Launch": 0.7,
+          "Operation": 1.0
+        },
+        "Customer fulfillment cycle time": {
+          "Launch": 0.6,
+          "Operation": 1.0
+        },
+        "Total lifecycle cost": {
+          "Ideation": 0.5,
+          "Basic Development": 0.7,
+          "Advanced Development": 0.8,
+          "Launch": 0.8,
+          "Operation": 0.9,
+          "End-of-Life": 1.0
+        },
+        "ESG performance index": {
+          "Ideation": 0.5,
+          "Basic Development": 0.7,
+          "Advanced Development": 0.8,
+          "Launch": 0.8,
+          "Operation": 0.9,
+          "End-of-Life": 1.0
+        },
+        "Workforce safety incident rate": {
+          "Basic Development": 0.5,
+          "Advanced Development": 0.8,
+          "Launch": 1.0,
+          "Operation": 1.0,
+          "End-of-Life": 0.7
+        },
+        "Service uptime": {
+          "Launch": 0.8,
+          "Operation": 1.0
+        },
+        "Planned maintenance ratio": {
+          "Launch": 0.7,
+          "Operation": 1.0
+        },
+        "Labor content accuracy": {
+          "Advanced Development": 0.5,
+          "Launch": 0.8,
+          "Operation": 1.0
+        },
+        "Closed-loop recovery rate": {
+          "Ideation": 0.3,
+          "Advanced Development": 0.6,
+          "Launch": 0.6,
+          "Operation": 0.8,
+          "End-of-Life": 1.0
         }
       },
       "drivers": {
@@ -472,6 +823,51 @@
       }
     }
   },
+  "kpi_mapping": {
+    "primary_configuration": {
+      "Supplier on-time delivery": "Product Transfer",
+      "Supplier quality defect rate": "Product Transfer",
+      "Assembly cycle time": "Product Transfer",
+      "Cost per assembled unit": "Product Transfer",
+      "Logistics lead time": "Product Transfer",
+      "Inventory turns": "Product Transfer",
+      "OTIF": "Product Transfer",
+      "Order cycle time": "Product Transfer",
+      "Forecast accuracy": "Product Transfer",
+      "Customer fill rate": "Product Transfer",
+      "Technology ramp-up time": "Technology Transfer",
+      "First-pass yield": "Technology Transfer",
+      "Learning-curve productivity": "Technology Transfer",
+      "Flexibility index": "Technology Transfer",
+      "Revenue from new products (%)": "Technology Transfer",
+      "Technology adoption cost": "Technology Transfer",
+      "Plant utilization": "Technology Transfer",
+      "Supplier on-time receipts": "Technology Transfer",
+      "Supplier quality pass": "Technology Transfer",
+      "Cycle time reduction": "Technology Transfer",
+      "OEE": "Facility Design",
+      "Production lead time": "Facility Design",
+      "Customer fulfillment cycle time": "Facility Design",
+      "Total lifecycle cost": "Facility Design",
+      "ESG performance index": "Facility Design",
+      "Workforce safety incident rate": "Facility Design",
+      "Service uptime": "Facility Design",
+      "Planned maintenance ratio": "Facility Design",
+      "Labor content accuracy": "Facility Design",
+      "Closed-loop recovery rate": "Facility Design"
+    },
+    "baseline_protocol": {
+      "scale": {
+        "0": "minimal relevance but still applicable",
+        "1": "low or secondary relevance",
+        "2": "important relevance",
+        "3": "core or critical relevance"
+      },
+      "applicability_policy": "All current KPI items are evaluated in all three configurations. N/A is reserved for a separately justified structural exclusion.",
+      "calibration_status": "Author-designed, literature-informed provisional mapping; requires structured expert elicitation and case-based validation."
+    },
+    "item_count": 30
+  },
   "antecedent_operator": "product t-norm",
   "defuzzification": "weighted average",
   "rules": [
@@ -480,7 +876,8 @@
       "baseline": "Low",
       "5s_alignment": "Low",
       "lifecycle_relevance": "Low",
-      "output": "Very Low",
+      "output_label": "Very Low",
+      "consequent": 0.0,
       "confidence": 1.0
     },
     {
@@ -488,7 +885,8 @@
       "baseline": "Low",
       "5s_alignment": "Low",
       "lifecycle_relevance": "Medium",
-      "output": "Very Low",
+      "output_label": "Very Low",
+      "consequent": 0.3,
       "confidence": 1.0
     },
     {
@@ -496,7 +894,8 @@
       "baseline": "Low",
       "5s_alignment": "Low",
       "lifecycle_relevance": "High",
-      "output": "Low",
+      "output_label": "Low",
+      "consequent": 0.6,
       "confidence": 1.0
     },
     {
@@ -504,7 +903,8 @@
       "baseline": "Low",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "Low",
-      "output": "Low",
+      "output_label": "Low",
+      "consequent": 0.45,
       "confidence": 1.0
     },
     {
@@ -512,7 +912,8 @@
       "baseline": "Low",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "Medium",
-      "output": "Low",
+      "output_label": "Low",
+      "consequent": 0.75,
       "confidence": 1.0
     },
     {
@@ -520,7 +921,8 @@
       "baseline": "Low",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "High",
-      "output": "Low",
+      "output_label": "Low",
+      "consequent": 1.05,
       "confidence": 1.0
     },
     {
@@ -528,7 +930,8 @@
       "baseline": "Low",
       "5s_alignment": "High",
       "lifecycle_relevance": "Low",
-      "output": "Low",
+      "output_label": "Low",
+      "consequent": 0.9,
       "confidence": 1.0
     },
     {
@@ -536,7 +939,8 @@
       "baseline": "Low",
       "5s_alignment": "High",
       "lifecycle_relevance": "Medium",
-      "output": "Medium",
+      "output_label": "Medium",
+      "consequent": 1.2,
       "confidence": 1.0
     },
     {
@@ -544,7 +948,8 @@
       "baseline": "Low",
       "5s_alignment": "High",
       "lifecycle_relevance": "High",
-      "output": "Medium",
+      "output_label": "Medium",
+      "consequent": 1.5,
       "confidence": 1.0
     },
     {
@@ -552,7 +957,8 @@
       "baseline": "Medium",
       "5s_alignment": "Low",
       "lifecycle_relevance": "Low",
-      "output": "Low",
+      "output_label": "Low",
+      "consequent": 0.75,
       "confidence": 1.0
     },
     {
@@ -560,7 +966,8 @@
       "baseline": "Medium",
       "5s_alignment": "Low",
       "lifecycle_relevance": "Medium",
-      "output": "Low",
+      "output_label": "Low",
+      "consequent": 1.05,
       "confidence": 1.0
     },
     {
@@ -568,7 +975,8 @@
       "baseline": "Medium",
       "5s_alignment": "Low",
       "lifecycle_relevance": "High",
-      "output": "Medium",
+      "output_label": "Medium",
+      "consequent": 1.35,
       "confidence": 1.0
     },
     {
@@ -576,7 +984,8 @@
       "baseline": "Medium",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "Low",
-      "output": "Medium",
+      "output_label": "Medium",
+      "consequent": 1.2,
       "confidence": 1.0
     },
     {
@@ -584,7 +993,8 @@
       "baseline": "Medium",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "Medium",
-      "output": "Medium",
+      "output_label": "Medium",
+      "consequent": 1.5,
       "confidence": 1.0
     },
     {
@@ -592,7 +1002,8 @@
       "baseline": "Medium",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "High",
-      "output": "Medium",
+      "output_label": "Medium",
+      "consequent": 1.8,
       "confidence": 1.0
     },
     {
@@ -600,7 +1011,8 @@
       "baseline": "Medium",
       "5s_alignment": "High",
       "lifecycle_relevance": "Low",
-      "output": "Medium",
+      "output_label": "Medium",
+      "consequent": 1.65,
       "confidence": 1.0
     },
     {
@@ -608,7 +1020,8 @@
       "baseline": "Medium",
       "5s_alignment": "High",
       "lifecycle_relevance": "Medium",
-      "output": "High",
+      "output_label": "High",
+      "consequent": 1.95,
       "confidence": 1.0
     },
     {
@@ -616,7 +1029,8 @@
       "baseline": "Medium",
       "5s_alignment": "High",
       "lifecycle_relevance": "High",
-      "output": "High",
+      "output_label": "High",
+      "consequent": 2.25,
       "confidence": 1.0
     },
     {
@@ -624,7 +1038,8 @@
       "baseline": "High",
       "5s_alignment": "Low",
       "lifecycle_relevance": "Low",
-      "output": "Medium",
+      "output_label": "Medium",
+      "consequent": 1.5,
       "confidence": 1.0
     },
     {
@@ -632,7 +1047,8 @@
       "baseline": "High",
       "5s_alignment": "Low",
       "lifecycle_relevance": "Medium",
-      "output": "Medium",
+      "output_label": "Medium",
+      "consequent": 1.8,
       "confidence": 1.0
     },
     {
@@ -640,7 +1056,8 @@
       "baseline": "High",
       "5s_alignment": "Low",
       "lifecycle_relevance": "High",
-      "output": "High",
+      "output_label": "High",
+      "consequent": 2.1,
       "confidence": 1.0
     },
     {
@@ -648,7 +1065,8 @@
       "baseline": "High",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "Low",
-      "output": "High",
+      "output_label": "High",
+      "consequent": 1.95,
       "confidence": 1.0
     },
     {
@@ -656,7 +1074,8 @@
       "baseline": "High",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "Medium",
-      "output": "High",
+      "output_label": "High",
+      "consequent": 2.25,
       "confidence": 1.0
     },
     {
@@ -664,7 +1083,8 @@
       "baseline": "High",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "High",
-      "output": "High",
+      "output_label": "High",
+      "consequent": 2.55,
       "confidence": 1.0
     },
     {
@@ -672,7 +1092,8 @@
       "baseline": "High",
       "5s_alignment": "High",
       "lifecycle_relevance": "Low",
-      "output": "High",
+      "output_label": "High",
+      "consequent": 2.4,
       "confidence": 1.0
     },
     {
@@ -680,7 +1101,8 @@
       "baseline": "High",
       "5s_alignment": "High",
       "lifecycle_relevance": "Medium",
-      "output": "Very High",
+      "output_label": "Very High",
+      "consequent": 2.7,
       "confidence": 1.0
     },
     {
@@ -688,7 +1110,8 @@
       "baseline": "High",
       "5s_alignment": "High",
       "lifecycle_relevance": "High",
-      "output": "Very High",
+      "output_label": "Very High",
+      "consequent": 3.0,
       "confidence": 1.0
     }
   ],
@@ -729,6 +1152,7 @@
         "5s_alignment": 0.3,
         "lifecycle_relevance": 0.2
       },
+      "singleton_formula": "1.5 * (0.50*q_baseline + 0.30*q_5s + 0.20*q_lifecycle), q in {0,1,2}",
       "status": "provisional pending structured expert elicitation and calibration"
     }
   }

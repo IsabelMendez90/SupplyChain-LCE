@@ -8,6 +8,7 @@ be reproduced from the command line.
 from fuzzy_engine import sugeno_fuzzy_score
 
 
+DECISION_MODEL_VERSION = "2.1-provisional"
 SYSTEMS = ["Product Transfer", "Technology Transfer", "Facility Design"]
 LCE = ["Ideation", "Basic Development", "Advanced Development", "Launch", "Operation", "End-of-Life"]
 FIVE_S = ["Social", "Sustainable", "Sensing", "Smart", "Safe"]
@@ -29,55 +30,150 @@ PROD_SERVICE = {
 }
 
 BASE_CORE = {
-    "Customer Driven Design": {"Product Transfer": 1, "Technology Transfer": 3, "Facility Design": 3},
+    "Customer Driven Design": {"Product Transfer": 1, "Technology Transfer": 2, "Facility Design": 3},
     "CRM": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
-    "Co-Engineering": {"Product Transfer": 3, "Technology Transfer": 1, "Facility Design": 1},
-    "SRM": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 1},
-    "NPD": {"Product Transfer": 1, "Technology Transfer": 2, "Facility Design": 2},
-    "Obtain Customer Commit.": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 2},
+    "Co-Engineering": {"Product Transfer": 3, "Technology Transfer": 2, "Facility Design": 1},
+    "SRM": {"Product Transfer": 3, "Technology Transfer": 2, "Facility Design": 1},
+    "NPD": {"Product Transfer": 1, "Technology Transfer": 3, "Facility Design": 3},
+    "Obtain Customer Commit.": {"Product Transfer": 3, "Technology Transfer": 2, "Facility Design": 3},
     "Order Fulfillment": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 3},
-    "Customer Service": {"Product Transfer": 1, "Technology Transfer": 1, "Facility Design": 3},
+    "Customer Service": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
 }
 BASE_KPIS = {
-    # ``None`` means structurally not applicable to that configuration. It is
-    # deliberately different from a numeric baseline of 0 (very low relevance).
-    "Supplier on-time delivery": {"Product Transfer": 3, "Technology Transfer": None, "Facility Design": None},
-    "Incoming defect rate": {"Product Transfer": 3, "Technology Transfer": None, "Facility Design": None},
-    "Assembly cost per unit": {"Product Transfer": 3, "Technology Transfer": None, "Facility Design": None},
-    "Logistics lead time": {"Product Transfer": 3, "Technology Transfer": None, "Facility Design": None},
-    "Ramp-up time": {"Product Transfer": None, "Technology Transfer": 3, "Facility Design": None},
-    "First-pass yield": {"Product Transfer": None, "Technology Transfer": 3, "Facility Design": None},
-    "Learning-curve productivity": {"Product Transfer": None, "Technology Transfer": 3, "Facility Design": None},
-    "% revenue from new products": {"Product Transfer": None, "Technology Transfer": 3, "Facility Design": None},
-    "OEE": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
-    "OTIF": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
-    "Lifecycle cost": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
-    "ESG index": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
-    "Safety incidents": {"Product Transfer": None, "Technology Transfer": None, "Facility Design": 3},
+    # All 30 manuscript KPIs remain applicable across the three supply-chain
+    # configurations. Values encode gradual contextual relevance:
+    # 1 = low/secondary, 2 = important, 3 = core/critical.
+    "Supplier on-time delivery": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 1},
+    "Supplier quality defect rate": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 2},
+    "Assembly cycle time": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 1},
+    "Cost per assembled unit": {"Product Transfer": 2, "Technology Transfer": 1, "Facility Design": 2},
+    "Logistics lead time": {"Product Transfer": 3, "Technology Transfer": 2, "Facility Design": 1},
+    "Inventory turns": {"Product Transfer": 2, "Technology Transfer": 1, "Facility Design": 2},
+    "OTIF": {"Product Transfer": 3, "Technology Transfer": 2, "Facility Design": 2},
+    "Order cycle time": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 2},
+    "Forecast accuracy": {"Product Transfer": 2, "Technology Transfer": 1, "Facility Design": 2},
+    "Customer fill rate": {"Product Transfer": 3, "Technology Transfer": 1, "Facility Design": 2},
+    "Technology ramp-up time": {"Product Transfer": 1, "Technology Transfer": 3, "Facility Design": 2},
+    "First-pass yield": {"Product Transfer": 2, "Technology Transfer": 3, "Facility Design": 3},
+    "Learning-curve productivity": {"Product Transfer": 1, "Technology Transfer": 2, "Facility Design": 2},
+    "Flexibility index": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
+    "Revenue from new products (%)": {"Product Transfer": 1, "Technology Transfer": 2, "Facility Design": 1},
+    "Technology adoption cost": {"Product Transfer": 1, "Technology Transfer": 2, "Facility Design": 2},
+    "Plant utilization": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
+    "Supplier on-time receipts": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 2},
+    "Supplier quality pass": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 2},
+    "Cycle time reduction": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
+    "OEE": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
+    "Production lead time": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 2},
+    "Customer fulfillment cycle time": {"Product Transfer": 3, "Technology Transfer": 2, "Facility Design": 2},
+    "Total lifecycle cost": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
+    "ESG performance index": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
+    "Workforce safety incident rate": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
+    "Service uptime": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
+    "Planned maintenance ratio": {"Product Transfer": 1, "Technology Transfer": 2, "Facility Design": 3},
+    "Labor content accuracy": {"Product Transfer": 1, "Technology Transfer": 2, "Facility Design": 2},
+    "Closed-loop recovery rate": {"Product Transfer": 1, "Technology Transfer": 1, "Facility Design": 2},
+}
+
+KPI_PRIMARY_SYSTEM = {
+    item: system
+    for system, items in {
+        "Product Transfer": (
+            "Supplier on-time delivery",
+            "Supplier quality defect rate",
+            "Assembly cycle time",
+            "Cost per assembled unit",
+            "Logistics lead time",
+            "Inventory turns",
+            "OTIF",
+            "Order cycle time",
+            "Forecast accuracy",
+            "Customer fill rate",
+        ),
+        "Technology Transfer": (
+            "Technology ramp-up time",
+            "First-pass yield",
+            "Learning-curve productivity",
+            "Flexibility index",
+            "Revenue from new products (%)",
+            "Technology adoption cost",
+            "Plant utilization",
+            "Supplier on-time receipts",
+            "Supplier quality pass",
+            "Cycle time reduction",
+        ),
+        "Facility Design": (
+            "OEE",
+            "Production lead time",
+            "Customer fulfillment cycle time",
+            "Total lifecycle cost",
+            "ESG performance index",
+            "Workforce safety incident rate",
+            "Service uptime",
+            "Planned maintenance ratio",
+            "Labor content accuracy",
+            "Closed-loop recovery rate",
+        ),
+    }.items()
+    for item in items
+}
+
+KPI_BASELINE_PROTOCOL = {
+    "scale": {
+        0: "minimal relevance but still applicable",
+        1: "low or secondary relevance",
+        2: "important relevance",
+        3: "core or critical relevance",
+    },
+    "applicability_policy": (
+        "All current KPI items are evaluated in all three configurations. "
+        "N/A is reserved for a separately justified structural exclusion."
+    ),
+    "calibration_status": (
+        "Author-designed, literature-informed provisional mapping; requires "
+        "structured expert elicitation and case-based validation."
+    ),
 }
 BASE_DRIVERS = {
-    "Inventory/Capacity Buffers": {"Product Transfer": 1, "Technology Transfer": 3, "Facility Design": 3},
-    "Network Diversification": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 1},
-    "Multisourcing": {"Product Transfer": 3, "Technology Transfer": 1, "Facility Design": 1},
-    "Nearshoring": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 2},
-    "Platform/Plant Harmonization": {"Product Transfer": 1, "Technology Transfer": 1, "Facility Design": 3},
-    "Ecosystem Partnerships": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 1},
+    "Inventory/Capacity Buffers": {"Product Transfer": 1, "Technology Transfer": 2, "Facility Design": 3},
+    "Network Diversification": {"Product Transfer": 3, "Technology Transfer": 2, "Facility Design": 1},
+    "Multisourcing": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 1},
+    "Nearshoring": {"Product Transfer": 2, "Technology Transfer": 2, "Facility Design": 3},
+    "Platform/Plant Harmonization": {"Product Transfer": 1, "Technology Transfer": 2, "Facility Design": 3},
+    "Ecosystem Partnerships": {"Product Transfer": 3, "Technology Transfer": 3, "Facility Design": 2},
 }
 
 S_TAGS_KPI = {
-    "Supplier on-time delivery": {"Social": 0.6, "Sustainable": 0.2},
-    "Incoming defect rate": {"Smart": 0.4, "Sensing": 0.6},
-    "Assembly cost per unit": {"Smart": 0.4, "Sustainable": 0.4},
-    "Logistics lead time": {"Social": 0.6, "Smart": 0.2},
-    "Ramp-up time": {"Smart": 0.6, "Safe": 0.3},
-    "First-pass yield": {"Smart": 0.4, "Sensing": 0.4},
-    "Learning-curve productivity": {"Smart": 0.5, "Social": 0.3},
-    "% revenue from new products": {"Sustainable": 0.6, "Smart": 0.4},
-    "OEE": {"Smart": 0.4, "Sensing": 0.4, "Safe": 0.2},
-    "OTIF": {"Social": 0.5, "Safe": 0.3},
-    "Lifecycle cost": {"Sustainable": 0.8, "Smart": 0.2},
-    "ESG index": {"Sustainable": 1.0},
-    "Safety incidents": {"Safe": 1.0, "Social": 0.2},
+    "Supplier on-time delivery": {"Social": 0.5, "Sensing": 0.3, "Smart": 0.2, "Safe": 0.2},
+    "Supplier quality defect rate": {"Safe": 0.5, "Sensing": 0.4, "Smart": 0.3},
+    "Assembly cycle time": {"Smart": 0.5, "Sensing": 0.4, "Social": 0.2},
+    "Cost per assembled unit": {"Sustainable": 0.4, "Smart": 0.4, "Social": 0.2},
+    "Logistics lead time": {"Social": 0.4, "Smart": 0.3, "Sustainable": 0.3, "Safe": 0.2},
+    "Inventory turns": {"Sustainable": 0.4, "Smart": 0.3, "Sensing": 0.3},
+    "OTIF": {"Social": 0.5, "Safe": 0.3, "Smart": 0.2},
+    "Order cycle time": {"Social": 0.4, "Smart": 0.4, "Sensing": 0.2},
+    "Forecast accuracy": {"Sensing": 0.6, "Smart": 0.4},
+    "Customer fill rate": {"Social": 0.6, "Smart": 0.2, "Safe": 0.2},
+    "Technology ramp-up time": {"Smart": 0.5, "Sensing": 0.3, "Safe": 0.3, "Social": 0.2},
+    "First-pass yield": {"Safe": 0.4, "Sensing": 0.4, "Smart": 0.4},
+    "Learning-curve productivity": {"Social": 0.5, "Smart": 0.4, "Safe": 0.2},
+    "Flexibility index": {"Smart": 0.4, "Social": 0.3, "Sustainable": 0.2, "Safe": 0.2},
+    "Revenue from new products (%)": {"Sustainable": 0.4, "Smart": 0.4, "Social": 0.2},
+    "Technology adoption cost": {"Smart": 0.5, "Sustainable": 0.3},
+    "Plant utilization": {"Smart": 0.4, "Sensing": 0.4, "Sustainable": 0.3, "Safe": 0.2},
+    "Supplier on-time receipts": {"Social": 0.4, "Sensing": 0.3, "Smart": 0.2, "Safe": 0.2},
+    "Supplier quality pass": {"Safe": 0.5, "Sensing": 0.4, "Smart": 0.3},
+    "Cycle time reduction": {"Smart": 0.5, "Sensing": 0.3, "Sustainable": 0.2, "Social": 0.2},
+    "OEE": {"Smart": 0.4, "Sensing": 0.4, "Safe": 0.3, "Sustainable": 0.2},
+    "Production lead time": {"Smart": 0.4, "Sensing": 0.3, "Social": 0.2},
+    "Customer fulfillment cycle time": {"Social": 0.5, "Smart": 0.3, "Safe": 0.2},
+    "Total lifecycle cost": {"Sustainable": 0.6, "Smart": 0.2, "Safe": 0.2},
+    "ESG performance index": {"Sustainable": 0.8, "Social": 0.2},
+    "Workforce safety incident rate": {"Safe": 0.8, "Social": 0.3, "Sensing": 0.2},
+    "Service uptime": {"Safe": 0.5, "Smart": 0.3, "Sensing": 0.3},
+    "Planned maintenance ratio": {"Safe": 0.5, "Sensing": 0.4, "Smart": 0.3},
+    "Labor content accuracy": {"Social": 0.4, "Smart": 0.3, "Sensing": 0.3, "Safe": 0.2},
+    "Closed-loop recovery rate": {"Sustainable": 0.7, "Smart": 0.2, "Social": 0.2},
 }
 S_TAGS_CORE = {
     "Customer Driven Design": {"Smart": 0.4, "Social": 0.4, "Sustainable": 0.2},
@@ -99,13 +195,36 @@ S_TAGS_DRIVERS = {
 }
 
 STAGE_TAGS_KPI = {
-    "Ramp-up time": {"Launch": 1.0, "Advanced Development": 0.6},
-    "First-pass yield": {"Launch": 0.7, "Operation": 0.5},
-    "Learning-curve productivity": {"Launch": 0.6, "Operation": 0.4},
-    "OEE": {"Operation": 1.0},
-    "OTIF": {"Operation": 0.7},
-    "Lifecycle cost": {"End-of-Life": 0.6, "Operation": 0.4},
-    "ESG index": {"End-of-Life": 0.9, "Operation": 0.5},
+    "Supplier on-time delivery": {"Launch": 0.5, "Operation": 1.0},
+    "Supplier quality defect rate": {"Advanced Development": 0.4, "Launch": 0.7, "Operation": 1.0},
+    "Assembly cycle time": {"Advanced Development": 0.5, "Launch": 0.8, "Operation": 1.0},
+    "Cost per assembled unit": {"Launch": 0.6, "Operation": 1.0},
+    "Logistics lead time": {"Launch": 0.6, "Operation": 1.0},
+    "Inventory turns": {"Operation": 1.0, "End-of-Life": 0.3},
+    "OTIF": {"Launch": 0.6, "Operation": 1.0},
+    "Order cycle time": {"Launch": 0.5, "Operation": 1.0},
+    "Forecast accuracy": {"Ideation": 0.3, "Launch": 0.6, "Operation": 1.0},
+    "Customer fill rate": {"Launch": 0.6, "Operation": 1.0},
+    "Technology ramp-up time": {"Basic Development": 0.4, "Advanced Development": 0.8, "Launch": 1.0, "Operation": 0.4},
+    "First-pass yield": {"Advanced Development": 0.6, "Launch": 1.0, "Operation": 0.8},
+    "Learning-curve productivity": {"Launch": 1.0, "Operation": 0.8},
+    "Flexibility index": {"Ideation": 0.4, "Basic Development": 0.6, "Advanced Development": 0.8, "Launch": 1.0, "Operation": 0.8},
+    "Revenue from new products (%)": {"Ideation": 0.5, "Advanced Development": 0.7, "Launch": 1.0, "Operation": 0.8},
+    "Technology adoption cost": {"Ideation": 0.4, "Basic Development": 0.7, "Advanced Development": 1.0, "Launch": 0.8},
+    "Plant utilization": {"Launch": 0.7, "Operation": 1.0},
+    "Supplier on-time receipts": {"Advanced Development": 0.5, "Launch": 0.8, "Operation": 1.0},
+    "Supplier quality pass": {"Advanced Development": 0.6, "Launch": 0.9, "Operation": 1.0},
+    "Cycle time reduction": {"Launch": 0.8, "Operation": 1.0},
+    "OEE": {"Launch": 0.7, "Operation": 1.0},
+    "Production lead time": {"Advanced Development": 0.4, "Launch": 0.7, "Operation": 1.0},
+    "Customer fulfillment cycle time": {"Launch": 0.6, "Operation": 1.0},
+    "Total lifecycle cost": {"Ideation": 0.5, "Basic Development": 0.7, "Advanced Development": 0.8, "Launch": 0.8, "Operation": 0.9, "End-of-Life": 1.0},
+    "ESG performance index": {"Ideation": 0.5, "Basic Development": 0.7, "Advanced Development": 0.8, "Launch": 0.8, "Operation": 0.9, "End-of-Life": 1.0},
+    "Workforce safety incident rate": {"Basic Development": 0.5, "Advanced Development": 0.8, "Launch": 1.0, "Operation": 1.0, "End-of-Life": 0.7},
+    "Service uptime": {"Launch": 0.8, "Operation": 1.0},
+    "Planned maintenance ratio": {"Launch": 0.7, "Operation": 1.0},
+    "Labor content accuracy": {"Advanced Development": 0.5, "Launch": 0.8, "Operation": 1.0},
+    "Closed-loop recovery rate": {"Ideation": 0.3, "Advanced Development": 0.6, "Launch": 0.6, "Operation": 0.8, "End-of-Life": 1.0},
 }
 STAGE_TAGS_CORE = {
     "Co-Engineering": {"Ideation": 0.8, "Basic Development": 0.6},

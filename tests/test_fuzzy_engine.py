@@ -1,6 +1,18 @@
+import json
 import unittest
+from pathlib import Path
 
-from decision_model import FIVE_S, SYSTEMS, is_applicable, score_all
+from decision_model import (
+    BASE_CORE,
+    BASE_DRIVERS,
+    BASE_KPIS,
+    FIVE_S,
+    KPI_PRIMARY_SYSTEM,
+    LCE,
+    SYSTEMS,
+    is_applicable,
+    score_all,
+)
 from fuzzy_engine import (
     FUZZY_MEMBERSHIP_PARAMETERS,
     SUGENO_CONSEQUENTS,
@@ -15,7 +27,9 @@ from fuzzy_engine import (
 class FuzzyEngineTests(unittest.TestCase):
     def test_rule_base_has_all_27_combinations(self):
         self.assertEqual(len(SUGENO_RULES), 27)
-        self.assertEqual(len(SUGENO_CONSEQUENTS), 5)
+        self.assertEqual(len(SUGENO_CONSEQUENTS), 19)
+        self.assertEqual(min(SUGENO_CONSEQUENTS), 0.0)
+        self.assertEqual(max(SUGENO_CONSEQUENTS), 3.0)
 
     def test_membership_domain_has_no_gaps(self):
         for input_name in FUZZY_MEMBERSHIP_PARAMETERS:
@@ -48,9 +62,6 @@ class FuzzyEngineTests(unittest.TestCase):
 
     def test_rule_outputs_are_monotonic_by_each_antecedent(self):
         ordinal = {"Low": 0, "Medium": 1, "High": 2}
-        output_order = {
-            label: index for index, label in enumerate(SUGENO_CONSEQUENTS)
-        }
         for antecedents, output in SUGENO_RULES.items():
             for axis in range(3):
                 if ordinal[antecedents[axis]] == 2:
@@ -58,8 +69,8 @@ class FuzzyEngineTests(unittest.TestCase):
                 raised = list(antecedents)
                 raised[axis] = ("Medium", "High")[ordinal[antecedents[axis]]]
                 self.assertLessEqual(
-                    output_order[output],
-                    output_order[SUGENO_RULES[tuple(raised)]],
+                    output,
+                    SUGENO_RULES[tuple(raised)],
                 )
 
     def test_declared_membership_threshold_shifts_preserve_coverage(self):
@@ -85,18 +96,97 @@ class FuzzyEngineTests(unittest.TestCase):
             for item in matrix.values():
                 self.assertEqual(set(item), set(SYSTEMS))
 
-    def test_kpi_applicability_gate_is_traced(self):
+    def test_all_30_kpis_are_applicable_and_traced(self):
         weights = {name: 0.5 for name in FIVE_S}
         scores, traces = score_all(
             weights, "Operation", return_trace=True
         )
-        self.assertFalse(
-            is_applicable("kpis", "OEE", "Product Transfer")
+        self.assertEqual(len(BASE_KPIS), 30)
+        self.assertEqual(len(KPI_PRIMARY_SYSTEM), 30)
+        for item, systems in BASE_KPIS.items():
+            self.assertEqual(set(systems), set(SYSTEMS))
+            for system, baseline in systems.items():
+                self.assertIn(baseline, (0, 1, 2, 3))
+                self.assertTrue(is_applicable("kpis", item, system))
+                self.assertTrue(
+                    traces["kpis"][item][system]["applicable"]
+                )
+                self.assertGreaterEqual(scores["kpis"][item][system], 0.0)
+
+    def test_kpi_primary_groups_have_ten_items_each(self):
+        for system in SYSTEMS:
+            self.assertEqual(
+                sum(
+                    primary == system
+                    for primary in KPI_PRIMARY_SYSTEM.values()
+                ),
+                10,
+            )
+
+    def test_otif_and_oee_have_cross_configuration_relevance(self):
+        self.assertEqual(BASE_KPIS["OTIF"]["Product Transfer"], 3)
+        self.assertEqual(BASE_KPIS["OTIF"]["Technology Transfer"], 2)
+        self.assertEqual(BASE_KPIS["OTIF"]["Facility Design"], 2)
+        self.assertEqual(BASE_KPIS["OEE"]["Product Transfer"], 2)
+        self.assertEqual(BASE_KPIS["OEE"]["Technology Transfer"], 2)
+        self.assertEqual(BASE_KPIS["OEE"]["Facility Design"], 3)
+
+    def test_lifecycle_stage_changes_kpi_scores(self):
+        weights = {name: 0.5 for name in FIVE_S}
+        for system in SYSTEMS:
+            stage_signatures = {
+                tuple(
+                    score_all(weights, stage)["kpis"][item][system]
+                    for item in BASE_KPIS
+                )
+                for stage in LCE
+            }
+            self.assertGreater(
+                len(stage_signatures),
+                1,
+                f"Lifecycle stage has no observable KPI effect for {system}.",
+            )
+
+    def test_rule_consequent_retains_lifecycle_ordering(self):
+        self.assertLess(
+            SUGENO_RULES[("High", "Medium", "Low")],
+            SUGENO_RULES[("High", "Medium", "Medium")],
         )
-        self.assertEqual(scores["kpis"]["OEE"]["Product Transfer"], 0.0)
-        self.assertFalse(
-            traces["kpis"]["OEE"]["Product Transfer"]["applicable"]
+        self.assertLess(
+            SUGENO_RULES[("High", "Medium", "Medium")],
+            SUGENO_RULES[("High", "Medium", "High")],
         )
+
+    def test_core_and_driver_baselines_match_manuscript_tables(self):
+        self.assertEqual(
+            BASE_CORE["NPD"],
+            {
+                "Product Transfer": 1,
+                "Technology Transfer": 3,
+                "Facility Design": 3,
+            },
+        )
+        self.assertEqual(
+            BASE_DRIVERS["Multisourcing"],
+            {
+                "Product Transfer": 3,
+                "Technology Transfer": 3,
+                "Facility Design": 1,
+            },
+        )
+
+    def test_benchmark_kpi_names_match_scored_catalog(self):
+        benchmark_path = (
+            Path(__file__).resolve().parents[1] / "benchmarks.json"
+        )
+        benchmarks = json.loads(benchmark_path.read_text(encoding="utf-8"))
+        scored_benchmark_names = {
+            name
+            for system_values in benchmarks.values()
+            for name, specification in system_values.items()
+            if specification.get("DSS KPI") is True
+        }
+        self.assertTrue(scored_benchmark_names.issubset(BASE_KPIS))
 
     def test_what_if_overrides_preserve_applicability(self):
         weights = {name: 0.5 for name in FIVE_S}
@@ -107,8 +197,8 @@ class FuzzyEngineTests(unittest.TestCase):
             s_alignment_override=0.5,
             lifecycle_relevance_override=0.5,
         )
-        self.assertEqual(scores["kpis"]["OEE"]["Product Transfer"], 0.0)
-        self.assertFalse(
+        self.assertGreater(scores["kpis"]["OEE"]["Product Transfer"], 0.0)
+        self.assertTrue(
             traces["kpis"]["OEE"]["Product Transfer"]["applicable"]
         )
         self.assertTrue(

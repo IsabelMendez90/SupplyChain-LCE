@@ -9,6 +9,9 @@ from decision_model import (
     BASE_CORE,
     BASE_DRIVERS,
     BASE_KPIS,
+    DECISION_MODEL_VERSION,
+    KPI_BASELINE_PROTOCOL,
+    KPI_PRIMARY_SYSTEM,
     S_TAGS_CORE,
     S_TAGS_DRIVERS,
     S_TAGS_KPI,
@@ -24,8 +27,10 @@ from fuzzy_engine import (
     FUZZY_RULE_PROVENANCE,
     RULE_DESIGN_WEIGHTS,
     SUGENO_CONSEQUENTS,
+    SUGENO_OUTPUT_BANDS,
     SUGENO_RULE_CONFIDENCES,
     SUGENO_RULES,
+    qualitative_consequent_label,
     validate_engine,
 )
 
@@ -41,7 +46,8 @@ def serializable_rules():
             "baseline": antecedents[0],
             "5s_alignment": antecedents[1],
             "lifecycle_relevance": antecedents[2],
-            "output": output,
+            "output_label": qualitative_consequent_label(output),
+            "consequent": output,
             "confidence": SUGENO_RULE_CONFIDENCES[f"R{number:02d}"],
         }
         for number, (antecedents, output) in enumerate(SUGENO_RULES.items(), start=1)
@@ -51,9 +57,11 @@ def serializable_rules():
 def model_configuration():
     return {
         "method": "zero-order Sugeno",
+        "decision_model_version": DECISION_MODEL_VERSION,
         "rule_base_version": FUZZY_RULE_BASE_VERSION,
         "membership_functions": FUZZY_MEMBERSHIP_PARAMETERS,
         "consequents": SUGENO_CONSEQUENTS,
+        "output_bands": SUGENO_OUTPUT_BANDS,
         "rule_design_weights": RULE_DESIGN_WEIGHTS,
         "rule_confidences": SUGENO_RULE_CONFIDENCES,
         "epsilon": EPSILON,
@@ -85,6 +93,11 @@ def model_configuration():
                 "drivers": STAGE_TAGS_DRIVERS,
             },
         },
+        "kpi_mapping": {
+            "primary_configuration": KPI_PRIMARY_SYSTEM,
+            "baseline_protocol": KPI_BASELINE_PROTOCOL,
+            "item_count": len(BASE_KPIS),
+        },
         "antecedent_operator": "product t-norm",
         "defuzzification": "weighted average",
         "rules": serializable_rules(),
@@ -108,6 +121,7 @@ def run(scenario):
     ).hexdigest()[:12]
     return {
         "run_id": run_id,
+        "decision_model_version": DECISION_MODEL_VERSION,
         "scenario": scenario,
         "engine_validation": validate_engine(),
         "scores": scores,

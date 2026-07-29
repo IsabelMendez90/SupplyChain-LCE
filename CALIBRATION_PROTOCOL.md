@@ -29,9 +29,10 @@ for every `N/A`, `0`, or extreme rating.
 
 Show the anonymized Round-1 distribution and the proposed membership plots.
 Ask experts to assess the Low/Medium/High breakpoints, the three rule-design
-weights, the five Sugeno singleton values, and each rule's direction and
-confidence. Do not change a confidence coefficient from `1.0` without
-documenting the panel evidence and decision rule.
+weights, the formula-derived numeric Sugeno singleton for each of the 27
+rules, and each rule's direction and confidence. Do not change a confidence
+coefficient from `1.0` without documenting the panel evidence and decision
+rule.
 
 ## 4. Consensus and revision
 

@@ -12,7 +12,7 @@ cannot calculate or modify those results; it can only render the frozen
 evidence in natural language. The application therefore remains operational
 and reproducible without an API key.
 
-The v2 rule base and input-specific membership breakpoints are explicitly marked as
+The v2.1 rule base and input-specific membership breakpoints are explicitly marked as
 **provisional**. The constructs and directional associations are literature
 informed, while the numerical calibration requires structured expert
 elicitation and sensitivity validation before industrial-validity claims are
@@ -35,6 +35,8 @@ made.
 - `METHODS_AND_REPLICATION.md`: reporting and replication specification.
 - `CALIBRATION_PROTOCOL.md`: prospective expert elicitation, calibration, and
   holdout-validation protocol.
+- `KPI_MAPPING.md`: complete 30-KPI cross-configuration baseline matrix and
+  applicability policy.
 
 ## Local installation
 
