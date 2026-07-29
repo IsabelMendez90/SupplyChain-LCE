@@ -2,7 +2,11 @@ import unittest
 from pathlib import Path
 
 import pandas as pd
-from llm_grounding import grounding_issues, validate_grounded_output
+from llm_grounding import (
+    GROUNDING_VALIDATOR_VERSION,
+    grounding_issues,
+    validate_grounded_output,
+)
 from validation_engine import promethee_rank
 
 
@@ -119,6 +123,78 @@ class McdaRegressionTests(unittest.TestCase):
             text,
         )
 
+    def test_auxiliary_5s_values_do_not_satisfy_fuzzy_scores(self):
+        text = (
+            "Order Fulfillment (High) aligns with Social (0.50) and Smart "
+            "(0.50) via Rule R24, with baseline High and 5S alignment Medium. "
+            "SRM (High) aligns with Social (0.50) via Rule R23."
+        )
+        _, issues = grounding_issues(
+            text,
+            self.canonical_payload(),
+            require_rule_ids=True,
+            require_scores=True,
+        )
+        self.assertIn("missing_item_score:Order Fulfillment", issues)
+        self.assertIn("missing_item_score:SRM", issues)
+
+    def test_score_from_next_item_cannot_satisfy_previous_item(self):
+        text = (
+            "Order Fulfillment is reported as High under rule R24. "
+            "SRM (score 2.06, rule R23) follows in the Operation evidence."
+        )
+        _, issues = grounding_issues(
+            text,
+            self.canonical_payload(),
+            require_rule_ids=True,
+            require_scores=True,
+        )
+        self.assertIn("missing_item_score:Order Fulfillment", issues)
+        self.assertNotIn("missing_item_score:SRM", issues)
+
+    def test_parenthetical_score_and_rule_style_is_accepted(self):
+        text = (
+            "Order Fulfillment (2.25, R24) is reported first in the canonical "
+            "evidence. SRM (2.06, R23) follows at the Operation stage, with "
+            "both entries retaining their High qualitative labels."
+        )
+        self.assertEqual(
+            validate_grounded_output(
+                text,
+                self.canonical_payload(),
+                require_rule_ids=True,
+                require_scores=True,
+            ),
+            text,
+        )
+
+    def test_each_mentioned_item_requires_its_own_rule(self):
+        text = (
+            "Order Fulfillment (score 2.25) is reported first. "
+            "SRM (score 2.06, rule R23) follows in the Operation evidence."
+        )
+        _, issues = grounding_issues(
+            text,
+            self.canonical_payload(),
+            require_rule_ids=True,
+            require_scores=True,
+        )
+        self.assertIn("missing_item_rule:Order Fulfillment", issues)
+
+    def test_required_priority_set_rejects_omitted_item(self):
+        text = (
+            "Order Fulfillment (score 2.25, rule R24) is reported as High "
+            "within the canonical evidence for the Operation lifecycle stage."
+        )
+        _, issues = grounding_issues(
+            text,
+            self.canonical_payload(),
+            require_rule_ids=True,
+            require_scores=True,
+            require_all_items=True,
+        )
+        self.assertIn("missing_item:SRM", issues)
+
     def test_structural_numbers_do_not_trigger_false_rejection(self):
         text = (
             "1. Order Fulfillment (score 2.25, rule R24) is reported first. "
@@ -138,6 +214,18 @@ class McdaRegressionTests(unittest.TestCase):
     def test_llm_mode_has_no_manual_selector(self):
         source = Path(__file__).resolve().parents[1].joinpath("app.py").read_text(encoding="utf-8")
         self.assertNotIn('st.radio(\n        "Explanation mode"', source)
+
+    def test_streamlit_results_are_invalidated_by_grounding_version(self):
+        source = (
+            Path(__file__).resolve().parents[1]
+            .joinpath("app.py")
+            .read_text(encoding="utf-8")
+        )
+        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.2")
+        self.assertIn(
+            'existing_results.get("grounding_validator_version")',
+            source,
+        )
 
 
 if __name__ == "__main__":

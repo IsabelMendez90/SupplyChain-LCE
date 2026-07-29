@@ -7,7 +7,7 @@ can be tested and reproduced without an API key.
 import re
 
 
-GROUNDING_VALIDATOR_VERSION = "2.1"
+GROUNDING_VALIDATOR_VERSION = "2.2"
 
 META_OUTPUT_PATTERNS = (
     r"\bwe need to\b",
@@ -129,12 +129,70 @@ def _number_is_allowed(number, allowed, tolerance=5e-4):
     return any(abs(float(number) - candidate) <= tolerance for candidate in allowed)
 
 
+def _mentioned_row_segments(rows, text, max_length=360):
+    """Return non-overlapping text segments anchored to mentioned items."""
+    mentioned = []
+    for row in rows:
+        match = re.search(re.escape(row["item"]), text, flags=re.IGNORECASE)
+        if match:
+            mentioned.append(
+                {
+                    "position": match.start(),
+                    "row": row,
+                }
+            )
+    mentioned.sort(key=lambda entry: entry["position"])
+    for index, entry in enumerate(mentioned):
+        start = entry["position"]
+        next_start = (
+            mentioned[index + 1]["position"]
+            if index + 1 < len(mentioned)
+            else len(text)
+        )
+        end = min(next_start, start + max_length)
+        entry["segment"] = text[start:end]
+    return mentioned
+
+
+def _associated_score(segment, item):
+    """Extract only a fuzzy score explicitly associated with one item."""
+    number = r"([-+]?(?:\d+(?:\.\d+)?|\.\d+))"
+    keyword_match = re.search(
+        r"\b(?:reported\s+|final\s+)?(?:fuzzy\s+)?score"
+        r"\s*(?:is|of|=|:)?\s*" + number,
+        segment,
+        flags=re.IGNORECASE,
+    )
+    if keyword_match:
+        return float(keyword_match.group(1))
+    parenthetical_match = re.search(
+        r"^"
+        + re.escape(item)
+        + r"\s*\(\s*(?:score\s*)?"
+        + number
+        + r"(?=\s*[,;)])",
+        segment,
+        flags=re.IGNORECASE,
+    )
+    if parenthetical_match:
+        return float(parenthetical_match.group(1))
+    return None
+
+
+def _associated_rules(segment):
+    """Return rule identifiers contained in one item-bounded segment."""
+    return {
+        rule.upper() for rule in RULE_PATTERN.findall(segment)
+    }
+
+
 def grounding_issues(
     text,
     payload=None,
     *,
     require_rule_ids=False,
     require_scores=False,
+    require_all_items=False,
     strict_claims=True,
 ):
     """Return a cleaned draft and machine-readable rejection reasons."""
@@ -194,57 +252,45 @@ def grounding_issues(
         issues.append("missing_rule_ids")
 
     rows = _canonical_rows(payload)
-    # If the draft gives "item (score X)" or "item ... rule RXX", verify the
-    # association rather than merely checking that X/RXX exists somewhere.
-    mentioned_score_count = 0
-    for row in rows:
-        match = re.search(re.escape(row["item"]), cleaned, flags=re.IGNORECASE)
-        if not match:
-            continue
-        segment = cleaned[match.start() : match.start() + 220]
-        score_match = re.search(
-            r"\bscore\s*(?:is|of|[:=])?\s*"
-            r"([-+]?(?:\d+(?:\.\d+)?|\.\d+))",
-            segment,
-            flags=re.IGNORECASE,
-        )
-        if not score_match:
-            score_match = re.search(
-                re.escape(row["item"])
-                + r"\s*\(\s*([-+]?(?:\d+(?:\.\d+)?|\.\d+))",
-                segment,
-                flags=re.IGNORECASE,
-            )
-        if score_match:
-            mentioned_score_count += 1
-        if score_match and not _number_is_allowed(
-            float(score_match.group(1)), [row["score"]]
-        ):
+    # Bind evidence locally: an auxiliary 5S value, baseline value, or another
+    # item's score cannot satisfy the score requirement for this item.
+    mentioned = _mentioned_row_segments(rows, cleaned)
+    for entry in mentioned:
+        row = entry["row"]
+        segment = entry["segment"]
+        associated_score = _associated_score(segment, row["item"])
+        if associated_score is None:
+            if require_scores:
+                issues.append("missing_item_score:" + row["item"])
+        elif not _number_is_allowed(associated_score, [row["score"]]):
             issues.append("item_score_mismatch:" + row["item"])
-        rule_match = re.search(
-            r"\b(?:rule|dominant)\s*[:=]?\s*(R\d{2,})\b",
-            segment,
-            flags=re.IGNORECASE,
-        )
-        if (
-            rule_match
-            and row["rule_id"]
-            and rule_match.group(1).upper() != row["rule_id"]
-        ):
+
+        associated_rules = _associated_rules(segment)
+        if not associated_rules:
+            if require_rule_ids and row["rule_id"]:
+                issues.append("missing_item_rule:" + row["item"])
+        elif row["rule_id"] and associated_rules != {row["rule_id"]}:
             issues.append("item_rule_mismatch:" + row["item"])
 
-    if require_scores and rows and mentioned_score_count == 0:
+    if require_scores and rows and not mentioned:
         issues.append("missing_scores")
+    if require_rule_ids and allowed_rules and not mentioned:
+        issues.append("missing_rule_ids")
+    if require_all_items and rows:
+        mentioned_items = {
+            entry["row"]["item"] for entry in mentioned
+        }
+        for row in rows:
+            if row["item"] not in mentioned_items:
+                issues.append("missing_item:" + row["item"])
 
     # Preserve descending score order for the first occurrence of each
     # mentioned canonical item. Different ordering within an exact tie is valid.
-    mentioned = []
-    for row in rows:
-        match = re.search(re.escape(row["item"]), cleaned, flags=re.IGNORECASE)
-        if match:
-            mentioned.append((match.start(), row["score"], row["item"]))
-    mentioned.sort()
-    for previous, current in zip(mentioned, mentioned[1:]):
+    ordered_mentions = [
+        (entry["position"], entry["row"]["score"], entry["row"]["item"])
+        for entry in mentioned
+    ]
+    for previous, current in zip(ordered_mentions, ordered_mentions[1:]):
         if current[1] > previous[1] + 5e-4:
             issues.append(
                 "ordering_violation:" + previous[2] + ">" + current[2]

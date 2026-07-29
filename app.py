@@ -170,6 +170,7 @@ def safe_llm_call(
     section="unspecified",
     require_rule_ids=False,
     require_scores=False,
+    require_all_items=False,
 ):
     if client is None:
         return fallback
@@ -198,6 +199,7 @@ def safe_llm_call(
                 payload,
                 require_rule_ids=require_rule_ids,
                 require_scores=require_scores,
+                require_all_items=require_all_items,
                 strict_claims=True,
             )
             accepted = not issues
@@ -352,13 +354,7 @@ def deterministic_category_explanation(evidence, matrix, title):
     rows = evidence.get("categories", {}).get(matrix, [])
     if not rows:
         return f"No {title.lower()} evidence is available for this run."
-    # Include every item tied at the third-position cutoff. This prevents an
-    # alphabetical tie-break from being misread as a substantive ranking.
-    cutoff_index = min(2, len(rows) - 1)
-    cutoff_score = rows[cutoff_index]["score"]
-    selected_rows = [
-        row for row in rows if row["score"] >= cutoff_score - 5e-4
-    ]
+    selected_rows = priority_evidence_rows(rows)
     details = []
     for row in selected_rows:
         inputs = row.get("normalized_inputs", {})
@@ -377,6 +373,18 @@ def deterministic_category_explanation(evidence, matrix, title):
         "Items with identical scores are tied. "
         "The ordering is generated exclusively by the deterministic fuzzy engine."
     )
+
+
+def priority_evidence_rows(rows, cutoff=3):
+    """Return every evidence row tied at the requested rank cutoff."""
+    if not rows:
+        return []
+    ordered = sorted(rows, key=lambda row: (-row["score"], row["item"]))
+    cutoff_index = min(int(cutoff) - 1, len(ordered) - 1)
+    cutoff_score = ordered[cutoff_index]["score"]
+    return [
+        row for row in ordered if row["score"] >= cutoff_score - 5e-4
+    ]
 
 
 def deterministic_interpretations(results, system, stage):
@@ -494,6 +502,11 @@ if existing_results:
         compatibility_issues.append("decision-model version mismatch")
     if existing_results.get("rule_base_version") != FUZZY_RULE_BASE_VERSION:
         compatibility_issues.append("fuzzy-rule version mismatch")
+    if (
+        existing_results.get("grounding_validator_version")
+        != GROUNDING_VALIDATOR_VERSION
+    ):
+        compatibility_issues.append("grounding-validator version mismatch")
     compatibility_issues.extend(
         scored_catalog_issues(existing_results.get("scored"))
     )
@@ -530,6 +543,7 @@ if st.button("Analyze", use_container_width=True):
         "explanation_mode": st.session_state.get("explanation_mode", "Deterministic trace"),
         "decision_model_version": DECISION_MODEL_VERSION,
         "rule_base_version": FUZZY_RULE_BASE_VERSION,
+        "grounding_validator_version": GROUNDING_VALIDATOR_VERSION,
         "elapsed": 0.0,
     }
     st.session_state["analyzed"] = True
@@ -954,13 +968,23 @@ with tabs[1]:
                 w5s_desc = describe_real_5s(w5s)
     
                 # ---- CORE ----
-                core_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["core_processes"].items()}
+                core_priority = priority_evidence_rows(
+                    canonical_evidence["categories"]["core_processes"]
+                )
+                core_priority_items = {
+                    row["item"] for row in core_priority
+                }
+                core_scores = {
+                    k: float(v.get(sel_sys, 0))
+                    for k, v in res["scored"]["core_processes"].items()
+                    if k in core_priority_items
+                }
                 core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
                 core_topS = {k: item_contrib_5s(k, "core_processes", w5s) for k in core_labels}
                 core_stage = {k: item_contrib_lce(k, "core_processes", lce_stage) for k in core_labels}
     
                 core_payload = {
-                    "canonical_evidence": canonical_evidence["categories"]["core_processes"],
+                    "canonical_evidence": core_priority,
                     "core_labels": core_labels,
                     "w5s_desc": w5s_desc,
                     "top_5s_per_item": core_topS,
@@ -971,10 +995,11 @@ with tabs[1]:
                 prompt_core = f"""
                 You are a supply-chain strategist advising a {role} in the {industry} industry.
                 The user's 5S priorities are: {json.dumps(w5s_desc)}.
-                Below is the qualitative status of each core process for the {sel_sys} system:
+                Below is the tie-aware priority set for the {sel_sys} system:
                 {json.dumps(core_labels, indent=2)}.
-                Describe the reported ordering using only the supplied values.
-                For each mentioned process, cite its exact score and dominant
+                Mention every supplied priority process and describe the
+                reported ordering using only the supplied values.
+                For every process, cite its exact score and dominant
                 rule identifier. State its baseline, 5S alignment, and lifecycle
                 relevance without adding causal, risk, performance, or managerial
                 claims. Do not create actions or recommendations.
@@ -986,20 +1011,28 @@ with tabs[1]:
                     section="Core Processes",
                     require_rule_ids=True,
                     require_scores=True,
+                    require_all_items=True,
                 )
     
                 # ---- KPIs ----
+                kpi_priority = priority_evidence_rows(
+                    canonical_evidence["categories"]["kpis"]
+                )
+                kpi_priority_items = {
+                    row["item"] for row in kpi_priority
+                }
                 kpi_scores = {
                     k: float(v.get(sel_sys, 0))
                     for k, v in res["scored"]["kpis"].items()
                     if is_applicable("kpis", k, sel_sys)
+                    and k in kpi_priority_items
                 }
                 kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
                 kpi_topS = {k: item_contrib_5s(k, "kpis", w5s) for k in kpi_labels}
                 kpi_stage = {k: item_contrib_lce(k, "kpis", lce_stage) for k in kpi_labels}
     
                 kpi_payload = {
-                    "canonical_evidence": canonical_evidence["categories"]["kpis"],
+                    "canonical_evidence": kpi_priority,
                     "kpi_labels": kpi_labels,
                     "w5s_desc": w5s_desc,
                     "top_5s_per_item": kpi_topS,
@@ -1016,8 +1049,9 @@ with tabs[1]:
                 - KPI labels (High/Medium/Low): {json.dumps(kpi_labels, indent=2)}
                 
                 OUTPUT REQUIREMENTS
-                - Describe the reported KPI ordering using canonical evidence only.
-                - Cite exact scores and dominant rule identifiers.
+                - Mention every supplied priority KPI.
+                - Describe their reported ordering using canonical evidence only.
+                - For every KPI, cite its exact score and dominant rule identifier.
                 - Preserve ties; do not imply an ordering within equal scores.
                 - State baseline, 5S alignment, and lifecycle relevance without
                   inferring maturity, performance, causes, risks, actions, or targets.
@@ -1030,16 +1064,27 @@ with tabs[1]:
                     section="KPIs",
                     require_rule_ids=True,
                     require_scores=True,
+                    require_all_items=True,
                 )
     
                 # ---- DRIVERS ----
-                driver_scores = {k: float(v.get(sel_sys, 0)) for k, v in res["scored"]["drivers"].items()}
+                driver_priority = priority_evidence_rows(
+                    canonical_evidence["categories"]["drivers"]
+                )
+                driver_priority_items = {
+                    row["item"] for row in driver_priority
+                }
+                driver_scores = {
+                    k: float(v.get(sel_sys, 0))
+                    for k, v in res["scored"]["drivers"].items()
+                    if k in driver_priority_items
+                }
                 driver_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in driver_scores.items()}
                 driver_topS = {k: item_contrib_5s(k, "drivers", w5s) for k in driver_labels}
                 driver_stage = {k: item_contrib_lce(k, "drivers", lce_stage) for k in driver_labels}
     
                 driver_payload = {
-                    "canonical_evidence": canonical_evidence["categories"]["drivers"],
+                    "canonical_evidence": driver_priority,
                     "driver_labels": driver_labels,
                     "w5s_desc": w5s_desc,
                     "top_5s_per_item": driver_topS,
@@ -1052,8 +1097,10 @@ with tabs[1]:
                 The user's 5S priorities are: {json.dumps(w5s_desc)}.
                 Below is the qualitative status of each resilience driver for the {sel_sys} system:
                 {json.dumps(driver_labels, indent=2)}.
-                Describe the reported ordering using only canonical evidence.
-                Cite exact scores and dominant rule identifiers. State baseline,
+                Mention every supplied priority driver and describe their
+                reported ordering using only canonical evidence.
+                For every driver, cite its exact score and dominant rule
+                identifier. State baseline,
                 5S alignment, and lifecycle relevance without claiming that a
                 driver creates stability, flexibility, vulnerability, advantage,
                 risk, or required action. Preserve ties and do not create
@@ -1065,6 +1112,7 @@ with tabs[1]:
                     section="Resilience Drivers",
                     require_rule_ids=True,
                     require_scores=True,
+                    require_all_items=True,
                 )
     
                 # --- store ---
@@ -1372,6 +1420,9 @@ with tabs[2]:
                                 "decision_model_version"
                             ],
                             "rule_base_version": loaded["rule_base_version"],
+                            "grounding_validator_version": (
+                                GROUNDING_VALIDATOR_VERSION
+                            ),
                         }
                         st.success(
                             f"Run {loaded.get('hash','?')} reloaded successfully."
@@ -1885,6 +1936,7 @@ with tabs[2]:
                             fallback=deterministic_whatif,
                             section="What-If Scenario",
                             require_scores=True,
+                            require_all_items=True,
                         )
                         if use_llm_whatif
                         else deterministic_whatif

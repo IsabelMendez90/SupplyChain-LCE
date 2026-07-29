@@ -146,13 +146,24 @@ and industrial-validation claims. Temperature is zero. If the API key is
 missing or the call fails, the app renders the deterministic score-and-rule
 explanation.
 
-Before display, validator version `2.1` checks the draft against the exact
+Before display, validator version `2.2` checks the draft against the exact
 payload. It rejects: reasoning or prompt leakage; numbers or rule identifiers
 absent from the payload; incorrect item–score or item–rule associations;
 descending-order violations (while permitting exact ties); and unsupported
 normative, causal, risk, performance, advantage, or outcome claims. Sections
 that fail after the declared retry limit are replaced by deterministic
 explanations. Every attempt records the routed model and rejection reasons.
+
+When exact scores or rule identifiers are required, validation is local to
+each mentioned item. Every mentioned item must contain its own explicit fuzzy
+score and dominant rule before the next item begins. Baseline, 5S, lifecycle,
+list-numbering, and neighboring-item values cannot satisfy this requirement.
+For generic chat tasks, the renderer may omit items and vary its prose
+structure. For the three principal interpretation sections, the payload is first reduced
+to the tie-aware priority set at or above the third-position score cutoff. The
+renderer must cover every item in this smaller supplied set, but remains free
+to vary sentence structure, vocabulary, and presentation order within exact
+ties.
 
 The OpenRouter free router may realize different models across calls. This is
 handled as a multi-model robustness condition rather than hidden variation:

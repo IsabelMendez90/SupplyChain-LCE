@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.2.1 grounding hotfix — 2026-07-28
+
+- Bound every required fuzzy score and dominant rule to the item-specific text
+  segment in which it appears.
+- Prevented 5S priorities, baseline values, lifecycle values, or a neighboring
+  item's score from satisfying the fuzzy-score requirement.
+- Added regression tests for auxiliary-number leakage, cross-item leakage,
+  parenthetical score/rule syntax, and missing item-specific rules.
+- Added the grounding-validator version to Streamlit session compatibility so
+  cached narratives from an older validator are cleared.
+
 ## 2.2 — 2026-07-28
 
 - Retained `model="openrouter/free"` as a documented multi-model robustness
