@@ -22,3 +22,7 @@
 - Removed duplicate scoring and decision-matrix definitions from `app.py`;
   `fuzzy_engine.py` and `decision_model.py` are now the only scientific source
   of truth.
+- Fixed What-If scenario recomputation so structural `N/A` KPI entries are
+  gated instead of being converted with `float(None)`. What-If ablations now
+  use the same authoritative `score_all()` path and exclude non-applicable
+  KPIs from correlation and visualization.

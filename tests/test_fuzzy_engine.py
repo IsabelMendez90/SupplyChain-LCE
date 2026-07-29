@@ -98,6 +98,37 @@ class FuzzyEngineTests(unittest.TestCase):
             traces["kpis"]["OEE"]["Product Transfer"]["applicable"]
         )
 
+    def test_what_if_overrides_preserve_applicability(self):
+        weights = {name: 0.5 for name in FIVE_S}
+        scores, traces = score_all(
+            weights,
+            "Operation",
+            return_trace=True,
+            s_alignment_override=0.5,
+            lifecycle_relevance_override=0.5,
+        )
+        self.assertEqual(scores["kpis"]["OEE"]["Product Transfer"], 0.0)
+        self.assertFalse(
+            traces["kpis"]["OEE"]["Product Transfer"]["applicable"]
+        )
+        self.assertTrue(
+            traces["kpis"]["Supplier on-time delivery"]["Product Transfer"][
+                "applicable"
+            ]
+        )
+
+    def test_empty_what_if_is_identical_to_full_model(self):
+        weights = {name: 0.5 for name in FIVE_S}
+        full = score_all(weights, "Operation", stage_gain=0.8)
+        empty_ablation = score_all(
+            weights,
+            "Operation",
+            stage_gain=0.8,
+            s_alignment_override=None,
+            lifecycle_relevance_override=None,
+        )
+        self.assertEqual(full, empty_ablation)
+
     def test_engine_validation_passes(self):
         self.assertTrue(validate_engine()["passed"])
 

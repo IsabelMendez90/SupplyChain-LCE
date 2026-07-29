@@ -162,6 +162,8 @@ def score_matrix(
     stage_gain=0.8,
     trace_out=None,
     membership_parameters=None,
+    s_alignment_override=None,
+    lifecycle_relevance_override=None,
 ):
     _, s_tags, stage_tags = MATRIX_CONFIGURATION[matrix]
     output = {}
@@ -169,10 +171,20 @@ def score_matrix(
         output[item] = {}
         for system, base in systems.items():
             applicable = base is not None
+            s_alignment = (
+                clamp01(s_alignment_override)
+                if s_alignment_override is not None
+                else s_boost(weights_5s, s_tags, item)
+            )
+            lifecycle_relevance = (
+                clamp01(lifecycle_relevance_override)
+                if lifecycle_relevance_override is not None
+                else stage_boost(stage, stage_tags, item, stage_gain)
+            )
             score, trace = sugeno_fuzzy_score(
                 base=float(base) if applicable else None,
-                s_alignment=s_boost(weights_5s, s_tags, item),
-                lifecycle_relevance=stage_boost(stage, stage_tags, item, stage_gain),
+                s_alignment=s_alignment,
+                lifecycle_relevance=lifecycle_relevance,
                 applicable=applicable,
                 membership_parameters=membership_parameters,
             )
@@ -188,6 +200,8 @@ def score_all(
     stage_gain=0.8,
     return_trace=False,
     membership_parameters=None,
+    s_alignment_override=None,
+    lifecycle_relevance_override=None,
 ):
     trace = {} if return_trace else None
     scored = {
@@ -199,6 +213,8 @@ def score_all(
             stage_gain,
             trace,
             membership_parameters,
+            s_alignment_override,
+            lifecycle_relevance_override,
         )
         for matrix, (base_map, _, _) in MATRIX_CONFIGURATION.items()
     }

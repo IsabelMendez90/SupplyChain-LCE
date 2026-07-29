@@ -1407,7 +1407,7 @@ with tabs[2]:
         else:
             results = st.session_state["results"]
             weights_5s = results["weights_5s"]
-            stage = st.session_state.get("lce_stage", "Operation")
+            stage = results.get("lce_stage", "Operation")
 
             disabled = st.multiselect(
                 "Deactivate components:",
@@ -1415,44 +1415,36 @@ with tabs[2]:
                 help="Choose one or both to recompute results without their effects."
             )
 
-            def recompute(base_map, matrix, w5s, stage):
-                out = {}
-                for item, cols in base_map.items():
-                    out[item] = {}
-                    for sys, base in cols.items():
-                        base = float(base)
-                        # A disabled fuzzy component is set to the neutral midpoint,
-                        # not to zero (which would mean explicitly Low relevance).
-                        s_infl = 0.5 if "5S Weighting" in disabled else s_boost(
-                            w5s,
-                            S_TAGS_KPI if matrix=="kpis"
-                            else S_TAGS_CORE if matrix=="core_processes"
-                            else S_TAGS_DRIVERS, item
-                        )
-                        stage_infl = 0.5 if "LCE Influence" in disabled else stage_boost(
-                            stage,
-                            STAGE_TAGS_KPI if matrix=="kpis"
-                            else STAGE_TAGS_CORE if matrix=="core_processes"
-                            else STAGE_TAGS_DRIVERS, item
-                        )
-                        score, _ = sugeno_fuzzy_score(
-                            base=base,
-                            s_alignment=s_infl,
-                            lifecycle_relevance=stage_infl,
-                        )
-                        out[item][sys] = round(score, 3)
-                return out
-
             if st.button("Run What-If Scenario", use_container_width=True):
-                scored_new = {
-                    "core_processes": recompute(BASE_CORE, "core_processes", weights_5s, stage),
-                    "kpis": recompute(BASE_KPIS, "kpis", weights_5s, stage),
-                    "drivers": recompute(BASE_DRIVERS, "drivers", weights_5s, stage),
-                }
+                # Ablation holds a selected component at the neutral midpoint.
+                # score_all() remains the sole authoritative scoring path and
+                # applies the same structural N/A gate as the full model.
+                scored_new = score_all(
+                    weights_5s,
+                    stage,
+                    stage_gain=results.get("stage_gain", 0.8),
+                    s_alignment_override=(
+                        0.5 if "5S Weighting" in disabled else None
+                    ),
+                    lifecycle_relevance_override=(
+                        0.5 if "LCE Influence" in disabled else None
+                    ),
+                )
 
                 frozen_system = results.get("system", "Product Transfer")
-                base_df = pd.DataFrame(results["scored"]["kpis"]).T[frozen_system]
-                new_df = pd.DataFrame(scored_new["kpis"]).T[frozen_system]
+                applicable_kpis = [
+                    item
+                    for item in scored_new["kpis"]
+                    if is_applicable("kpis", item, frozen_system)
+                ]
+                base_df = (
+                    pd.DataFrame(results["scored"]["kpis"])
+                    .T.loc[applicable_kpis, frozen_system]
+                )
+                new_df = (
+                    pd.DataFrame(scored_new["kpis"])
+                    .T.loc[applicable_kpis, frozen_system]
+                )
                 corr = base_df.corr(new_df)
                 
 
@@ -1465,7 +1457,11 @@ with tabs[2]:
                     st.warning("Significant change — these components strongly shape outcomes.")
 
                 # ---- Compact visualization ----
-                df_kpi = pd.DataFrame(scored_new["kpis"]).T[frozen_system].reset_index()
+                df_kpi = (
+                    pd.DataFrame(scored_new["kpis"])
+                    .T.loc[applicable_kpis, frozen_system]
+                    .reset_index()
+                )
                 df_kpi.columns = ["KPI", "Score"]
                 df_kpi = df_kpi.sort_values("Score", ascending=True)
 
