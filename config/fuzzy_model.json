@@ -1,7 +1,7 @@
 {
   "method": "zero-order Sugeno",
-  "decision_model_version": "2.1-provisional",
-  "rule_base_version": "2.1-provisional",
+  "decision_model_version": "2.2",
+  "rule_base_version": "2.2",
   "membership_functions": {
     "baseline": {
       "Low": {
@@ -136,6 +136,7 @@
     "5s_alignment": 0.3,
     "lifecycle_relevance": 0.2
   },
+  "component_ablation": "set the selected rule-design weight to zero and renormalize the remaining positive weights",
   "rule_confidences": {
     "R01": 1.0,
     "R02": 1.0,
@@ -864,7 +865,7 @@
         "3": "core or critical relevance"
       },
       "applicability_policy": "All current KPI items are evaluated in all three configurations. N/A is reserved for a separately justified structural exclusion.",
-      "calibration_status": "Author-designed, literature-informed provisional mapping; requires structured expert elicitation and case-based validation."
+      "calibration_status": "Versioned, literature-informed design-science mapping; numerical values require structured expert elicitation and case-based validation."
     },
     "item_count": 30
   },
@@ -1153,7 +1154,7 @@
         "lifecycle_relevance": 0.2
       },
       "singleton_formula": "1.5 * (0.50*q_baseline + 0.30*q_5s + 0.20*q_lifecycle), q in {0,1,2}",
-      "status": "provisional pending structured expert elicitation and calibration"
+      "validation_status": "versioned research model; numerical mappings require structured expert calibration and external case validation"
     }
   }
 }

@@ -1,33 +1,23 @@
-import ast
 import unittest
 from pathlib import Path
 
 import pandas as pd
 from llm_grounding import grounding_issues, validate_grounded_output
-
-
-def load_app_function(name):
-    """Load one pure function from app.py without executing Streamlit."""
-    source = Path(__file__).resolve().parents[1].joinpath("app.py").read_text(encoding="utf-8")
-    tree = ast.parse(source)
-    function = next(
-        node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == name
-    )
-    namespace = {"pd": pd, "max": max}
-    exec(compile(ast.Module(body=[function], type_ignores=[]), "app.py", "exec"), namespace)
-    return namespace[name]
+from validation_engine import promethee_rank
 
 
 class McdaRegressionTests(unittest.TestCase):
     def test_promethee_accepts_decimal_preferences(self):
-        promethee_compare = load_app_function("promethee_compare")
-        matrix = {
-            "KPI A": {"Product Transfer": 2.5, "Technology Transfer": 1.2},
-            "KPI B": {"Product Transfer": 1.1, "Technology Transfer": 2.0},
-            "KPI C": {"Product Transfer": 0.7, "Technology Transfer": 1.4},
-        }
-        ranks = promethee_compare(matrix)
-        self.assertEqual(set(ranks.index), set(matrix))
+        matrix = pd.DataFrame(
+            {
+                "baseline": [1.0, 0.5, 0.25],
+                "5s_alignment": [0.4, 0.8, 0.3],
+                "lifecycle_relevance": [0.7, 0.6, 0.2],
+            },
+            index=["KPI A", "KPI B", "KPI C"],
+        )
+        ranks = promethee_rank(matrix)
+        self.assertEqual(set(ranks.index), set(matrix.index))
         self.assertTrue(ranks.notna().all())
 
     def test_llm_reasoning_leakage_is_rejected(self):
@@ -127,6 +117,22 @@ class McdaRegressionTests(unittest.TestCase):
                 require_scores=True,
             ),
             text,
+        )
+
+    def test_structural_numbers_do_not_trigger_false_rejection(self):
+        text = (
+            "1. Order Fulfillment (score 2.25, rule R24) is reported first. "
+            "2. SRM (score 2.06, rule R23) follows. Both are interpreted "
+            "within the Industry 5.0 context."
+        )
+        _, issues = grounding_issues(
+            text,
+            self.canonical_payload(),
+            require_rule_ids=True,
+            require_scores=True,
+        )
+        self.assertFalse(
+            any(issue.startswith("unsupported_numbers:") for issue in issues)
         )
 
     def test_llm_mode_has_no_manual_selector(self):

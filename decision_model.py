@@ -8,7 +8,7 @@ be reproduced from the command line.
 from fuzzy_engine import sugeno_fuzzy_score
 
 
-DECISION_MODEL_VERSION = "2.1-provisional"
+DECISION_MODEL_VERSION = "2.2"
 SYSTEMS = ["Product Transfer", "Technology Transfer", "Facility Design"]
 LCE = ["Ideation", "Basic Development", "Advanced Development", "Launch", "Operation", "End-of-Life"]
 FIVE_S = ["Social", "Sustainable", "Sensing", "Smart", "Safe"]
@@ -130,8 +130,8 @@ KPI_BASELINE_PROTOCOL = {
         "N/A is reserved for a separately justified structural exclusion."
     ),
     "calibration_status": (
-        "Author-designed, literature-informed provisional mapping; requires "
-        "structured expert elicitation and case-based validation."
+        "Versioned, literature-informed design-science mapping; numerical "
+        "values require structured expert elicitation and case-based validation."
     ),
 }
 BASE_DRIVERS = {
@@ -333,6 +333,7 @@ def score_matrix(
     membership_parameters=None,
     s_alignment_override=None,
     lifecycle_relevance_override=None,
+    rule_design_weights=None,
 ):
     _, s_tags, stage_tags = MATRIX_CONFIGURATION[matrix]
     output = {}
@@ -356,6 +357,7 @@ def score_matrix(
                 lifecycle_relevance=lifecycle_relevance,
                 applicable=applicable,
                 membership_parameters=membership_parameters,
+                rule_design_weights=rule_design_weights,
             )
             output[item][system] = round(score, 3)
             if trace_out is not None:
@@ -371,6 +373,7 @@ def score_all(
     membership_parameters=None,
     s_alignment_override=None,
     lifecycle_relevance_override=None,
+    rule_design_weights=None,
 ):
     trace = {} if return_trace else None
     scored = {
@@ -384,6 +387,7 @@ def score_all(
             membership_parameters,
             s_alignment_override,
             lifecycle_relevance_override,
+            rule_design_weights,
         )
         for matrix, (base_map, _, _) in MATRIX_CONFIGURATION.items()
     }

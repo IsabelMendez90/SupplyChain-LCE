@@ -33,6 +33,13 @@ from llm_grounding import (
     grounding_issues,
     validate_grounded_output,
 )
+from validation_engine import (
+    convergent_mcda_comparison,
+    counterfactual_5s_amplitude,
+    format_p_value,
+    score_comparison_metrics,
+    tie_aware_top_items,
+)
 
 # =====================================================
 #                  LOAD BENCHMARKS
@@ -166,6 +173,12 @@ def safe_llm_call(
 ):
     if client is None:
         return fallback
+    prompt_hash = hashlib.sha256(
+        (
+            prompt
+            + json.dumps(payload, sort_keys=True, default=_json_default)
+        ).encode()
+    ).hexdigest()[:10]
     for attempt in range(1, retries + 1):
         try:
             r = client.chat.completions.create(
@@ -179,7 +192,7 @@ def safe_llm_call(
                 max_tokens=max_toks,
             )
             raw_out = r.choices[0].message.content.strip()
-            actual_model = getattr(r, "model", LLM_MODEL)
+            actual_model = getattr(r, "model", None) or LLM_MODEL
             out, issues = grounding_issues(
                 raw_out,
                 payload,
@@ -187,14 +200,17 @@ def safe_llm_call(
                 require_scores=require_scores,
                 strict_claims=True,
             )
-            prompt_hash = hashlib.sha256(
-                (
-                    prompt
-                    + json.dumps(payload, sort_keys=True, default=_json_default)
-                ).encode()
-            ).hexdigest()[:10]
             accepted = not issues
+            call_id = hashlib.sha256(
+                (
+                    actual_model
+                    + prompt_hash
+                    + raw_out
+                    + str(attempt)
+                ).encode()
+            ).hexdigest()[:12]
             st.session_state.setdefault("llm_model_log", []).append({
+                "call_id": call_id,
                 "section": section,
                 "attempt": attempt,
                 "prompt_hash": prompt_hash,
@@ -204,6 +220,7 @@ def safe_llm_call(
                 "max_tokens": max_toks,
                 "grounding_status": "accepted" if accepted else "rejected",
                 "grounding_issues": issues,
+                "draft": raw_out,
             })
             if accepted:
                 # openrouter/free may select a different free model per request.
@@ -218,6 +235,21 @@ def safe_llm_call(
             })
         except Exception as e:
             st.session_state["last_llm_error"] = str(e)
+            st.session_state.setdefault("llm_model_log", []).append({
+                "call_id": hashlib.sha256(
+                    f"{section}:{attempt}:{type(e).__name__}:{e}".encode()
+                ).hexdigest()[:12],
+                "section": section,
+                "attempt": attempt,
+                "prompt_hash": prompt_hash,
+                "router": LLM_MODEL,
+                "actual_model": None,
+                "temperature": temp,
+                "max_tokens": max_toks,
+                "grounding_status": "api_error",
+                "grounding_issues": [type(e).__name__],
+                "draft": None,
+            })
     st.session_state["llm_fallback_used"] = True
     fallback_sections = st.session_state.setdefault("llm_fallback_sections", [])
     if section not in fallback_sections:
@@ -471,7 +503,7 @@ if existing_results:
         st.session_state.pop("compare_analysis", None)
         st.session_state["stale_results_notice"] = (
             "A frozen run from an earlier model version was cleared. "
-            "Click Analyze to generate a compatible v2.1 run."
+            "Click Analyze to generate a compatible v2.2 run."
         )
 
 st.title("Supply-Chain Strategy Agent (LCE + 5S)")
@@ -483,7 +515,7 @@ st.caption(
 if st.session_state.pop("stale_results_notice", None):
     st.info(
         "A frozen run from an earlier model version was cleared. "
-        "Click **Analyze** to generate a compatible v2.1 run."
+        "Click **Analyze** to generate a compatible v2.2 run."
     )
 
 # Single analyze button: freeze state & trigger LLM on tabs 2–3
@@ -508,6 +540,12 @@ if st.button("Analyze", use_container_width=True):
     st.session_state["llm_fallback_used"] = False
     st.session_state.pop("llm_interpretations", None)
     st.session_state.pop("compare_analysis", None)
+    st.session_state.pop("single_sensitivity", None)
+    st.session_state.pop("breakpoint_sensitivity", None)
+    st.session_state.pop("mc_robustness", None)
+    st.session_state.pop("whatif_result", None)
+    st.session_state.pop("llm_whatif", None)
+    st.session_state.pop("llm_whatif_cache_key", None)
 
 # =====================================================
 #  HELPER: DISPLAY MATRIX WITH LABEL COLORS
@@ -543,7 +581,7 @@ def show_matrix(title, df_dict):
             "All 30 manuscript KPIs are evaluated in every configuration. "
             "Differences reflect gradual baseline relevance (0–3), 5S "
             "alignment, and lifecycle relevance; N/A is not used in the "
-            "current provisional KPI matrix."
+            "current versioned KPI matrix."
         )
 
     # Preserve the distinction between a low fuzzy score and an item that is
@@ -616,49 +654,6 @@ def dominance_test(scored):
     return fails
 
 # -----------------------------------------------------
-# Simple MCDA baseline (TOPSIS-style)
-# -----------------------------------------------------
-def topsis_compare(matrix):
-    """Standard benefit-criterion TOPSIS with equal criterion weights.
-
-    Rows are decision items (KPIs) and columns are manufacturing-system views.
-    This setup must be stated explicitly when the benchmark is reported.
-    """
-    df = pd.DataFrame(matrix).T
-    df = df.fillna(0)
-    denominators = np.sqrt((df ** 2).sum(axis=0)).replace(0, np.finfo(float).eps)
-    normalized = df / denominators
-    weights = pd.Series(1.0 / len(df.columns), index=df.columns)
-    weighted = normalized * weights
-    ideal_best = weighted.max(axis=0)
-    ideal_worst = weighted.min(axis=0)
-    distance_best = np.sqrt(((weighted - ideal_best) ** 2).sum(axis=1))
-    distance_worst = np.sqrt(((weighted - ideal_worst) ** 2).sum(axis=1))
-    closeness = distance_worst / (distance_best + distance_worst + np.finfo(float).eps)
-    return closeness.rank(ascending=False, method="average")
-
-
-def weighted_sum_compare(matrix):
-    """Equal-weight normalized-sum baseline; this is not AHP."""
-    df = pd.DataFrame(matrix).T.fillna(0)
-    col_sums = df.sum().replace(0, np.finfo(float).eps)
-    weights  = df / col_sums
-    priority = weights.mean(axis=1)
-    return priority.rank(ascending=False)
-
-def promethee_compare(matrix):
-    """Simplified PROMETHEE preference flow (linear preference function)."""
-    df = pd.DataFrame(matrix).T.fillna(0)
-    # Pandas 2.2+/3.0 rejects assigning decimal preference values into an
-    # integer-typed DataFrame. Initialise the preference matrix as float.
-    pref = pd.DataFrame(0.0, index=df.index, columns=df.index, dtype=float)
-    for i in df.index:
-        for j in df.index:
-            if i != j:
-                pref.loc[i, j] = max(0, (df.loc[i] - df.loc[j]).mean())
-    flow = pref.sum(axis=1) - pref.sum(axis=0)
-    return flow.rank(ascending=False)
-# -----------------------------------------------------
 # Sensitivity / robustness test
 # -----------------------------------------------------
 def perturb_weights(weights, delta=0.2, seed=42):
@@ -679,7 +674,7 @@ def monte_carlo_robustness(weights, stage, system, delta=0.2, repetitions=1000, 
     ]
     base_series = pd.DataFrame(base_scores).T.loc[applicable_items, system]
     base_rank = base_series.rank(ascending=False, method="average")
-    base_top3 = set(base_series.nlargest(3).index)
+    base_priority_set = set(tie_aware_top_items(base_series))
     records = []
     for run in range(repetitions):
         perturbed = {
@@ -689,12 +684,18 @@ def monte_carlo_robustness(weights, stage, system, delta=0.2, repetitions=1000, 
         new_scores = score_all(perturbed, stage, stage_gain=stage_gain)["kpis"]
         new_series = pd.DataFrame(new_scores).T.loc[applicable_items, system]
         tau_result = kendalltau(base_rank, new_series.rank(ascending=False, method="average"))
-        top3_retention = len(base_top3.intersection(set(new_series.nlargest(3).index))) / 3.0
+        new_priority_set = set(tie_aware_top_items(new_series))
+        priority_set_retention = (
+            len(base_priority_set.intersection(new_priority_set))
+            / len(base_priority_set)
+            if base_priority_set
+            else 1.0
+        )
         records.append({
             "iteration": run + 1,
             "kendall_tau_b": float(tau_result.statistic) if not pd.isna(tau_result.statistic) else np.nan,
             "p_value": float(tau_result.pvalue) if not pd.isna(tau_result.pvalue) else np.nan,
-            "top3_retention": top3_retention,
+            "priority_set_retention": priority_set_retention,
         })
     frame = pd.DataFrame(records)
     valid_tau = frame["kendall_tau_b"].dropna()
@@ -707,7 +708,12 @@ def monte_carlo_robustness(weights, stage, system, delta=0.2, repetitions=1000, 
             [float(valid_tau.quantile(0.025)), float(valid_tau.quantile(0.975))]
             if len(valid_tau) else [None, None]
         ),
-        "mean_top3_retention": float(frame["top3_retention"].mean()),
+        "mean_priority_set_retention": float(
+            frame["priority_set_retention"].mean()
+        ),
+        "tie_policy": (
+            "all KPIs at or above the third-position score cutoff are retained"
+        ),
     }
     return summary, frame
 
@@ -722,7 +728,7 @@ def membership_threshold_sensitivity(
     ]
     base_series = pd.DataFrame(base_scores).T.loc[applicable_items, system]
     base_rank = base_series.rank(ascending=False, method="average")
-    base_top3 = set(base_series.nlargest(3).index)
+    base_priority_set = set(tie_aware_top_items(base_series))
     rows = []
     for shift in (-float(delta), float(delta)):
         parameters = shifted_membership_parameters(shift)
@@ -752,13 +758,15 @@ def membership_threshold_sensitivity(
                     if not pd.isna(tau_result.pvalue)
                     else np.nan
                 ),
-                "top3_retention": (
+                "priority_set_retention": (
                     len(
-                        base_top3.intersection(
-                            set(shifted_series.nlargest(3).index)
+                        base_priority_set.intersection(
+                            set(tie_aware_top_items(shifted_series))
                         )
                     )
-                    / 3.0
+                    / len(base_priority_set)
+                    if base_priority_set
+                    else 1.0
                 ),
             }
         )
@@ -844,10 +852,6 @@ def show_chat(tab_id: str):
                 },
             }
 
-            system_prompt = (
-                f"{GROUNDING_CONSTRAINTS} Answer questions only about the frozen run evidence."
-            )
-
             ctx_compact = compact_dict(ctx, max_items=5)
             deterministic_text, canonical = deterministic_interpretations(
                 res,
@@ -868,58 +872,26 @@ def show_chat(tab_id: str):
                     + deterministic_text["drivers"]
                 )
             else:
-              try:
-                r = client.chat.completions.create(
-                    model=LLM_MODEL,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": json.dumps(ctx_compact, ensure_ascii=False, default=_json_default)},
-                        {"role": "user", "content": user_q},
-                    ],
-                    extra_headers=OPENROUTER_HEADERS,
-                    temperature=0.0,
-                    max_tokens=700,
-                )
-                raw_reply = r.choices[0].message.content.strip()
-                reply, chat_issues = grounding_issues(
-                    raw_reply,
-                    ctx_compact,
-                    strict_claims=True,
-                )
-                if chat_issues:
-                    st.session_state["llm_fallback_used"] = True
-                    fallback_sections = st.session_state.setdefault(
-                        "llm_fallback_sections", []
-                    )
-                    if "Strategy Chat" not in fallback_sections:
-                        fallback_sections.append("Strategy Chat")
-                    reply = (
-                        "The language output did not pass the grounding check. "
-                        + deterministic_text["core"] + " "
-                        + deterministic_text["kpi"] + " "
-                        + deterministic_text["drivers"]
-                    )
-                actual_model = getattr(r, "model", LLM_MODEL)
-                st.session_state["last_llm_model"] = actual_model
-                st.session_state.setdefault("llm_model_log", []).append({
-                    "section": "Strategy Chat",
-                    "attempt": 1,
-                    "prompt_hash": hashlib.sha256(user_q.encode()).hexdigest()[:10],
-                    "router": LLM_MODEL,
-                    "actual_model": actual_model,
-                    "temperature": 0.0,
-                    "max_tokens": 700,
-                    "grounding_status": (
-                        "accepted" if not chat_issues else "rejected"
-                    ),
-                    "grounding_issues": chat_issues,
-                })
-              except Exception:
-                reply = (
-                    "The optional language service is unavailable. "
+                chat_fallback = (
+                    "The language output was unavailable or did not pass the "
+                    "grounding check. "
                     + deterministic_text["core"] + " "
                     + deterministic_text["kpi"] + " "
                     + deterministic_text["drivers"]
+                )
+                chat_prompt = (
+                    "Answer the following user question only from the frozen "
+                    "run evidence supplied in the payload. Do not calculate, "
+                    "re-rank, introduce recommendations, or infer unreported "
+                    f"outcomes. User question: {user_q}"
+                )
+                reply = safe_llm_call(
+                    chat_prompt,
+                    ctx_compact,
+                    temp=0.0,
+                    max_toks=700,
+                    fallback=chat_fallback,
+                    section="Strategy Chat",
                 )
 
         st.session_state["chat"].append({"role": "assistant", "content": reply})
@@ -1108,12 +1080,22 @@ with tabs[1]:
             call_log = st.session_state.get("llm_model_log", []) if use_llm else []
             if call_log:
                 unique_models = sorted(
-                    {entry.get("actual_model", LLM_MODEL) for entry in call_log}
+                    {
+                        entry["actual_model"]
+                        for entry in call_log
+                        if entry.get("actual_model")
+                    }
                 )
-                st.caption(
-                    "OpenRouter model(s) returned during this run: "
-                    + ", ".join(f"`{model}`" for model in unique_models)
-                )
+                if unique_models:
+                    st.caption(
+                        "OpenRouter model(s) returned during this run: "
+                        + ", ".join(f"`{model}`" for model in unique_models)
+                    )
+                else:
+                    st.caption(
+                        "OpenRouter did not return a model response; "
+                        "deterministic explanations were used."
+                    )
                 with st.expander("Inspect LLM grounding audit"):
                     st.json(call_log, expanded=False)
             else:
@@ -1254,6 +1236,33 @@ with tabs[2]:
             # 2️Save / Load reproducible JSON
             # -------------------------------------------------
             st.subheader("Reproducibility")
+            llm_calls = st.session_state.get("llm_model_log", [])
+            llm_interpretations = st.session_state.get(
+                "llm_interpretations", {}
+            )
+            llm_realization_payload = {
+                "calls": llm_calls,
+                "interpretations": llm_interpretations,
+                "comparative": st.session_state.get("compare_analysis"),
+            }
+            llm_realization_id = (
+                hashlib.sha256(
+                    json.dumps(
+                        llm_realization_payload,
+                        sort_keys=True,
+                        default=_json_default,
+                    ).encode()
+                ).hexdigest()[:12]
+                if llm_calls
+                else None
+            )
+            actual_models = sorted(
+                {
+                    call["actual_model"]
+                    for call in llm_calls
+                    if call.get("actual_model")
+                }
+            )
             run_data = {
                 "hash": run_hash,
                 "system": system,
@@ -1278,8 +1287,28 @@ with tabs[2]:
                 "decision_authority": "deterministic fuzzy engine",
                 "llm_role": "optional non-authoritative language renderer",
                 "llm_router": LLM_MODEL,
-                "llm_actual_model": st.session_state.get("last_llm_model"),
-                "llm_calls": st.session_state.get("llm_model_log", []),
+                "llm_experiment_design": (
+                    "dynamic multi-model routing; every returned model and "
+                    "draft is audited independently"
+                ),
+                "llm_realization_id": llm_realization_id,
+                "llm_actual_models": actual_models,
+                "llm_calls": llm_calls,
+                "llm_interpretations": llm_interpretations,
+                "llm_call_summary": {
+                    "accepted": sum(
+                        call.get("grounding_status") == "accepted"
+                        for call in llm_calls
+                    ),
+                    "rejected": sum(
+                        call.get("grounding_status") == "rejected"
+                        for call in llm_calls
+                    ),
+                    "api_errors": sum(
+                        call.get("grounding_status") == "api_error"
+                        for call in llm_calls
+                    ),
+                },
                 "grounding_validator_version": GROUNDING_VALIDATOR_VERSION,
                 "llm_rejections": st.session_state.get(
                     "llm_rejection_log", []
@@ -1306,14 +1335,6 @@ with tabs[2]:
                     trace_system = system if system in trace_systems else next(iter(trace_systems))
                     st.json(trace_systems[trace_system], expanded=False)
     
-            json_bytes = io.BytesIO(json.dumps(run_data, indent=2).encode("utf-8"))
-            st.download_button(
-                "💾 Download Run JSON",
-                data=json_bytes,
-                file_name=f"run_{run_hash}.json",
-                mime="application/json",
-            )
-    
             uploaded_run = st.file_uploader("📤 Reload run.json", type="json")
             if uploaded_run:
                 try:
@@ -1335,7 +1356,7 @@ with tabs[2]:
                     if upload_issues:
                         st.error(
                             "This run JSON is incompatible with the current "
-                            "scientific model. Generate a new run with v2.1. "
+                            "scientific model. Generate a new run with v2.2. "
                             f"First issue: {upload_issues[0]}"
                         )
                     else:
@@ -1387,21 +1408,32 @@ with tabs[2]:
                     delta=breakpoint_delta,
                     stage_gain=stage_gain,
                 )
-                st.dataframe(breakpoint_results, use_container_width=True)
+                st.session_state["breakpoint_sensitivity"] = {
+                    "run_id": run_hash,
+                    "delta": breakpoint_delta,
+                    "results": breakpoint_results.to_dict(orient="records"),
+                }
                 st.caption(
                     "All interior Low/Medium/High breakpoints are shifted "
                     "together by the declared ± amount; endpoints remain at "
-                    "0 and 1. Kendall tau-b, p-value, and top-three retention "
-                    "are computed only over applicable KPIs."
+                    "0 and 1. Kendall tau-b, p-value, and tie-aware priority-set "
+                    "retention are computed only over applicable KPIs."
+                )
+            saved_breakpoint = st.session_state.get(
+                "breakpoint_sensitivity", {}
+            )
+            if (
+                saved_breakpoint.get("run_id") == run_hash
+                and saved_breakpoint.get("results")
+            ):
+                st.dataframe(
+                    pd.DataFrame(saved_breakpoint["results"]),
+                    use_container_width=True,
                 )
             delta = st.slider("Multiplicative perturbation (± proportion)", 0.0, 1.0, 0.2, 0.05)
             
-            # Initialize variable outside to avoid NameError
-            corr = None  
-            
             if st.button("Run Sensitivity Test"):
                 perturbed = perturb_weights(weights_5s, delta)
-                st.json(perturbed, expanded=False)
                 scored_pert = score_all(perturbed, stage, stage_gain=stage_gain)
             
                 df_base = pd.DataFrame(results["scored"]["kpis"]).T
@@ -1422,19 +1454,42 @@ with tabs[2]:
                     )
                 
                 corr = base_series.corr(new_series, method="pearson")
-                
-                
-            
-                st.metric("KPI Correlation (original vs perturbed)", f"{corr:.2f}")
-            
-                if corr < 0.6:
-                    st.warning("High sensitivity — small changes in weights alter results substantially.")
-                else:
-                    st.success("Robust response — stable under weight perturbations.")
-            
-    
-            if corr is None:
-                st.info("Adjust the perturbation slider and click **Run Sensitivity Test** to compute robustness.")
+                st.session_state["single_sensitivity"] = {
+                    "run_id": run_hash,
+                    "delta": delta,
+                    "seed": 42,
+                    "perturbed_weights": perturbed,
+                    "pearson_score_correlation": (
+                        None if pd.isna(corr) else float(corr)
+                    ),
+                }
+
+            single_sensitivity = st.session_state.get(
+                "single_sensitivity", {}
+            )
+            corr = (
+                single_sensitivity.get("pearson_score_correlation")
+                if single_sensitivity.get("run_id") == run_hash
+                else None
+            )
+            if corr is not None:
+                st.json(
+                    single_sensitivity["perturbed_weights"],
+                    expanded=False,
+                )
+                st.metric(
+                    "KPI Pearson correlation (original vs perturbed)",
+                    f"{corr:.3f}",
+                )
+                st.caption(
+                    "This diagnostic compares score vectors. Ranking stability "
+                    "is evaluated separately with Monte Carlo Kendall tau-b."
+                )
+            else:
+                st.info(
+                    "Adjust the perturbation slider and run the sensitivity "
+                    "test to compute robustness."
+                )
 
             repetitions = st.select_slider(
                 "Monte Carlo repetitions", options=[100, 500, 1000, 5000], value=1000
@@ -1449,128 +1504,178 @@ with tabs[2]:
                     seed=42,
                     stage_gain=stage_gain,
                 )
-                st.session_state["mc_summary"] = mc_summary
-                st.session_state["mc_runs"] = mc_runs.to_dict(orient="records")
-            if "mc_summary" in st.session_state:
-                mc_summary = st.session_state["mc_summary"]
+                st.session_state["mc_robustness"] = {
+                    "run_id": run_hash,
+                    "delta": delta,
+                    "summary": mc_summary,
+                    "runs": mc_runs.to_dict(orient="records"),
+                }
+            mc_robustness = st.session_state.get("mc_robustness", {})
+            if mc_robustness.get("run_id") == run_hash:
+                mc_summary = mc_robustness["summary"]
                 low_ci, high_ci = mc_summary["tau_b_95pct_interval"]
                 c1, c2 = st.columns(2)
                 c1.metric("Mean Kendall τb", f"{mc_summary['mean_tau_b']:.3f}")
-                c2.metric("Mean top-3 retention", f"{100 * mc_summary['mean_top3_retention']:.1f}%")
+                c2.metric(
+                    "Mean priority-set retention",
+                    f"{100 * mc_summary['mean_priority_set_retention']:.1f}%",
+                )
                 st.caption(
                     f"Empirical 95% interval for τb: [{low_ci:.3f}, {high_ci:.3f}]. "
-                    f"{mc_summary['distribution']}; seed {mc_summary['seed']}."
+                    f"{mc_summary['distribution']}; seed {mc_summary['seed']}. "
+                    f"{mc_summary['tie_policy']}."
                 )
             
 
 # -------------------------------------------------
-            # MCDA Baseline Comparison (all ranks are per KPI)
+            # Convergent MCDA comparison
             # -------------------------------------------------
-            st.subheader("MCDA Baseline Comparison")
-            
-            kpi_matrix = results["scored"]["kpis"]
-            df_kpi = pd.DataFrame(kpi_matrix).T.fillna(0)  # rows = KPIs, cols = systems
-            
-            # 1) Custom fuzzy ranking PER KPI (use row mean across systems)
-            rank_custom = df_kpi.mean(axis=1).rank(ascending=False, method="dense")
-            
-            # 2) Baseline methods (already return per-KPI ranks)
-            rank_topsis = topsis_compare(kpi_matrix)   # index = KPI
-            rank_wsm    = weighted_sum_compare(kpi_matrix)  # index = KPI
-            rank_prom   = promethee_compare(kpi_matrix)# index = KPI
-            
-            # 3) Align indexes safely
-            def align(a, b):
-                idx = a.index.intersection(b.index)
-                return a.loc[idx], b.loc[idx]
-            
-            def safe_kendall(a, b):
-                a2, b2 = align(a, b)
-                if len(a2) < 2:
-                    return np.nan, np.nan
-                result = kendalltau(a2, b2)
-                return float(result.statistic), float(result.pvalue)
-            
-            tau_topsis, p_topsis = safe_kendall(rank_custom, rank_topsis)
-            tau_wsm, p_wsm       = safe_kendall(rank_custom, rank_wsm)
-            tau_prom, p_prom     = safe_kendall(rank_custom, rank_prom)
-            
-            # 4) Debug/diagnostic: show aligned ranks so you can see they’re non-empty
-            rk = pd.DataFrame({
-                "custom":    rank_custom,
-                "topsis":    rank_topsis.reindex(rank_custom.index),
-                "weighted_sum": rank_wsm.reindex(rank_custom.index),
-                "promethee": rank_prom.reindex(rank_custom.index),
-            }).dropna()
-            with st.expander("See aligned ranks (per KPI)"):
-                st.dataframe(rk.sort_values("custom"), use_container_width=True)
-            
-            # 5) Display
-            fmt = lambda x: ("—" if pd.isna(x) else f"{float(x):.2f}")
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Kendall τb vs TOPSIS", fmt(tau_topsis), f"p={fmt(p_topsis)}")
-            col2.metric("Kendall τb vs weighted sum", fmt(tau_wsm), f"p={fmt(p_wsm)}")
-            col3.metric("Kendall τb vs PROMETHEE", fmt(tau_prom), f"p={fmt(p_prom)}")
-            
-            vals = [v for v in [tau_topsis, tau_wsm, tau_prom] if pd.notna(v)]
-            if len(vals) and min(vals) >= 0.7:
-                st.success("High alignment with MCDA baselines — consistent prioritization across methods.")
-            elif len(vals) and max(vals) >= 0.5:
-                st.info("Moderate alignment — partial consistency; verify 5S or stage influence.")
-            else:
-                st.warning("Low/undefined alignment — check weight effects or KPI redundancy.")
+            st.subheader("Convergent MCDA Method Comparison")
+            criteria_frame, rank_frame, mcda_metrics = (
+                convergent_mcda_comparison(
+                    results["scored"]["kpis"],
+                    weights_5s,
+                    stage,
+                    system,
+                    stage_gain=stage_gain,
+                )
+            )
+            with st.expander("See antecedents and aligned KPI ranks"):
+                st.markdown(
+                    "Crisp methods use the original baseline, 5S-alignment, "
+                    "and lifecycle-relevance antecedents—not fuzzy outputs."
+                )
+                st.dataframe(criteria_frame, use_container_width=True)
+                st.dataframe(
+                    rank_frame.sort_values("fuzzy"),
+                    use_container_width=True,
+                )
 
-    
+            metric_columns = st.columns(3)
+            method_labels = {
+                "topsis": "TOPSIS",
+                "weighted_sum": "weighted sum",
+                "promethee": "PROMETHEE",
+            }
+            for column, method in zip(metric_columns, method_labels):
+                metric = mcda_metrics[method]
+                tau_value = metric["kendall_tau_b"]
+                column.metric(
+                    f"Kendall τb vs {method_labels[method]}",
+                    "N/A" if tau_value is None else f"{tau_value:.3f}",
+                    format_p_value(metric["p_value"]),
+                )
+            st.caption(
+                "This is an internal convergent-method comparison using the "
+                "same constructs before fuzzy inference. It is not external "
+                "or industrial validation."
+            )
+
             # -------------------------------------------------
-            # Quantitative Amplitude Check (5S effect range)
+            # Genuine 5S counterfactual amplitude
             # -------------------------------------------------
-            st.subheader("Amplitude of 5S Influence")
-            
-            # Combine all scored matrices into one unified DataFrame
-            scores_df = pd.concat([
-                pd.DataFrame(results["scored"]["core_processes"]).T,
-                pd.DataFrame(results["scored"]["kpis"]).T,
-                pd.DataFrame(results["scored"]["drivers"]).T,
-            ])
-            
-            # Compute range across systems
-            
-            row_range = (scores_df.max(axis=1) - scores_df.min(axis=1)).mean()
-            variation = float(row_range)
-            
-            st.metric("Average Score Range across Systems", f"{variation:.2f}")
-            
-            if variation < 0.25:
-                st.warning("⚠️ Low amplitude — 5S sliders may have limited visible impact.")
-            elif variation < 0.6:
-                st.info("Moderate amplitude — 5S weights produce perceptible variation.")
-            else:
-                st.success("High amplitude — 5S sliders meaningfully reshape system priorities.")
-    
-    
+            st.subheader("Counterfactual 5S Influence")
+            influence_5s = counterfactual_5s_amplitude(
+                weights_5s,
+                stage,
+                system,
+                stage_gain=stage_gain,
+            )
+            c1, c2, c3 = st.columns(3)
+            c1.metric(
+                "Mean KPI score range",
+                f"{influence_5s['mean_kpi_score_range']:.3f}",
+            )
+            c2.metric(
+                "Maximum KPI score range",
+                f"{influence_5s['maximum_kpi_score_range']:.3f}",
+            )
+            c3.metric(
+                "Affected KPIs",
+                f"{influence_5s['affected_kpi_count']}/"
+                f"{influence_5s['kpi_count']}",
+            )
+            st.caption(influence_5s["design"])
+
             # -------------------------------------------------
-            # Summary panel
+            # Summary and complete export
             # -------------------------------------------------
             st.subheader("Validation Summary")
-            
-            # Safe formatting for None values
-            corr_val = f"{corr:.2f}" if corr is not None else "N/A"
-            
-            st.markdown(f"""
-            - **Run ID:** `{run_hash}`  
-            - **LCE Stage:** `{stage}`  
-            - **System:** `{system}`  
-            - **Dominance tests:** {'Pass' if not dom_fails else 'Fail'}  
-            - **Robustness (KPI corr):** {corr_val}  
-            - **Baseline alignment (Kendall τ):** {min(tau_topsis, tau_wsm, tau_prom):.2f}
-            """)
+            valid_taus = [
+                metric["kendall_tau_b"]
+                for metric in mcda_metrics.values()
+                if metric["kendall_tau_b"] is not None
+            ]
+            minimum_tau = min(valid_taus) if valid_taus else None
+            corr_val = f"{corr:.3f}" if corr is not None else "N/A"
+            tau_val = (
+                f"{minimum_tau:.3f}" if minimum_tau is not None else "N/A"
+            )
+            st.markdown(
+                f"- **Run ID:** `{run_hash}`\n"
+                f"- **LCE Stage:** `{stage}`\n"
+                f"- **System:** `{system}`\n"
+                f"- **Internal checks:** "
+                f"{'Pass' if not dom_fails and engine_checks['passed'] else 'Fail'}\n"
+                f"- **Single-perturbation Pearson correlation:** {corr_val}\n"
+                f"- **Minimum convergent Kendall τb:** {tau_val}"
+            )
+
+            run_data["validation_results"] = {
+                "single_perturbation": (
+                    single_sensitivity
+                    if single_sensitivity.get("run_id") == run_hash
+                    else None
+                ),
+                "membership_threshold_sensitivity": (
+                    saved_breakpoint
+                    if saved_breakpoint.get("run_id") == run_hash
+                    else None
+                ),
+                "monte_carlo": (
+                    mc_robustness
+                    if mc_robustness.get("run_id") == run_hash
+                    else None
+                ),
+                "convergent_mcda": {
+                    "status": "internal convergent comparison, not external validation",
+                    "criteria": criteria_frame.to_dict(orient="index"),
+                    "ranks": rank_frame.to_dict(orient="index"),
+                    "metrics": mcda_metrics,
+                },
+                "counterfactual_5s_influence": influence_5s,
+            }
+            run_data["llm_calls"] = st.session_state.get(
+                "llm_model_log", []
+            )
+            run_data["llm_rejections"] = st.session_state.get(
+                "llm_rejection_log", []
+            )
+            run_data["llm_fallback_sections"] = st.session_state.get(
+                "llm_fallback_sections", []
+            )
+            json_bytes = io.BytesIO(
+                json.dumps(
+                    run_data,
+                    indent=2,
+                    ensure_ascii=False,
+                    default=_json_default,
+                ).encode("utf-8")
+            )
+            st.download_button(
+                "💾 Download complete reproducibility JSON",
+                data=json_bytes,
+                file_name=f"run_{run_hash}_{system.replace(' ', '_')}.json",
+                mime="application/json",
+            )
     with sub_tabs[1]:
         st.header("🤔 What-If Scenarios")
 
-        st.markdown("""
-        Evaluate how the system behaves if key framework layers are temporarily deactivated.
-        This section recomputes results without selected influences and visualizes the overall effect.
-        """)
+        st.markdown(
+            "Perform a true component-weight ablation. A selected component's "
+            "rule-design weight is set to zero and the remaining weights are "
+            "renormalized before the fuzzy rules are recomputed."
+        )
 
         if "results" not in st.session_state:
             st.info("Run **Analyze** first to enable What-If Scenarios.")
@@ -1581,124 +1686,237 @@ with tabs[2]:
 
             disabled = st.multiselect(
                 "Deactivate components:",
-                ["LCE Influence", "5S Weighting"],
-                help="Choose one or both to recompute results without their effects."
+                ["Lifecycle contribution", "5S contribution"],
+                help=(
+                    "Choose one or both. Baseline relevance always remains "
+                    "active as the structural reference."
+                ),
             )
 
             if st.button("Run What-If Scenario", use_container_width=True):
-                # Ablation holds a selected component at the neutral midpoint.
-                # score_all() remains the sole authoritative scoring path and
-                # applies the same structural N/A gate as the full model.
-                scored_new = score_all(
-                    weights_5s,
-                    stage,
-                    stage_gain=results.get("stage_gain", 0.8),
-                    s_alignment_override=(
-                        0.5 if "5S Weighting" in disabled else None
-                    ),
-                    lifecycle_relevance_override=(
-                        0.5 if "LCE Influence" in disabled else None
-                    ),
-                )
-
-                frozen_system = results.get("system", "Product Transfer")
-                applicable_kpis = [
-                    item
-                    for item in scored_new["kpis"]
-                    if is_applicable("kpis", item, frozen_system)
-                ]
-                base_df = (
-                    pd.DataFrame(results["scored"]["kpis"])
-                    .T.loc[applicable_kpis, frozen_system]
-                )
-                new_df = (
-                    pd.DataFrame(scored_new["kpis"])
-                    .T.loc[applicable_kpis, frozen_system]
-                )
-                corr = base_df.corr(new_df)
-                
-
-                st.metric("KPI Correlation (vs full model)", f"{corr:.2f}")
-                if corr >= 0.8:
-                    st.success("System remains stable — minimal dependency on disabled components.")
-                elif corr >= 0.5:
-                    st.info("Moderate deviation — partial dependency detected.")
+                if not disabled:
+                    st.warning("Select at least one contribution to deactivate.")
                 else:
-                    st.warning("Significant change — these components strongly shape outcomes.")
+                    ablated_weights = dict(RULE_DESIGN_WEIGHTS)
+                    if "Lifecycle contribution" in disabled:
+                        ablated_weights["lifecycle_relevance"] = 0.0
+                    if "5S contribution" in disabled:
+                        ablated_weights["5s_alignment"] = 0.0
+                    total_weight = sum(ablated_weights.values())
+                    normalized_ablated_weights = {
+                        key: value / total_weight
+                        for key, value in ablated_weights.items()
+                    }
+                    scored_new, traces_new = score_all(
+                        weights_5s,
+                        stage,
+                        stage_gain=results.get("stage_gain", 0.8),
+                        return_trace=True,
+                        rule_design_weights=ablated_weights,
+                    )
 
-                # ---- Compact visualization ----
-                df_kpi = (
-                    pd.DataFrame(scored_new["kpis"])
-                    .T.loc[applicable_kpis, frozen_system]
-                    .reset_index()
+                    frozen_system = results.get(
+                        "system", "Product Transfer"
+                    )
+                    applicable_kpis = [
+                        item
+                        for item in scored_new["kpis"]
+                        if is_applicable("kpis", item, frozen_system)
+                    ]
+                    base_series = (
+                        pd.DataFrame(results["scored"]["kpis"])
+                        .T.loc[applicable_kpis, frozen_system]
+                    )
+                    new_series = (
+                        pd.DataFrame(scored_new["kpis"])
+                        .T.loc[applicable_kpis, frozen_system]
+                    )
+                    comparison = score_comparison_metrics(
+                        base_series, new_series
+                    )
+                    priority_items = tie_aware_top_items(new_series)
+                    parent_run_id = compute_run_hash(
+                        weights_5s,
+                        stage,
+                        frozen_system,
+                        results.get("stage_gain", 0.8),
+                    )
+                    scenario_payload = {
+                        "parent_run_id": parent_run_id,
+                        "system": frozen_system,
+                        "lce_stage": stage,
+                        "weights_5s": weights_5s,
+                        "stage_gain": results.get("stage_gain", 0.8),
+                        "deactivated_components": sorted(disabled),
+                        "original_rule_design_weights": RULE_DESIGN_WEIGHTS,
+                        "ablated_rule_design_weights_raw": ablated_weights,
+                        "ablated_rule_design_weights_normalized": (
+                            normalized_ablated_weights
+                        ),
+                        "comparison": comparison,
+                        "priority_items": priority_items,
+                        "selected_system_scores": {
+                            item: float(new_series[item])
+                            for item in new_series.index
+                        },
+                    }
+                    scenario_id = hashlib.sha256(
+                        json.dumps(
+                            scenario_payload,
+                            sort_keys=True,
+                            default=_json_default,
+                        ).encode()
+                    ).hexdigest()[:12]
+                    st.session_state["whatif_result"] = {
+                        "scenario_id": scenario_id,
+                        "decision_model_version": DECISION_MODEL_VERSION,
+                        "rule_base_version": FUZZY_RULE_BASE_VERSION,
+                        **scenario_payload,
+                        "all_system_scores": scored_new,
+                        "fuzzy_trace": traces_new,
+                    }
+
+            whatif_result = st.session_state.get("whatif_result")
+            frozen_system = results.get("system", "Product Transfer")
+            if (
+                whatif_result
+                and whatif_result.get("system") == frozen_system
+                and whatif_result.get("lce_stage") == stage
+                and whatif_result.get("weights_5s") == weights_5s
+                and whatif_result.get("deactivated_components")
+                == sorted(disabled)
+            ):
+                comparison = whatif_result["comparison"]
+                c1, c2, c3 = st.columns(3)
+                c1.metric(
+                    "Pearson score correlation",
+                    f"{comparison['pearson_score_correlation']:.3f}",
                 )
-                df_kpi.columns = ["KPI", "Score"]
-                df_kpi = df_kpi.sort_values("Score", ascending=True)
+                c2.metric(
+                    "Kendall τb",
+                    f"{comparison['kendall_tau_b']:.3f}",
+                    format_p_value(comparison["kendall_p_value"]),
+                )
+                c3.metric(
+                    "Priority-set Jaccard",
+                    f"{comparison['priority_set_jaccard']:.3f}",
+                )
 
+                df_kpi = pd.DataFrame(
+                    {
+                        "KPI": list(
+                            whatif_result["selected_system_scores"].keys()
+                        ),
+                        "Score": list(
+                            whatif_result["selected_system_scores"].values()
+                        ),
+                    }
+                ).sort_values("Score", ascending=True)
                 import plotly.express as px
-                fig = px.bar(df_kpi, x="Score", y="KPI", orientation="h",
-                             title="KPI Impact Summary (What-If Scenario)")
+
+                fig = px.bar(
+                    df_kpi,
+                    x="Score",
+                    y="KPI",
+                    orientation="h",
+                    title=(
+                        f"KPI priorities after ablation — {frozen_system}"
+                    ),
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
-                top_kpis = df_kpi.tail(3)["KPI"].tolist()
-                st.markdown(f"**Top 3 highest-priority KPIs:** {', '.join(top_kpis)}")
-                deterministic_whatif = (
-                    f"For {frozen_system}, the scenario disabled "
-                    f"{', '.join(disabled) or 'no components'}. The KPI-score correlation "
-                    f"with the full fuzzy model is {corr:.3f}. The three highest resulting "
-                    f"KPI priorities are {', '.join(top_kpis)}. No LLM was used to compute "
-                    "or rank these results."
+                priority_items = whatif_result["priority_items"]
+                st.markdown(
+                    "**KPIs at or above the third-position score cutoff:** "
+                    + ", ".join(priority_items)
                 )
-                
-                # ---- LLM interpretation of What-If Scenario ----
-                if (
-                    "llm_whatif" not in st.session_state
-                    or st.session_state.get("last_disabled") != disabled
-                    or st.session_state.get("last_weights") != weights_5s
-                ):
-                    w5s_desc = describe_real_5s(weights_5s)
-                    prompt_whatif = f"""
-                    Disabled components: {', '.join(disabled) or 'None'}
-                    KPI correlation vs full model: {corr:.2f}
-                    Highest-priority KPIs: {', '.join(top_kpis)}
-                    User's 5S weights: {json.dumps(w5s_desc, indent=2)}
-                    Describe only the reported What-If inputs, correlation, KPI
-                    names, scores, and ordering. Do not convert correlation into
-                    claims about stability, causality, effectiveness, risk, or
-                    recommended strategy. Do not introduce new numbers.
-                    """
-                    payload = {
-                        "disabled": disabled,
-                        "corr": corr,
-                        "top_kpis": top_kpis,
-                        "weights_5s": w5s_desc
-                    }
+                deterministic_whatif = (
+                    f"For {frozen_system}, the ablation deactivated "
+                    f"{', '.join(whatif_result['deactivated_components'])}. "
+                    "The remaining rule-design weights were renormalized. "
+                    f"Pearson score correlation is "
+                    f"{comparison['pearson_score_correlation']:.3f} and "
+                    f"Kendall tau-b is {comparison['kendall_tau_b']:.3f}. "
+                    "The tie-aware priority set contains "
+                    f"{', '.join(priority_items)}. No LLM computed or changed "
+                    "these results."
+                )
+                llm_payload = {
+                    "system": frozen_system,
+                    "deactivated_components": whatif_result[
+                        "deactivated_components"
+                    ],
+                    "pearson_score_correlation": round(
+                        comparison["pearson_score_correlation"], 3
+                    ),
+                    "kendall_tau_b": round(
+                        comparison["kendall_tau_b"], 3
+                    ),
+                    "priority_items": [
+                        {
+                            "item": item,
+                            "score": whatif_result[
+                                "selected_system_scores"
+                            ][item],
+                        }
+                        for item in priority_items
+                    ],
+                }
+                cache_key = whatif_result["scenario_id"]
+                if st.session_state.get("llm_whatif_cache_key") != cache_key:
                     use_llm_whatif = (
-                        results.get("explanation_mode") == "Optional LLM narrative"
+                        results.get("explanation_mode")
+                        == "Optional LLM narrative"
                         and client is not None
                     )
-                    expl = safe_llm_call(
-                        prompt_whatif,
-                        payload,
-                        temp=0.0,
-                        max_toks=350,
-                        fallback=deterministic_whatif,
-                        section="What-If Scenario",
-                    ) if use_llm_whatif else deterministic_whatif
-                    st.session_state["llm_whatif"] = expl
-                    st.session_state["last_disabled"] = disabled
-                    st.session_state["last_weights"] = weights_5s
-              
-                
-                if "llm_whatif" in st.session_state:
-                    st.markdown("### Scenario Explanation")
-                    st.write(st.session_state["llm_whatif"])
-    
+                    prompt_whatif = (
+                        "Write one concise factual paragraph describing only "
+                        "the supplied ablation, Pearson correlation, Kendall "
+                        "tau-b, and tie-aware priority items with their exact "
+                        "scores. Do not infer effectiveness, causality, risk, "
+                        "stability, or recommended action."
+                    )
+                    st.session_state["llm_whatif"] = (
+                        safe_llm_call(
+                            prompt_whatif,
+                            llm_payload,
+                            temp=0.0,
+                            max_toks=300,
+                            fallback=deterministic_whatif,
+                            section="What-If Scenario",
+                            require_scores=True,
+                        )
+                        if use_llm_whatif
+                        else deterministic_whatif
+                    )
+                    st.session_state["llm_whatif_cache_key"] = cache_key
 
+                st.markdown("### Scenario Explanation")
+                st.write(st.session_state["llm_whatif"])
+
+                whatif_export = {
+                    **whatif_result,
+                    "explanation": st.session_state["llm_whatif"],
+                    "llm_calls": [
+                        call
+                        for call in st.session_state.get(
+                            "llm_model_log", []
+                        )
+                        if call.get("section") == "What-If Scenario"
+                    ],
+                }
                 st.download_button(
-                    "📥 Download detailed What-If data (JSON)",
-                    data=json.dumps(scored_new, indent=2).encode("utf-8"),
-                    file_name="what_if_results.json",
+                    "📥 Download complete What-If JSON",
+                    data=json.dumps(
+                        whatif_export,
+                        indent=2,
+                        ensure_ascii=False,
+                        default=_json_default,
+                    ).encode("utf-8"),
+                    file_name=(
+                        f"what_if_{whatif_result['scenario_id']}_"
+                        f"{frozen_system.replace(' ', '_')}.json"
+                    ),
                     mime="application/json",
                 )
 

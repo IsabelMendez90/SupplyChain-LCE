@@ -8,7 +8,7 @@ from itertools import product
 
 
 EPSILON = 1e-12
-FUZZY_RULE_BASE_VERSION = "2.1-provisional"
+FUZZY_RULE_BASE_VERSION = "2.2"
 LINGUISTIC_LEVELS = ("Low", "Medium", "High")
 
 # The three antecedents represent different constructs and therefore use
@@ -72,19 +72,46 @@ FUZZY_RULE_PROVENANCE = {
             "1.5 * (0.50*q_baseline + 0.30*q_5s + "
             "0.20*q_lifecycle), q in {0,1,2}"
         ),
-        "status": "provisional pending structured expert elicitation and calibration",
+        "validation_status": (
+            "versioned research model; numerical mappings require structured "
+            "expert calibration and external case validation"
+        ),
     },
 }
 
 
-def _rule_consequent(baseline_label, s_label, lifecycle_label):
+def rule_consequents_from_weights(rule_design_weights=None):
+    """Build all 27 singleton consequents from declared component weights."""
+    weights = dict(RULE_DESIGN_WEIGHTS)
+    if rule_design_weights is not None:
+        weights.update(rule_design_weights)
+    unknown = set(weights) - set(RULE_DESIGN_WEIGHTS)
+    if unknown:
+        raise KeyError(f"Unknown rule-design weights: {sorted(unknown)}")
+    if any(float(value) < 0.0 for value in weights.values()):
+        raise ValueError("Rule-design weights must be non-negative.")
+    total = sum(float(value) for value in weights.values())
+    if total <= 0.0:
+        raise ValueError("At least one rule-design weight must remain active.")
+
+    return {
+        antecedents: _rule_consequent(*antecedents, weights=weights)
+        for antecedents in product(LINGUISTIC_LEVELS, repeat=3)
+    }
+
+
+def _rule_consequent(
+    baseline_label, s_label, lifecycle_label, weights=None
+):
     """Map an antecedent combination to an explicit singleton in [0, 3]."""
     ordinal = {"Low": 0, "Medium": 1, "High": 2}
+    weights = weights or RULE_DESIGN_WEIGHTS
+    total = sum(float(value) for value in weights.values())
     combined = (
-        RULE_DESIGN_WEIGHTS["baseline"] * ordinal[baseline_label]
-        + RULE_DESIGN_WEIGHTS["5s_alignment"] * ordinal[s_label]
-        + RULE_DESIGN_WEIGHTS["lifecycle_relevance"] * ordinal[lifecycle_label]
-    )
+        float(weights["baseline"]) * ordinal[baseline_label]
+        + float(weights["5s_alignment"]) * ordinal[s_label]
+        + float(weights["lifecycle_relevance"]) * ordinal[lifecycle_label]
+    ) / total
     return round(1.5 * combined, 6)
 
 
@@ -97,10 +124,7 @@ def qualitative_consequent_label(consequent):
 
 # Antecedent order: baseline relevance, 5S alignment, lifecycle relevance.
 # The insertion order fixes stable rule identifiers R01-R27.
-SUGENO_RULES = {
-    antecedents: _rule_consequent(*antecedents)
-    for antecedents in product(LINGUISTIC_LEVELS, repeat=3)
-}
+SUGENO_RULES = rule_consequents_from_weights()
 SUGENO_CONSEQUENTS = tuple(sorted(set(SUGENO_RULES.values())))
 SUGENO_RULE_CONFIDENCES = {
     f"R{number:02d}": 1.0 for number in range(1, len(SUGENO_RULES) + 1)
@@ -166,7 +190,7 @@ def shifted_membership_parameters(delta):
 
     Every interior breakpoint is shifted by the same declared amount while
     fixed domain endpoints remain at 0 and 1. The supported ±0.10 interval
-    preserves the ordering of the provisional partitions.
+    preserves the ordering of the declared partitions.
     """
     delta = float(delta)
     if not -0.10 <= delta <= 0.10:
@@ -220,6 +244,7 @@ def sugeno_fuzzy_score(
     applicable=True,
     rule_confidences=None,
     membership_parameters=None,
+    rule_design_weights=None,
 ):
     """Return a priority score in [0, 3] and a complete inference trace.
 
@@ -235,6 +260,14 @@ def sugeno_fuzzy_score(
         raise ValueError("An applicable item requires a numeric baseline in [0, 3].")
 
     parameters = membership_parameters or FUZZY_MEMBERSHIP_PARAMETERS
+    active_rules = (
+        SUGENO_RULES
+        if rule_design_weights is None
+        else rule_consequents_from_weights(rule_design_weights)
+    )
+    active_design_weights = dict(RULE_DESIGN_WEIGHTS)
+    if rule_design_weights is not None:
+        active_design_weights.update(rule_design_weights)
     confidences = dict(SUGENO_RULE_CONFIDENCES)
     if rule_confidences:
         confidences.update(rule_confidences)
@@ -259,7 +292,7 @@ def sugeno_fuzzy_score(
     weighted_sum = 0.0
     firing_sum = 0.0
     for rule_number, (antecedents, consequent) in enumerate(
-        SUGENO_RULES.items(), start=1
+        active_rules.items(), start=1
     ):
         baseline_label, s_label, lifecycle_label = antecedents
         raw_firing = (
@@ -313,6 +346,7 @@ def sugeno_fuzzy_score(
         "alpha_cuts_used": False,
         "defuzzification": "zero-order Sugeno weighted average",
         "antecedent_operator": "product t-norm",
+        "rule_design_weights": active_design_weights,
         "score": round(score, 6),
     }
     return score, trace

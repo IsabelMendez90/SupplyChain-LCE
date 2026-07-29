@@ -102,30 +102,41 @@ u_j ~ Uniform(-delta, +delta)
 
 The interface exposes the perturbation magnitude and repetition count and uses
 seed 42 by default. It reports mean Kendall tau-b, an empirical 95% interval,
-and mean top-three retention. Recommended publication experiments are 5,000 or
+and mean tie-aware priority-set retention. The priority set contains every item
+tied at the third-rank score threshold, avoiding alphabetical or row-order
+selection among exact ties. Recommended publication experiments are 5,000 or
 10,000 repetitions at `delta = 0.05`, `0.10`, and `0.20`.
 
 The application also implements membership-threshold sensitivity. Every
 interior breakpoint is shifted together by `-delta` and `+delta`, while the
 domain endpoints remain fixed at `0` and `1`. The supported range is
 `delta <= 0.10`. For applicable KPIs only, the app reports Kendall tau-b,
-its p-value, and top-three retention against the unshifted ranking. This is a
-transparent global threshold-location test; independent breakpoint
-perturbations should additionally be reported in a full calibration study.
+its p-value, and tie-aware priority-set retention against the unshifted
+ranking. This is a transparent global threshold-location test; independent
+breakpoint perturbations should additionally be reported in a full calibration
+study.
+
+Counterfactual 5S influence is measured directly. One Industry 5.0 priority at
+a time is set to `0` and `1`, with the other four priorities held at the
+selected values. The mean and maximum KPI score ranges and the affected-KPI
+count are reported for the selected supply-chain configuration.
 
 ## 5. Benchmark comparison
 
-The TOPSIS implementation treats KPI rows as alternatives and the three
-manufacturing-system views as equally weighted benefit criteria. It uses
-vector normalization, equal criterion weights, positive and negative ideal
-solutions, Euclidean separation, and relative closeness. Kendall tau-b and its
-p-value compare its ranking with the fuzzy ranking.
+For the selected supply-chain configuration, KPI rows are alternatives and the
+three original pre-inference antecedents are benefit criteria: normalized
+baseline relevance, 5S alignment, and lifecycle relevance. TOPSIS, a weighted
+sum, and a PROMETHEE-style net flow use the declared design weights
+`0.50/0.30/0.20`. They never use fuzzy output scores as their input criteria.
+Kendall tau-b and its p-value compare each crisp ranking with the fuzzy
+ranking.
 
-This setup must be reported explicitly. The equal-weight normalized-sum method
-is labelled as such; it is not presented as AHP because no expert pairwise
-comparison matrix has been elicited. The PROMETHEE-style result remains an
-exploratory interface diagnostic and should not be claimed as a validated
-benchmark without declared preference thresholds.
+This is an internal convergent-method comparison, not independent industrial
+validation. The weighted-sum method is not presented as AHP because no expert
+pairwise comparison matrix has been elicited. The PROMETHEE-style diagnostic
+uses a simple positive-difference preference function and must not be claimed
+as a validated benchmark without elicited preference and indifference
+thresholds.
 
 ## 6. LLM boundary and failure mode
 
@@ -135,13 +146,20 @@ and industrial-validation claims. Temperature is zero. If the API key is
 missing or the call fails, the app renders the deterministic score-and-rule
 explanation.
 
-Before display, validator version `2.0` checks the draft against the exact
+Before display, validator version `2.1` checks the draft against the exact
 payload. It rejects: reasoning or prompt leakage; numbers or rule identifiers
 absent from the payload; incorrect item–score or item–rule associations;
 descending-order violations (while permitting exact ties); and unsupported
 normative, causal, risk, performance, advantage, or outcome claims. Sections
 that fail after the declared retry limit are replaced by deterministic
 explanations. Every attempt records the routed model and rejection reasons.
+
+The OpenRouter free router may realize different models across calls. This is
+handled as a multi-model robustness condition rather than hidden variation:
+the actual model, call identifier, prompt hash, complete draft, validator
+outcome, and fallback status are archived for each attempt. The validator does
+not reject harmless stylistic variation, list numbering, word-count references,
+or the term `Industry 5.0`; it remains strict about scientific content.
 
 Exact prose is not a replication target. Fidelity is evaluated by numerical
 agreement, ordering agreement, rule-reference agreement, unsupported-claim

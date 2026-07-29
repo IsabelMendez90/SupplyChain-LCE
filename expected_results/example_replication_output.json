@@ -1,7 +1,7 @@
 {
-  "run_id": "15b82a3e853b",
-  "decision_model_version": "2.1-provisional",
-  "rule_base_version": "2.1-provisional",
+  "run_id": "c5d13ddcaf17",
+  "decision_model_version": "2.2",
+  "rule_base_version": "2.2",
   "scenario": {
     "system": "Product Transfer",
     "lce_stage": "Operation",
@@ -255,7 +255,7 @@
     "core_processes": {
       "Customer Driven Design": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -318,10 +318,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.640299
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -384,10 +389,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.759701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -437,12 +447,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         }
       },
       "CRM": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -505,10 +520,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.759701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -571,10 +591,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.759701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -624,12 +649,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         }
       },
       "Co-Engineering": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -679,10 +709,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -745,10 +780,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.759701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -811,12 +851,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.640299
         }
       },
       "SRM": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -866,10 +911,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.25
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -932,10 +982,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.059701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -998,12 +1053,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.940299
         }
       },
       "NPD": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1066,10 +1126,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.640299
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1119,10 +1184,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1172,12 +1242,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         }
       },
       "Obtain Customer Commit.": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1227,10 +1302,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1293,10 +1373,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.759701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1346,12 +1431,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         }
       },
       "Order Fulfillment": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1414,10 +1504,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.442857
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1480,10 +1575,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.442857
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1546,12 +1646,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.442857
         }
       },
       "Customer Service": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1614,10 +1719,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.059701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1680,10 +1790,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.059701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1733,6 +1848,11 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.25
         }
       }
@@ -1740,7 +1860,7 @@
     "kpis": {
       "Supplier on-time delivery": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1790,10 +1910,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1843,10 +1968,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1909,12 +2039,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.240299
         }
       },
       "Supplier quality defect rate": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -1964,10 +2099,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2017,10 +2157,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2083,12 +2228,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Assembly cycle time": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2151,10 +2301,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2217,10 +2372,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2283,12 +2443,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.240299
         }
       },
       "Cost per assembled unit": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2351,10 +2516,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2417,10 +2587,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.240299
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2483,12 +2658,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Logistics lead time": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2538,10 +2718,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2604,10 +2789,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2670,12 +2860,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.240299
         }
       },
       "Inventory turns": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2738,10 +2933,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2804,10 +3004,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.240299
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2870,12 +3075,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "OTIF": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2925,10 +3135,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -2991,10 +3206,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3057,12 +3277,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Order cycle time": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3125,10 +3350,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3191,10 +3421,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3257,12 +3492,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Forecast accuracy": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3325,10 +3565,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3391,10 +3636,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.240299
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3457,12 +3707,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Customer fill rate": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3512,10 +3767,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3578,10 +3838,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.240299
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3644,12 +3909,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Technology ramp-up time": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3738,10 +4008,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.806965
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3804,10 +4079,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.116667
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3896,12 +4176,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.926368
         }
       },
       "First-pass yield": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -3990,10 +4275,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.128932
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4056,10 +4346,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.319231
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4122,12 +4417,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.319231
         }
       },
       "Learning-curve productivity": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4216,10 +4516,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.009529
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4308,10 +4613,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.128932
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4400,12 +4710,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.128932
         }
       },
       "Flexibility index": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4494,10 +4809,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.128932
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4586,10 +4906,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.128932
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4652,12 +4977,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.319231
         }
       },
       "Revenue from new products (%)": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4746,10 +5076,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.009529
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4838,10 +5173,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.128932
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4930,12 +5270,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.009529
         }
       },
       "Technology adoption cost": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -4998,10 +5343,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.640299
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5064,10 +5414,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.759701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5130,12 +5485,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.759701
         }
       },
       "Plant utilization": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5198,10 +5558,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5264,10 +5629,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5317,12 +5687,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         }
       },
       "Supplier on-time receipts": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5372,10 +5747,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5425,10 +5805,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5491,12 +5876,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Supplier quality pass": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5546,10 +5936,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5599,10 +5994,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5665,12 +6065,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Cycle time reduction": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5733,10 +6138,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5799,10 +6209,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5852,12 +6267,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         }
       },
       "OEE": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5920,10 +6340,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -5986,10 +6411,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6039,12 +6469,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         }
       },
       "Production lead time": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6107,10 +6542,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6173,10 +6613,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6239,12 +6684,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Customer fulfillment cycle time": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6294,10 +6744,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6360,10 +6815,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6426,12 +6886,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Total lifecycle cost": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6520,10 +6985,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.252559
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6612,10 +7082,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.252559
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6678,12 +7153,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.442857
         }
       },
       "ESG performance index": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6772,10 +7252,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.252559
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6864,10 +7349,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.252559
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6930,12 +7420,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.442857
         }
       },
       "Workforce safety incident rate": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -6998,10 +7493,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7064,10 +7564,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7117,12 +7622,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         }
       },
       "Service uptime": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7185,10 +7695,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7251,10 +7766,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7304,12 +7824,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         }
       },
       "Planned maintenance ratio": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7372,10 +7897,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.240299
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7438,10 +7968,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7491,12 +8026,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.55
         }
       },
       "Labor content accuracy": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7559,10 +8099,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.240299
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7625,10 +8170,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7691,12 +8241,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.359701
         }
       },
       "Closed-loop recovery rate": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7785,10 +8340,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.009529
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7877,10 +8437,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.009529
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -7969,6 +8534,11 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.128932
         }
       }
@@ -7976,7 +8546,7 @@
     "drivers": {
       "Inventory/Capacity Buffers": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8039,10 +8609,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.940299
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8105,10 +8680,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.059701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8158,12 +8738,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.25
         }
       },
       "Network Diversification": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8213,10 +8798,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8279,10 +8869,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.759701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8345,12 +8940,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.640299
         }
       },
       "Multisourcing": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8400,10 +9000,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8453,10 +9058,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8519,12 +9129,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.640299
         }
       },
       "Nearshoring": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8613,10 +9228,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.926368
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8705,10 +9325,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.926368
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8771,12 +9396,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.116667
         }
       },
       "Platform/Plant Harmonization": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8839,10 +9469,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 0.940299
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8905,10 +9540,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.059701
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -8958,12 +9598,17 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 2.25
         }
       },
       "Ecosystem Partnerships": {
         "Product Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -9013,10 +9658,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         },
         "Technology Transfer": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -9066,10 +9716,15 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.95
         },
         "Facility Design": {
-          "rule_base_version": "2.1-provisional",
+          "rule_base_version": "2.2",
           "applicable": true,
           "structural_gate": "passed",
           "raw_inputs": {
@@ -9132,6 +9787,11 @@
           "alpha_cuts_used": false,
           "defuzzification": "zero-order Sugeno weighted average",
           "antecedent_operator": "product t-norm",
+          "rule_design_weights": {
+            "baseline": 0.5,
+            "5s_alignment": 0.3,
+            "lifecycle_relevance": 0.2
+          },
           "score": 1.759701
         }
       }

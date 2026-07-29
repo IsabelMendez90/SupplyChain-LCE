@@ -23,6 +23,11 @@ from fuzzy_engine import (
     sugeno_fuzzy_score,
     validate_engine,
 )
+from validation_engine import (
+    convergent_mcda_comparison,
+    counterfactual_5s_amplitude,
+    format_p_value,
+)
 
 
 class FuzzyEngineTests(unittest.TestCase):
@@ -238,6 +243,81 @@ class FuzzyEngineTests(unittest.TestCase):
             lifecycle_relevance_override=None,
         )
         self.assertEqual(full, empty_ablation)
+
+    def test_disabling_5s_contribution_removes_weight_dependence(self):
+        profile_a = {name: 0.1 for name in FIVE_S}
+        profile_b = {name: 0.9 for name in FIVE_S}
+        ablation = {
+            "baseline": 0.50,
+            "5s_alignment": 0.0,
+            "lifecycle_relevance": 0.20,
+        }
+        first = score_all(
+            profile_a,
+            "Operation",
+            rule_design_weights=ablation,
+        )
+        second = score_all(
+            profile_b,
+            "Operation",
+            rule_design_weights=ablation,
+        )
+        self.assertEqual(first, second)
+
+    def test_disabling_lifecycle_contribution_removes_stage_dependence(self):
+        weights = {name: 0.5 for name in FIVE_S}
+        ablation = {
+            "baseline": 0.50,
+            "5s_alignment": 0.30,
+            "lifecycle_relevance": 0.0,
+        }
+        first = score_all(
+            weights,
+            "Ideation",
+            rule_design_weights=ablation,
+        )
+        second = score_all(
+            weights,
+            "Operation",
+            rule_design_weights=ablation,
+        )
+        self.assertEqual(first, second)
+
+    def test_convergent_mcda_uses_selected_system_antecedents(self):
+        weights = {name: 0.5 for name in FIVE_S}
+        scores = score_all(weights, "Operation")["kpis"]
+        criteria, ranks, metrics = convergent_mcda_comparison(
+            scores,
+            weights,
+            "Operation",
+            "Product Transfer",
+        )
+        self.assertEqual(
+            set(criteria.columns),
+            {"baseline", "5s_alignment", "lifecycle_relevance"},
+        )
+        self.assertEqual(len(criteria), 30)
+        self.assertEqual(set(ranks.columns), {
+            "fuzzy", "topsis", "weighted_sum", "promethee"
+        })
+        self.assertTrue(
+            all(value["kendall_tau_b"] is not None for value in metrics.values())
+        )
+
+    def test_counterfactual_5s_amplitude_is_not_cross_system_range(self):
+        weights = {name: 0.5 for name in FIVE_S}
+        amplitude = counterfactual_5s_amplitude(
+            weights,
+            "Operation",
+            "Product Transfer",
+        )
+        self.assertEqual(amplitude["kpi_count"], 30)
+        self.assertGreater(amplitude["affected_kpi_count"], 0)
+        self.assertGreater(amplitude["mean_kpi_score_range"], 0.0)
+
+    def test_p_value_formatter_never_reports_rounded_zero(self):
+        self.assertEqual(format_p_value(0.00001), "p < 0.001")
+        self.assertEqual(format_p_value(0.0254), "p = 0.025")
 
     def test_engine_validation_passes(self):
         self.assertTrue(validate_engine()["passed"])

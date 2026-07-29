@@ -66,6 +66,7 @@ scenario configuration.
 ## 7. Reporting boundary
 
 Until this protocol has been executed, describe the numerical mappings and
-rule base as an author-designed, literature-informed, provisional
-design-science artifact. Software reproducibility demonstrates that results
-can be regenerated; it does not demonstrate empirical validity.
+rule base as an author-designed, literature-informed, versioned
+design-science artifact that still requires external validation. Software
+reproducibility demonstrates that results can be regenerated; it does not
+demonstrate empirical validity.

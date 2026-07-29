@@ -63,6 +63,10 @@ def model_configuration():
         "consequents": SUGENO_CONSEQUENTS,
         "output_bands": SUGENO_OUTPUT_BANDS,
         "rule_design_weights": RULE_DESIGN_WEIGHTS,
+        "component_ablation": (
+            "set the selected rule-design weight to zero and renormalize "
+            "the remaining positive weights"
+        ),
         "rule_confidences": SUGENO_RULE_CONFIDENCES,
         "epsilon": EPSILON,
         "alpha_cuts_used": False,

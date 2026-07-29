@@ -1,4 +1,4 @@
-# KPI mapping and provisional baseline protocol
+# KPI mapping and baseline protocol
 
 This document is the human-readable counterpart of `BASE_KPIS` in
 `decision_model.py`. It aligns the implementation with the 30 representative

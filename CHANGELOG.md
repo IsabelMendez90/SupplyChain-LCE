@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.2 — 2026-07-28
+
+- Retained `model="openrouter/free"` as a documented multi-model robustness
+  condition instead of forcing a single provider model.
+- Added a unique call identifier, actual routed model, prompt hash, raw draft,
+  validation outcome, rejection reason, and deterministic fallback to every
+  LLM audit record.
+- Updated grounding validator `2.1` to permit harmless stylistic numbers such
+  as list numbering and `Industry 5.0`, while continuing to reject incorrect
+  scores, rule identifiers, item associations, ranking inversions, and
+  unsupported scientific claims.
+- Added true component ablation: setting the 5S or lifecycle rule-design weight
+  to zero and renormalizing the remaining weights removes that component from
+  the rule base.
+- Replaced the former range-across-configurations display with one-at-a-time 5S
+  endpoint counterfactuals for the selected supply-chain configuration.
+- Rebuilt TOPSIS, weighted-sum, and PROMETHEE-style comparisons from the
+  original pre-inference antecedents rather than fuzzy outputs.
+- Added tie-aware priority sets, exact p-value formatting, persistent
+  robustness results, and complete downloadable validation and What-If JSON.
+- Replaced the temporary model qualifier in application labels,
+  documentation, and version identifiers while preserving an explicit
+  external-validation boundary.
+
 ## 2.1.1 interface hotfix — 2026-07-28
 
 - Added strict catalog and version validation for frozen Streamlit results and
@@ -10,7 +34,7 @@
   so obsolete item names cannot reach strict scientific key lookup.
 - Added the fuzzy-rule version to command-line replication output.
 
-## 2.1-provisional — 2026-07-28
+## 2.1 — 2026-07-28
 
 - Replaced the former 13-item, one-configuration-only KPI assignment with the
   complete 30-KPI catalog reported in the manuscript.
@@ -34,7 +58,7 @@
 - Added `KPI_MAPPING.md`, exported the mapping protocol, and regenerated all
   frozen replication artifacts.
 
-## 2.0-provisional — 2026-07-28
+## 2.0 — 2026-07-28
 
 - Replaced the shared membership partition with three input-specific
   Low/Medium/High partitions.

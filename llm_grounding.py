@@ -7,7 +7,7 @@ can be tested and reproduced without an API key.
 import re
 
 
-GROUNDING_VALIDATOR_VERSION = "2.0"
+GROUNDING_VALIDATOR_VERSION = "2.1"
 
 META_OUTPUT_PATTERNS = (
     r"\bwe need to\b",
@@ -28,7 +28,6 @@ UNSUPPORTED_CLAIM_PATTERNS = (
     r"\bvulnerabilit(?:y|ies)\b",
     r"\brequires? rethinking\b",
     r"\bneeds? rethinking\b",
-    r"\bshould\b",
     r"\brecommend(?:s|ed|ation|ations)?\b",
     r"\bimplement(?:s|ed|ation)?\b",
     r"\badopt(?:s|ed|ion)?\b",
@@ -46,6 +45,13 @@ NUMBER_PATTERN = re.compile(
     r"(?<![A-Za-z0-9])[-+]?(?:\d+(?:\.\d+)?|\.\d+)%?(?![A-Za-z0-9])"
 )
 RULE_PATTERN = re.compile(r"\bR\d{2,}\b", flags=re.IGNORECASE)
+SCIENTIFIC_NUMBER_PATTERN = re.compile(
+    r"\b(?:score|baseline|alignment|lifecycle relevance|correlation|"
+    r"kendall(?: tau(?:-b)?)?|p[- ]?value|retention|weight)"
+    r"\s*(?:is|of|=|:)?\s*"
+    r"([-+]?(?:\d+(?:\.\d+)?|\.\d+)%?)",
+    flags=re.IGNORECASE,
+)
 
 
 def _clean_output(text):
@@ -158,8 +164,12 @@ def grounding_issues(
         return cleaned, issues
 
     allowed_numbers = _numeric_tokens(payload)
+    # Validate numbers presented as scientific evidence. Structural numbering,
+    # word limits, and stable domain names such as Industry 5.0 are permitted.
+    # Item-associated parenthetical scores are added below.
     output_numbers = [
-        float(token.rstrip("%")) for token in NUMBER_PATTERN.findall(cleaned)
+        float(token.rstrip("%"))
+        for token in SCIENTIFIC_NUMBER_PATTERN.findall(cleaned)
     ]
     unsupported_numbers = sorted(
         {
@@ -184,21 +194,29 @@ def grounding_issues(
         issues.append("missing_rule_ids")
 
     rows = _canonical_rows(payload)
-    if require_scores and rows and not output_numbers:
-        issues.append("missing_scores")
-
     # If the draft gives "item (score X)" or "item ... rule RXX", verify the
     # association rather than merely checking that X/RXX exists somewhere.
+    mentioned_score_count = 0
     for row in rows:
         match = re.search(re.escape(row["item"]), cleaned, flags=re.IGNORECASE)
         if not match:
             continue
         segment = cleaned[match.start() : match.start() + 220]
         score_match = re.search(
-            r"\bscore\s*[:=]?\s*([-+]?(?:\d+(?:\.\d+)?|\.\d+))",
+            r"\bscore\s*(?:is|of|[:=])?\s*"
+            r"([-+]?(?:\d+(?:\.\d+)?|\.\d+))",
             segment,
             flags=re.IGNORECASE,
         )
+        if not score_match:
+            score_match = re.search(
+                re.escape(row["item"])
+                + r"\s*\(\s*([-+]?(?:\d+(?:\.\d+)?|\.\d+))",
+                segment,
+                flags=re.IGNORECASE,
+            )
+        if score_match:
+            mentioned_score_count += 1
         if score_match and not _number_is_allowed(
             float(score_match.group(1)), [row["score"]]
         ):
@@ -214,6 +232,9 @@ def grounding_issues(
             and rule_match.group(1).upper() != row["rule_id"]
         ):
             issues.append("item_rule_mismatch:" + row["item"])
+
+    if require_scores and rows and mentioned_score_count == 0:
+        issues.append("missing_scores")
 
     # Preserve descending score order for the first occurrence of each
     # mentioned canonical item. Different ordering within an exact tie is valid.

@@ -12,16 +12,17 @@ cannot calculate or modify those results; it can only render the frozen
 evidence in natural language. The application therefore remains operational
 and reproducible without an API key.
 
-The v2.1 rule base and input-specific membership breakpoints are explicitly marked as
-**provisional**. The constructs and directional associations are literature
-informed, while the numerical calibration requires structured expert
-elicitation and sensitivity validation before industrial-validity claims are
-made.
+The v2.2 rule base and input-specific membership breakpoints are explicitly
+versioned. The constructs and directional associations are literature
+informed. Numerical calibration and external validity are reported separately
+and require structured expert elicitation and case-based validation.
 
 ## Repository contents
 
 - `app.py`: Streamlit interface and optional OpenRouter narrative layer.
 - `llm_grounding.py`: API-independent semantic grounding validator.
+- `validation_engine.py`: API-independent robustness, counterfactual, and
+  convergent-MCDA utilities.
 - `fuzzy_engine.py`: API-independent Sugeno inference engine and trace.
 - `decision_model.py`: baselines, 5S associations, lifecycle associations, and scoring.
 - `benchmarks.json`: contextual benchmark ranges shown in the interface.
@@ -92,9 +93,12 @@ model="openrouter/free"
 ```
 
 The underlying free model may vary between requests. The app records the model
-returned by the router, temperature, token limit, and prompt hash. This router
-is appropriate for accessibility and demonstrations, but a controlled paper
-experiment should either pin one model or archive the evaluated outputs.
+returned by the router, a unique call identifier, temperature, token limit,
+prompt hash, raw draft, and validation outcome. The changing router is treated
+as a multi-model robustness condition: every realized model is evaluated
+against the same frozen evidence and the evaluated outputs are archived. A
+fixed model is necessary only when the research question requires
+single-model repeatability.
 
 Every optional narrative is checked against its supplied payload. The
 validator rejects reasoning leakage, unsupported numbers and rule identifiers,
