@@ -126,6 +126,14 @@ and industrial-validation claims. Temperature is zero. If the API key is
 missing or the call fails, the app renders the deterministic score-and-rule
 explanation.
 
+Before display, validator version `2.0` checks the draft against the exact
+payload. It rejects: reasoning or prompt leakage; numbers or rule identifiers
+absent from the payload; incorrect item–score or item–rule associations;
+descending-order violations (while permitting exact ties); and unsupported
+normative, causal, risk, performance, advantage, or outcome claims. Sections
+that fail after the declared retry limit are replaced by deterministic
+explanations. Every attempt records the routed model and rejection reasons.
+
 Exact prose is not a replication target. Fidelity is evaluated by numerical
 agreement, ordering agreement, rule-reference agreement, unsupported-claim
 rate, and contradiction rate.

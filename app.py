@@ -25,6 +25,11 @@ from fuzzy_engine import (
     SUGENO_RULE_CONFIDENCES, SUGENO_RULES,
     shifted_membership_parameters, sugeno_fuzzy_score, validate_engine,
 )
+from llm_grounding import (
+    GROUNDING_VALIDATOR_VERSION,
+    grounding_issues,
+    validate_grounded_output,
+)
 
 # =====================================================
 #                  LOAD BENCHMARKS
@@ -140,37 +145,25 @@ wants", "I must", or "let's craft". Begin directly with the substantive answer.
 """.strip()
 
 
-META_OUTPUT_PATTERNS = (
-    r"\bwe need to\b",
-    r"\bthe user wants\b",
-    r"\bi (?:need|must|should)\b",
-    r"\blet(?:'|’)s craft\b",
-    r"\bmust (?:preserve|use|cite|limit|explain|not)\b",
-    r"\bword count\b",
-    r"\bprompt requirements?\b",
-    r"\bwe have evidence\b",
-    r"\bneed to produce\b",
-)
+def validate_llm_output(text, payload=None, **kwargs):
+    """Compatibility wrapper around the API-independent validator."""
+    return validate_grounded_output(text, payload, **kwargs)
 
 
-def validate_llm_output(text):
-    """Reject reasoning leakage, prompt echoes, and empty/truncated drafts."""
-    if not text:
-        return ""
-    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.IGNORECASE | re.DOTALL).strip()
-    if re.search(r"(?i)final (?:answer|response)\s*:", cleaned):
-        cleaned = re.split(r"(?i)final (?:answer|response)\s*:", cleaned)[-1].strip()
-    if len(cleaned.split()) < 20:
-        return ""
-    if any(re.search(pattern, cleaned, flags=re.IGNORECASE) for pattern in META_OUTPUT_PATTERNS):
-        return ""
-    return cleaned
-
-
-def safe_llm_call(prompt: str, payload: dict, temp=0.0, max_toks=400, retries=2, fallback=""):
+def safe_llm_call(
+    prompt: str,
+    payload: dict,
+    temp=0.0,
+    max_toks=400,
+    retries=2,
+    fallback="",
+    section="unspecified",
+    require_rule_ids=False,
+    require_scores=False,
+):
     if client is None:
         return fallback
-    for _ in range(retries):
+    for attempt in range(1, retries + 1):
         try:
             r = client.chat.completions.create(
                 model=LLM_MODEL,
@@ -183,30 +176,49 @@ def safe_llm_call(prompt: str, payload: dict, temp=0.0, max_toks=400, retries=2,
                 max_tokens=max_toks,
             )
             raw_out = r.choices[0].message.content.strip()
-            out = validate_llm_output(raw_out)
-            if out:
+            actual_model = getattr(r, "model", LLM_MODEL)
+            out, issues = grounding_issues(
+                raw_out,
+                payload,
+                require_rule_ids=require_rule_ids,
+                require_scores=require_scores,
+                strict_claims=True,
+            )
+            prompt_hash = hashlib.sha256(
+                (
+                    prompt
+                    + json.dumps(payload, sort_keys=True, default=_json_default)
+                ).encode()
+            ).hexdigest()[:10]
+            accepted = not issues
+            st.session_state.setdefault("llm_model_log", []).append({
+                "section": section,
+                "attempt": attempt,
+                "prompt_hash": prompt_hash,
+                "router": LLM_MODEL,
+                "actual_model": actual_model,
+                "temperature": temp,
+                "max_tokens": max_toks,
+                "grounding_status": "accepted" if accepted else "rejected",
+                "grounding_issues": issues,
+            })
+            if accepted:
                 # openrouter/free may select a different free model per request.
                 # Persist the actual model returned for run-level traceability.
-                actual_model = getattr(r, "model", LLM_MODEL)
                 st.session_state["last_llm_model"] = actual_model
-                prompt_hash = hashlib.sha256(
-                    (prompt + json.dumps(payload, sort_keys=True, default=_json_default)).encode()
-                ).hexdigest()[:10]
-                st.session_state.setdefault("llm_model_log", []).append({
-                    "prompt_hash": prompt_hash,
-                    "router": LLM_MODEL,
-                    "actual_model": actual_model,
-                    "temperature": temp,
-                    "max_tokens": max_toks,
-                })
                 return out
             st.session_state.setdefault("llm_rejection_log", []).append({
-                "reason": "reasoning leakage, prompt echo, or truncated output",
-                "model": getattr(r, "model", LLM_MODEL),
+                "section": section,
+                "attempt": attempt,
+                "reasons": issues,
+                "model": actual_model,
             })
         except Exception as e:
             st.session_state["last_llm_error"] = str(e)
     st.session_state["llm_fallback_used"] = True
+    fallback_sections = st.session_state.setdefault("llm_fallback_sections", [])
+    if section not in fallback_sections:
+        fallback_sections.append(section)
     return fallback
 # =====================================================
 #  CONVERT NUMERIC SCORES TO QUALITATIVE LABELS
@@ -274,8 +286,15 @@ def deterministic_category_explanation(evidence, matrix, title):
     rows = evidence.get("categories", {}).get(matrix, [])
     if not rows:
         return f"No {title.lower()} evidence is available for this run."
+    # Include every item tied at the third-position cutoff. This prevents an
+    # alphabetical tie-break from being misread as a substantive ranking.
+    cutoff_index = min(2, len(rows) - 1)
+    cutoff_score = rows[cutoff_index]["score"]
+    selected_rows = [
+        row for row in rows if row["score"] >= cutoff_score - 5e-4
+    ]
     details = []
-    for row in rows[:3]:
+    for row in selected_rows:
         inputs = row.get("normalized_inputs", {})
         rule = row.get("dominant_rule", {})
         rule_id = rule.get("rule_id", "no active rule")
@@ -287,7 +306,9 @@ def deterministic_category_explanation(evidence, matrix, title):
         )
     return (
         f"For {evidence['system']} at the {evidence['lce_stage']} stage, the "
-        f"highest-priority {title.lower()} are " + "; ".join(details) + ". "
+        f"highest-priority {title.lower()} at or above the third-position "
+        f"cutoff are " + "; ".join(details) + ". "
+        "Items with identical scores are tied. "
         "The ordering is generated exclusively by the deterministic fuzzy engine."
     )
 
@@ -420,6 +441,7 @@ if st.button("Analyze", use_container_width=True):
     st.session_state["llm_done"] = False
     st.session_state["llm_model_log"] = []
     st.session_state["llm_rejection_log"] = []
+    st.session_state["llm_fallback_sections"] = []
     st.session_state["llm_fallback_used"] = False
     st.session_state.pop("llm_interpretations", None)
     st.session_state.pop("compare_analysis", None)
@@ -787,9 +809,19 @@ def show_chat(tab_id: str):
                     temperature=0.0,
                     max_tokens=700,
                 )
-                reply = validate_llm_output(r.choices[0].message.content.strip())
-                if not reply:
+                raw_reply = r.choices[0].message.content.strip()
+                reply, chat_issues = grounding_issues(
+                    raw_reply,
+                    ctx_compact,
+                    strict_claims=True,
+                )
+                if chat_issues:
                     st.session_state["llm_fallback_used"] = True
+                    fallback_sections = st.session_state.setdefault(
+                        "llm_fallback_sections", []
+                    )
+                    if "Strategy Chat" not in fallback_sections:
+                        fallback_sections.append("Strategy Chat")
                     reply = (
                         "The language output did not pass the grounding check. "
                         + deterministic_text["core"] + " "
@@ -799,11 +831,17 @@ def show_chat(tab_id: str):
                 actual_model = getattr(r, "model", LLM_MODEL)
                 st.session_state["last_llm_model"] = actual_model
                 st.session_state.setdefault("llm_model_log", []).append({
+                    "section": "Strategy Chat",
+                    "attempt": 1,
                     "prompt_hash": hashlib.sha256(user_q.encode()).hexdigest()[:10],
                     "router": LLM_MODEL,
                     "actual_model": actual_model,
                     "temperature": 0.0,
                     "max_tokens": 700,
+                    "grounding_status": (
+                        "accepted" if not chat_issues else "rejected"
+                    ),
+                    "grounding_issues": chat_issues,
                 })
               except Exception:
                 reply = (
@@ -892,16 +930,19 @@ with tabs[1]:
                 The user's 5S priorities are: {json.dumps(w5s_desc)}.
                 Below is the qualitative status of each core process for the {sel_sys} system:
                 {json.dumps(core_labels, indent=2)}.
-                For each High or Medium process, refer to the dominant 5S dimensions that drove it 
-                (see 'top_5s_per_item') and consider how the current LCE stage '{lce_stage}' 
-                influences that priority. 
-                Explain the reported ordering using only the canonical evidence. Preserve and cite
-                the exact scores and dominant rule identifiers. Do not create new actions.
+                Describe the reported ordering using only the supplied values.
+                For each mentioned process, cite its exact score and dominant
+                rule identifier. State its baseline, 5S alignment, and lifecycle
+                relevance without adding causal, risk, performance, or managerial
+                claims. Do not create actions or recommendations.
                 Limit to 170 words.
                 """
                 core_expl = safe_llm_call(
                     prompt_core, core_payload, temp=0.0,
-                    fallback=deterministic_text["core"]
+                    fallback=deterministic_text["core"],
+                    section="Core Processes",
+                    require_rule_ids=True,
+                    require_scores=True,
                 )
     
                 # ---- KPIs ----
@@ -923,31 +964,29 @@ with tabs[1]:
                     "stage_push": kpi_stage
                 }
                 
-                # Add benchmark context to LLM payload
-                if sel_sys in BENCHMARKS:
-                    kpi_payload["benchmark_reference"] = BENCHMARKS[sel_sys]
-                
                 prompt_kpi = f"""
-                ROLE: Senior supply-chain performance strategist.
-                TASK: Write ONE cohesive, declarative paragraph (<=170 words). Do not ask questions.
+                TASK: Write ONE factual paragraph (<=170 words). Do not ask questions.
                 
                 CONTEXT
                 - System: {sel_sys}
                 - User 5S priorities: {json.dumps(w5s_desc)}
                 - KPI labels (High/Medium/Low): {json.dumps(kpi_labels, indent=2)}
-                - Benchmarks: Use 'benchmark_reference' if provided to calibrate maturity and actions.
                 
                 OUTPUT REQUIREMENTS
-                - Start with a one-sentence assessment of current KPI strengths.
-                - Then explain 1–2 lower priorities without inventing actions or targets.
-                - Tie recommendations explicitly to the dominant 5S dimensions and current LCE stage (“{lce_stage}”).
-                - End with a single prescriptive sentence.
+                - Describe the reported KPI ordering using canonical evidence only.
+                - Cite exact scores and dominant rule identifiers.
+                - Preserve ties; do not imply an ordering within equal scores.
+                - State baseline, 5S alignment, and lifecycle relevance without
+                  inferring maturity, performance, causes, risks, actions, or targets.
                 - No bullet points. No lists. No questions. Declarative voice only.
                 """
                 
                 kpi_expl = safe_llm_call(
                     prompt_kpi, kpi_payload, temp=0.0,
-                    fallback=deterministic_text["kpi"]
+                    fallback=deterministic_text["kpi"],
+                    section="KPIs",
+                    require_rule_ids=True,
+                    require_scores=True,
                 )
     
                 # ---- DRIVERS ----
@@ -970,14 +1009,19 @@ with tabs[1]:
                 The user's 5S priorities are: {json.dumps(w5s_desc)}.
                 Below is the qualitative status of each resilience driver for the {sel_sys} system:
                 {json.dumps(driver_labels, indent=2)}.
-                Use the 5S profile ('top_5s_per_item') and the LCE stage '{lce_stage}' to reason 
-                which drivers reinforce stability, enhance flexibility, or need rethinking.
-                Preserve the reported ordering and cite exact scores and dominant rule identifiers.
-                Do not create new actions. Keep the explanation analytical and concise (≤170 words).
+                Describe the reported ordering using only canonical evidence.
+                Cite exact scores and dominant rule identifiers. State baseline,
+                5S alignment, and lifecycle relevance without claiming that a
+                driver creates stability, flexibility, vulnerability, advantage,
+                risk, or required action. Preserve ties and do not create
+                recommendations. Keep the explanation concise (≤170 words).
                 """
                 driver_expl = safe_llm_call(
                     prompt_drv, driver_payload, temp=0.0,
-                    fallback=deterministic_text["drivers"]
+                    fallback=deterministic_text["drivers"],
+                    section="Resilience Drivers",
+                    require_rule_ids=True,
+                    require_scores=True,
                 )
     
                 # --- store ---
@@ -990,15 +1034,27 @@ with tabs[1]:
     
             # --- render ---
             inter = st.session_state["llm_interpretations"]
-            actual_model = st.session_state.get("last_llm_model") if use_llm else None
-            if actual_model:
-                st.caption(f"OpenRouter free router selected: `{actual_model}`")
+            call_log = st.session_state.get("llm_model_log", []) if use_llm else []
+            if call_log:
+                unique_models = sorted(
+                    {entry.get("actual_model", LLM_MODEL) for entry in call_log}
+                )
+                st.caption(
+                    "OpenRouter model(s) returned during this run: "
+                    + ", ".join(f"`{model}`" for model in unique_models)
+                )
+                with st.expander("Inspect LLM grounding audit"):
+                    st.json(call_log, expanded=False)
             else:
                 st.caption("Deterministic explanation generated without an external model.")
             if st.session_state.get("llm_fallback_used", False):
+                rejected_sections = st.session_state.get(
+                    "llm_fallback_sections", []
+                )
                 st.warning(
-                    "One or more LLM drafts failed the grounding check. "
-                    "The affected section was replaced with the deterministic explanation."
+                    "Deterministic fallback applied to: "
+                    + ", ".join(rejected_sections or ["unspecified section"])
+                    + ". Inspect the grounding audit for the exact rejection reasons."
                 )
             st.markdown("### Core Processes Interpretation")
             st.write(inter["core"])
@@ -1041,13 +1097,13 @@ with tabs[1]:
                             "drivers": res["drivers"],
                         })
                         compare_prompt = f"""
-                        You are an expert supply-chain strategist.
-                        Compare {sel_sys} with {others_str} across Core Processes, KPIs, and Drivers.
-                        Explain relative strengths and weaknesses from the lens of a {role} aiming to achieve "{objective}".
-                        Highlight where {sel_sys} outperforms and where the others offer advantages, and indicate complementarities.
-                        Conclude with one actionable recommendation to balance synergy, resilience, and innovation.
-                        Preserve the fuzzy scores and ordering exactly. Do not introduce actions or
-                        claims absent from the evidence. Keep the tone analytical and concise (≤180 words).
+                        Compare {sel_sys} with {others_str} descriptively across
+                        Core Processes, KPIs, and Drivers. Report only differences
+                        present in the supplied fuzzy scores. Preserve values,
+                        ties, and ordering exactly. Do not infer strengths,
+                        weaknesses, superiority, advantages, complementarities,
+                        causes, risks, actions, or recommendations. Keep the
+                        explanation factual and concise (≤180 words).
                         """
     
                         use_llm_compare = (
@@ -1060,6 +1116,7 @@ with tabs[1]:
                                 compare_prompt, compare_payload,
                                 temp=0.0, max_toks=450,
                                 fallback=deterministic_compare,
+                                section="Comparative Interpretation",
                             )
                         else:
                             compare_expl = deterministic_compare
@@ -1148,6 +1205,13 @@ with tabs[2]:
                 "llm_router": LLM_MODEL,
                 "llm_actual_model": st.session_state.get("last_llm_model"),
                 "llm_calls": st.session_state.get("llm_model_log", []),
+                "grounding_validator_version": GROUNDING_VALIDATOR_VERSION,
+                "llm_rejections": st.session_state.get(
+                    "llm_rejection_log", []
+                ),
+                "llm_fallback_sections": st.session_state.get(
+                    "llm_fallback_sections", []
+                ),
             }
 
             fuzzy_trace = results.get("fuzzy_trace", {})
@@ -1488,15 +1552,14 @@ with tabs[2]:
                 ):
                     w5s_desc = describe_real_5s(weights_5s)
                     prompt_whatif = f"""
-                    You are a supply-chain strategist analyzing a What-If scenario.
                     Disabled components: {', '.join(disabled) or 'None'}
                     KPI correlation vs full model: {corr:.2f}
                     Top resilient KPIs: {', '.join(top_kpis)}
                     User's 5S weights: {json.dumps(w5s_desc, indent=2)}
-                    Explain how the current 5S emphasis and the disabled components
-                    affect overall system stability and strategy priorities.
-                    Preserve the correlation, KPI names, scores, and ordering exactly. Do not
-                    introduce recommendations or claims absent from the supplied evidence.
+                    Describe only the reported What-If inputs, correlation, KPI
+                    names, scores, and ordering. Do not convert correlation into
+                    claims about stability, causality, effectiveness, risk, or
+                    recommended strategy. Do not introduce new numbers.
                     """
                     payload = {
                         "disabled": disabled,
@@ -1514,6 +1577,7 @@ with tabs[2]:
                         temp=0.0,
                         max_toks=350,
                         fallback=deterministic_whatif,
+                        section="What-If Scenario",
                     ) if use_llm_whatif else deterministic_whatif
                     st.session_state["llm_whatif"] = expl
                     st.session_state["last_disabled"] = disabled

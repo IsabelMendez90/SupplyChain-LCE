@@ -26,3 +26,14 @@
   gated instead of being converted with `float(None)`. What-If ablations now
   use the same authoritative `score_all()` path and exclude non-applicable
   KPIs from correlation and visualization.
+- Added API-independent grounding validator `2.0`: payload-level checks for
+  unsupported numbers/rules, item–score and item–rule mismatches, ranking
+  inversions, reasoning leakage, and unsupported normative, causal, risk, or
+  outcome claims.
+- Tightened all LLM prompts to factual trace rendering and removed requests
+  for prescriptive actions, maturity judgments, advantages, vulnerabilities,
+  or claims that drivers create stability/flexibility.
+- Added per-section/per-attempt routed-model audit, explicit fallback-section
+  notices, and grounding rejection reasons to the downloadable run JSON.
+- Deterministic explanations now include all items tied at the third-position
+  cutoff and explicitly identify ties.

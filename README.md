@@ -21,6 +21,7 @@ made.
 ## Repository contents
 
 - `app.py`: Streamlit interface and optional OpenRouter narrative layer.
+- `llm_grounding.py`: API-independent semantic grounding validator.
 - `fuzzy_engine.py`: API-independent Sugeno inference engine and trace.
 - `decision_model.py`: baselines, 5S associations, lifecycle associations, and scoring.
 - `benchmarks.json`: contextual benchmark ranges shown in the interface.
@@ -92,6 +93,13 @@ The underlying free model may vary between requests. The app records the model
 returned by the router, temperature, token limit, and prompt hash. This router
 is appropriate for accessibility and demonstrations, but a controlled paper
 experiment should either pin one model or archive the evaluated outputs.
+
+Every optional narrative is checked against its supplied payload. The
+validator rejects reasoning leakage, unsupported numbers and rule identifiers,
+item–score or item–rule mismatches, ranking inversions, and unsupported
+normative, risk, causal, performance, or outcome claims. Rejected sections are
+replaced by deterministic trace explanations. The run JSON records every
+attempt, actual routed model, rejection reason, and fallback section.
 
 ## Benchmark caution
 
