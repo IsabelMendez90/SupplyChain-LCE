@@ -8,7 +8,7 @@ be reproduced from the command line.
 from fuzzy_engine import sugeno_fuzzy_score
 
 
-DECISION_MODEL_VERSION = "2.2"
+DECISION_MODEL_VERSION = "2.3"
 SYSTEMS = ["Product Transfer", "Technology Transfer", "Facility Design"]
 LCE = ["Ideation", "Basic Development", "Advanced Development", "Launch", "Operation", "End-of-Life"]
 FIVE_S = ["Social", "Sustainable", "Sensing", "Smart", "Safe"]

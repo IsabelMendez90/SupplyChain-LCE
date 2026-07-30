@@ -6,6 +6,7 @@ from decision_model import (
     BASE_CORE,
     BASE_DRIVERS,
     BASE_KPIS,
+    DECISION_MODEL_VERSION,
     FIVE_S,
     KPI_PRIMARY_SYSTEM,
     LCE,
@@ -35,6 +36,7 @@ from validation_engine import (
 
 class FuzzyEngineTests(unittest.TestCase):
     def test_reader_facing_output_bands_match_manuscript(self):
+        self.assertEqual(DECISION_MODEL_VERSION, "2.3")
         self.assertEqual(FUZZY_RULE_BASE_VERSION, "2.3")
         self.assertEqual(
             SUGENO_OUTPUT_BANDS,

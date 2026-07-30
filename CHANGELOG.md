@@ -2,6 +2,9 @@
 
 ## 2.3 methodological consistency update — 2026-07-30
 
+- Unified the decision-model and fuzzy-rule-base identifiers at version 2.3.
+- Added the application release, decision-model version, and fuzzy-rule-base
+  version directly below the Streamlit title.
 - Unified every reader-facing score label with the manuscript's declared
   Low `[0,1)`, Medium `[1,2)`, and High `[2,3]` bands.
 - Removed the contradictory five-band metadata that classified a score such

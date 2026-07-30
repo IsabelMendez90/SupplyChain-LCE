@@ -110,6 +110,7 @@ OPENROUTER_HEADERS = {
 # request, so safe_llm_call() records the actual model returned by OpenRouter.
 LLM_MODEL = "openrouter/free"
 LLM_MAX_TOKENS = 800
+APP_RELEASE = "11.2"
 
 # The canonical vocabulary, baselines, and association matrices are imported
 # from decision_model.py so they have one auditable source of truth.
@@ -625,6 +626,11 @@ if existing_results:
         )
 
 st.title("Supply-Chain Strategy Agent (LCE + 5S)")
+st.caption(
+    f"Application release v{APP_RELEASE} · "
+    f"Decision model v{DECISION_MODEL_VERSION} · "
+    f"Fuzzy rule base v{FUZZY_RULE_BASE_VERSION}"
+)
 st.markdown("Developed by: **Dr. J. Isabel Méndez** & **Dr. Arturo Molina**")
 st.caption(
     "Decision authority: deterministic zero-order Sugeno engine. "

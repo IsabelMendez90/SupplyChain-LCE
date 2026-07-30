@@ -12,7 +12,7 @@ cannot calculate or modify those results; it can only render the frozen
 evidence in natural language. The application therefore remains operational
 and reproducible without an API key.
 
-The v2.3 rule base and input-specific membership breakpoints are explicitly
+The v2.3 decision model, v2.3 rule base, and input-specific membership breakpoints are explicitly
 versioned. The constructs and directional associations are literature
 informed. Numerical calibration and external validity are reported separately
 and require structured expert elicitation and case-based validation.

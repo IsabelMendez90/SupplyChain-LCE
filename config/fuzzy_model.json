@@ -1,6 +1,6 @@
 {
   "method": "zero-order Sugeno",
-  "decision_model_version": "2.2",
+  "decision_model_version": "2.3",
   "rule_base_version": "2.3",
   "membership_functions": {
     "baseline": {
