@@ -7,7 +7,7 @@ can be tested and reproduced without an API key.
 import re
 
 
-GROUNDING_VALIDATOR_VERSION = "2.0"
+GROUNDING_VALIDATOR_VERSION = "2.0.1"
 
 META_OUTPUT_PATTERNS = (
     r"\bwe need to\b",
@@ -46,7 +46,7 @@ NUMBER_PATTERN = re.compile(
 )
 RULE_PATTERN = re.compile(r"\bR\d{2,}\b", flags=re.IGNORECASE)
 SCIENTIFIC_NUMBER_PATTERN = re.compile(
-    r"\b(?:score|baseline|alignment|lifecycle relevance|correlation|"
+    r"\b(?:scores?|baseline|alignment|lifecycle relevance|correlation|"
     r"kendall(?: tau(?:-b)?)?|p[- ]?value|retention|weight)"
     r"\s*(?:is|of|=|:)?\s*"
     r"([-+]?(?:\d+(?:\.\d+)?|\.\d+)%?)",
@@ -208,7 +208,7 @@ def _associated_score(segment, item):
     """Extract only a fuzzy score explicitly associated with one item."""
     number = r"([-+]?(?:\d+(?:\.\d+)?|\.\d+))"
     keyword_match = re.search(
-        r"\b(?:reported\s+|final\s+)?(?:fuzzy\s+)?score"
+        r"\b(?:reported\s+|final\s+)?(?:fuzzy\s+)?scores?"
         r"\s*(?:is|of|=|:)?\s*" + number,
         segment,
         flags=re.IGNORECASE,
@@ -305,19 +305,57 @@ def grounding_issues(
     # Bind evidence locally: an auxiliary 5S value, baseline value, or another
     # item's score cannot satisfy the score requirement for this item.
     mentioned = _mentioned_row_segments(rows, cleaned)
+    mentioned_items = {
+        entry["row"]["item"] for entry in mentioned
+    }
+    all_items_mentioned = bool(rows) and {
+        row["item"] for row in rows
+    }.issubset(mentioned_items)
+    tie_cue_present = bool(
+        re.search(
+            r"\b(?:all|each|identical|same|tied|equally)\b",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+    )
+    unique_scores = {
+        round(float(row["score"]), 6) for row in rows
+    }
+    unique_rules = {
+        row["rule_id"] for row in rows if row["rule_id"]
+    }
+    shared_score_is_valid = (
+        all_items_mentioned
+        and tie_cue_present
+        and len(unique_scores) == 1
+        and any(
+            _number_is_allowed(number, unique_scores)
+            for number in output_numbers
+        )
+    )
+    shared_rule_is_valid = (
+        all_items_mentioned
+        and tie_cue_present
+        and len(unique_rules) == 1
+        and output_rules == unique_rules
+    )
     for entry in mentioned:
         row = entry["row"]
         segment = entry["segment"]
         associated_score = _associated_score(segment, row["item"])
         if associated_score is None:
-            if require_scores:
+            if require_scores and not shared_score_is_valid:
                 issues.append("missing_item_score:" + row["item"])
         elif not _number_is_allowed(associated_score, [row["score"]]):
             issues.append("item_score_mismatch:" + row["item"])
 
         associated_rules = _associated_rules(segment)
         if not associated_rules:
-            if require_rule_ids and row["rule_id"]:
+            if (
+                require_rule_ids
+                and row["rule_id"]
+                and not shared_rule_is_valid
+            ):
                 issues.append("missing_item_rule:" + row["item"])
         elif row["rule_id"] and associated_rules != {row["rule_id"]}:
             issues.append("item_rule_mismatch:" + row["item"])
@@ -327,9 +365,6 @@ def grounding_issues(
     if require_rule_ids and allowed_rules and not mentioned:
         issues.append("missing_rule_ids")
     if require_all_items and rows:
-        mentioned_items = {
-            entry["row"]["item"] for entry in mentioned
-        }
         for row in rows:
             if row["item"] not in mentioned_items:
                 issues.append("missing_item:" + row["item"])

@@ -10,6 +10,19 @@ include the later experimental contextual-weight transformation.
 
 ## Implemented changes
 
+0. **Generate–validate–repair pipeline**
+   - The first OpenRouter call generates a candidate explanation.
+   - A rejected textual draft is passed to a second call together with the
+     exact validator issues and frozen canonical evidence.
+   - The repaired response is validated again before display.
+   - Exact ties may share one score/rule statement only when all items,
+     scores, and dominant rules match the canonical evidence.
+   - Empty responses, reasoning leakage, and failed repairs still trigger the
+     deterministic fallback.
+   - Internal validator revision `2.0.1` invalidates cached pre-repair
+     narratives while the public decision model and fuzzy rule base remain
+     version `2.0`.
+
 1. **One qualitative-label policy**
    - Low: `0 <= score < 1`
    - Medium: `1 <= score < 2`

@@ -170,6 +170,60 @@ class McdaRegressionTests(unittest.TestCase):
             text,
         )
 
+    def test_exact_tie_can_share_one_score_and_rule_statement(self):
+        payload = {
+            "canonical_evidence": [
+                {
+                    "item": item,
+                    "score": 1.95,
+                    "label": "Medium",
+                    "dominant_rule": {"rule_id": "R22"},
+                }
+                for item in (
+                    "Network Diversification",
+                    "Multisourcing",
+                    "Ecosystem Partnerships",
+                )
+            ]
+        }
+        text = (
+            "All three tied drivers—Network Diversification, Multisourcing, "
+            "and Ecosystem Partnerships—have score 1.95 and dominant rule "
+            "R22 in the canonical evidence. Each retains the reported Medium "
+            "label for Product Transfer at the Operation stage."
+        )
+        self.assertEqual(
+            validate_grounded_output(
+                text,
+                payload,
+                require_rule_ids=True,
+                require_scores=True,
+                require_all_items=True,
+            ),
+            text,
+        )
+
+    def test_non_tied_items_cannot_share_one_score_and_rule(self):
+        text = (
+            "Both Order Fulfillment and SRM have score 2.25 and dominant "
+            "rule R24 in the canonical evidence."
+        )
+        _, issues = grounding_issues(
+            text,
+            self.canonical_payload(),
+            require_rule_ids=True,
+            require_scores=True,
+            require_all_items=True,
+        )
+        self.assertTrue(
+            any(
+                issue.startswith(
+                    ("missing_item_score:", "item_score_mismatch:")
+                )
+                for issue in issues
+            )
+        )
+
     def test_each_mentioned_item_requires_its_own_rule(self):
         text = (
             "Order Fulfillment (score 2.25) is reported first. "
@@ -227,6 +281,8 @@ class McdaRegressionTests(unittest.TestCase):
         self.assertNotIn("APP_RELEASE", source)
         self.assertIn("Decision model v{DECISION_MODEL_VERSION}", source)
         self.assertIn("Fuzzy rule base v{FUZZY_RULE_BASE_VERSION}", source)
+        self.assertIn("REPAIR MODE:", source)
+        self.assertIn('"validator_issues": repair_issues', source)
 
     def test_streamlit_results_are_invalidated_by_grounding_version(self):
         source = (
@@ -234,9 +290,13 @@ class McdaRegressionTests(unittest.TestCase):
             .joinpath("app.py")
             .read_text(encoding="utf-8")
         )
-        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.0")
+        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.0.1")
         self.assertIn(
             'existing_results.get("grounding_validator_version")',
+            source,
+        )
+        self.assertIn(
+            "LLM rendering pipeline: Generate → Validate → Repair →",
             source,
         )
 

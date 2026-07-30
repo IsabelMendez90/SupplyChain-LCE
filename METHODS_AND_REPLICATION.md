@@ -159,18 +159,24 @@ and industrial-validation claims. Temperature is zero. If the API key is
 missing or the call fails, the app renders the deterministic score-and-rule
 explanation.
 
-Before display, validator version `2.0` checks the draft against the exact
+Before display, validator revision `2.0.1` checks the draft against the exact
 payload. It rejects: reasoning or prompt leakage; numbers or rule identifiers
 absent from the payload; incorrect item–score or item–rule associations;
 descending-order violations (while permitting exact ties); and unsupported
-normative, causal, risk, performance, advantage, or outcome claims. Sections
-that fail after the declared retry limit are replaced by deterministic
-explanations. Every attempt records the routed model and rejection reasons.
+normative, causal, risk, performance, advantage, or outcome claims. The first
+call generates a draft. If validation fails and a textual draft exists, the
+second call receives that draft, the machine-readable rejection reasons, and
+the same canonical evidence as a directed repair task. The repaired text is
+validated again. Sections that still fail after the declared limit are
+replaced by deterministic explanations. Every generation and repair records
+the routed model, parent call, prompt hash, and rejection reasons.
 
-When exact scores or rule identifiers are required, validation is local to
-each mentioned item. Every mentioned item must contain its own explicit fuzzy
-score and dominant rule before the next item begins. Baseline, 5S, lifecycle,
-list-numbering, and neighboring-item values cannot satisfy this requirement.
+When exact scores or rule identifiers are required, validation is normally
+local to each mentioned item. Baseline, 5S, lifecycle, list-numbering, and
+neighboring-item values cannot satisfy this requirement. A tie-aware exception
+allows one shared score and rule statement only when every supplied item is
+mentioned, every item has exactly the same canonical score and rule, and the
+text explicitly signals the shared/tied status.
 For generic chat tasks, the renderer may omit items and vary its prose
 structure. For the three principal interpretation sections, the payload is first reduced
 to the tie-aware priority set at or above the third-position score cutoff. The

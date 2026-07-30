@@ -19,6 +19,12 @@ process for the associated manuscript.
   PROMETHEE using the pre-inference antecedents.
 - Added exact prompt, routed-model, response, grounding, rejection, and
   deterministic-fallback audit records for the optional LLM renderer.
+- Replaced blind LLM retries with a generate–validate–repair–revalidate
+  sequence using machine-readable rejection reasons.
+- Added a tie-aware grounding exception for grouped prose only when all
+  mentioned items have the same canonical score and dominant rule.
+- Marked the revised grounding pipeline as internal validator revision 2.0.1
+  so Streamlit invalidates cached pre-repair narratives after deployment.
 - Frozen objective, industry, and role with each analyzed run while excluding
   them explicitly from fuzzy scoring and numerical validation.
 - Clarified that KPI classes represent strategic priority rather than measured

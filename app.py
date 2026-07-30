@@ -109,7 +109,7 @@ OPENROUTER_HEADERS = {
 # OpenRouter's free-model router. The selected underlying model may vary by
 # request, so safe_llm_call() records the actual model returned by OpenRouter.
 LLM_MODEL = "openrouter/free"
-LLM_MAX_TOKENS = 800
+LLM_MAX_TOKENS = 1200
 
 # The canonical vocabulary, baselines, and association matrices are imported
 # from decision_model.py so they have one auditable source of truth.
@@ -234,20 +234,52 @@ def safe_llm_call(
 ):
     if client is None:
         return fallback
-    prompt_hash = hashlib.sha256(
+    base_prompt_hash = hashlib.sha256(
         (
             prompt
             + json.dumps(payload, sort_keys=True, default=_json_default)
         ).encode()
     ).hexdigest()[:10]
+    repair_draft = None
+    repair_issues = None
+    repair_parent_call_id = None
     for attempt in range(1, retries + 1):
         actual_model = None
+        call_type = "repair" if repair_draft else "generation"
+        if repair_draft:
+            system_content = (
+                f"{GROUNDING_CONSTRAINTS}\n\n{prompt}\n\n"
+                "REPAIR MODE: Correct the supplied rejected draft using the "
+                "validator issues and canonical evidence. Preserve every "
+                "supported fact, remove unsupported language, restore the "
+                "required descending order, and return only the repaired "
+                "reader-facing explanation."
+            )
+            user_content = json.dumps(
+                {
+                    "draft_to_repair": repair_draft,
+                    "validator_issues": repair_issues,
+                    "canonical_evidence": payload,
+                },
+                ensure_ascii=False,
+                default=_json_default,
+            )
+        else:
+            system_content = f"{GROUNDING_CONSTRAINTS}\n\n{prompt}"
+            user_content = json.dumps(
+                payload,
+                ensure_ascii=False,
+                default=_json_default,
+            )
+        prompt_hash = hashlib.sha256(
+            (system_content + user_content).encode()
+        ).hexdigest()[:10]
         try:
             r = client.chat.completions.create(
                 model=LLM_MODEL,
                 messages=[
-                    {"role": "system", "content": f"{GROUNDING_CONSTRAINTS}\n\n{prompt}"},
-                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=_json_default)},
+                    {"role": "system", "content": system_content},
+                    {"role": "user", "content": user_content},
                 ],
                 extra_headers=OPENROUTER_HEADERS,
                 temperature=temp,
@@ -271,6 +303,9 @@ def safe_llm_call(
                     "call_id": call_id,
                     "section": section,
                     "attempt": attempt,
+                    "call_type": call_type,
+                    "repair_parent_call_id": repair_parent_call_id,
+                    "base_prompt_hash": base_prompt_hash,
                     "prompt_hash": prompt_hash,
                     "router": LLM_MODEL,
                     "actual_model": actual_model,
@@ -285,6 +320,7 @@ def safe_llm_call(
                 st.session_state.setdefault("llm_rejection_log", []).append({
                     "section": section,
                     "attempt": attempt,
+                    "call_type": call_type,
                     "reasons": [response_issue],
                     "model": actual_model,
                 })
@@ -310,6 +346,9 @@ def safe_llm_call(
                 "call_id": call_id,
                 "section": section,
                 "attempt": attempt,
+                "call_type": call_type,
+                "repair_parent_call_id": repair_parent_call_id,
+                "base_prompt_hash": base_prompt_hash,
                 "prompt_hash": prompt_hash,
                 "router": LLM_MODEL,
                 "actual_model": actual_model,
@@ -326,9 +365,13 @@ def safe_llm_call(
                 # Persist the actual model returned for run-level traceability.
                 st.session_state["last_llm_model"] = actual_model
                 return out
+            repair_draft = out
+            repair_issues = issues
+            repair_parent_call_id = call_id
             st.session_state.setdefault("llm_rejection_log", []).append({
                 "section": section,
                 "attempt": attempt,
+                "call_type": call_type,
                 "reasons": issues,
                 "model": actual_model,
             })
@@ -341,6 +384,9 @@ def safe_llm_call(
                 ).hexdigest()[:12],
                 "section": section,
                 "attempt": attempt,
+                "call_type": call_type,
+                "repair_parent_call_id": repair_parent_call_id,
+                "base_prompt_hash": base_prompt_hash,
                 "prompt_hash": prompt_hash,
                 "router": LLM_MODEL,
                 "actual_model": actual_model,
@@ -619,7 +665,8 @@ if existing_results:
         st.session_state.pop("llm_interpretations", None)
         st.session_state.pop("compare_analysis", None)
         st.session_state["stale_results_notice"] = (
-            "A frozen run from an earlier model version was cleared. "
+            "A frozen run from an earlier model or LLM-validation revision "
+            "was cleared. "
             f"Click Analyze to generate a compatible rule-base "
             f"{FUZZY_RULE_BASE_VERSION} run."
         )
@@ -1186,6 +1233,12 @@ with tabs[1]:
                     "drivers": STAGE_TAGS_DRIVERS
                 }[matrix_type]
                 return [stage for stage, val in stage_tags.get(item_name, {}).items() if val > 0.5]
+
+            if use_llm:
+                st.caption(
+                    "LLM rendering pipeline: Generate → Validate → Repair → "
+                    "Revalidate → Deterministic fallback."
+                )
     
             if not st.session_state.get("llm_done", False):
                 st.info("Generating qualitative interpretations with the LLM...")
