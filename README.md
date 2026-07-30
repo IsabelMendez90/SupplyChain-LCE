@@ -34,6 +34,8 @@ and require structured expert elicitation and case-based validation.
 - `expected_results/example_replication_output.json`: reference output.
 - `tests/test_fuzzy_engine.py`: deterministic coverage, range, and repeatability tests.
 - `METHODS_AND_REPLICATION.md`: reporting and replication specification.
+- `OPENROUTER_TROUBLESHOOTING.md`: Streamlit-secret setup and transport,
+  empty-response, grounding, and fallback status definitions.
 - `CALIBRATION_PROTOCOL.md`: prospective expert elicitation, calibration, and
   holdout-validation protocol.
 - `KPI_MAPPING.md`: complete 30-KPI cross-configuration baseline matrix and

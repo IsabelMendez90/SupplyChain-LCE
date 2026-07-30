@@ -4,9 +4,11 @@ from pathlib import Path
 import pandas as pd
 from llm_grounding import (
     GROUNDING_VALIDATOR_VERSION,
+    extract_chat_completion,
     grounding_issues,
     validate_grounded_output,
 )
+from types import SimpleNamespace
 from validation_engine import promethee_rank
 
 
@@ -221,11 +223,66 @@ class McdaRegressionTests(unittest.TestCase):
             .joinpath("app.py")
             .read_text(encoding="utf-8")
         )
-        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.2")
+        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.3")
         self.assertIn(
             'existing_results.get("grounding_validator_version")',
             source,
         )
+
+    def test_empty_model_content_preserves_actual_model(self):
+        response = SimpleNamespace(
+            model="example/free-model",
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(
+                        content=None,
+                        reasoning="internal reasoning",
+                    ),
+                    finish_reason="stop",
+                )
+            ],
+        )
+        parsed = extract_chat_completion(response, "openrouter/free")
+        self.assertEqual(parsed["actual_model"], "example/free-model")
+        self.assertEqual(parsed["issue"], "empty_model_content")
+        self.assertTrue(parsed["has_reasoning"])
+
+    def test_text_model_content_is_extracted(self):
+        response = SimpleNamespace(
+            model="example/free-model",
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(
+                        content="  Grounded explanation.  ",
+                        reasoning=None,
+                    ),
+                    finish_reason="stop",
+                )
+            ],
+        )
+        parsed = extract_chat_completion(response, "openrouter/free")
+        self.assertEqual(parsed["text"], "Grounded explanation.")
+        self.assertIsNone(parsed["issue"])
+
+    def test_content_part_list_is_extracted(self):
+        response = SimpleNamespace(
+            model="example/free-model",
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(
+                        content=[
+                            {"type": "text", "text": "First"},
+                            {"type": "text", "text": "second"},
+                        ],
+                        reasoning=None,
+                    ),
+                    finish_reason="stop",
+                )
+            ],
+        )
+        parsed = extract_chat_completion(response, "openrouter/free")
+        self.assertEqual(parsed["text"], "First\nsecond")
+        self.assertIsNone(parsed["issue"])
 
 
 if __name__ == "__main__":

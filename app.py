@@ -30,6 +30,7 @@ from fuzzy_engine import (
 )
 from llm_grounding import (
     GROUNDING_VALIDATOR_VERSION,
+    extract_chat_completion,
     grounding_issues,
     validate_grounded_output,
 )
@@ -90,10 +91,18 @@ try:
 except Exception:
     API_KEY = ""
 API_KEY = API_KEY or os.getenv("OPENROUTER_API_KEY", "")
-client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY) if API_KEY else None
+client = (
+    OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=API_KEY,
+        max_retries=0,
+        timeout=60.0,
+    )
+    if API_KEY
+    else None
+)
 OPENROUTER_HEADERS = {
-    "HTTP-Referer": "http://localhost:8501",
-    "X-Title": "LCE+5S Supply-Chain Agent"
+    "X-OpenRouter-Title": "LCE+5S Supply-Chain Agent"
 }
 
 # OpenRouter's free-model router. The selected underlying model may vary by
@@ -160,6 +169,19 @@ def validate_llm_output(text, payload=None, **kwargs):
     return validate_grounded_output(text, payload, **kwargs)
 
 
+def _api_error_details(error):
+    """Return diagnostic API details without exposing the configured key."""
+    message = str(error) or type(error).__name__
+    if API_KEY:
+        message = message.replace(str(API_KEY), "[REDACTED]")
+    return {
+        "type": type(error).__name__,
+        "status_code": getattr(error, "status_code", None),
+        "code": getattr(error, "code", None),
+        "message": message[:500],
+    }
+
+
 def safe_llm_call(
     prompt: str,
     payload: dict,
@@ -181,6 +203,7 @@ def safe_llm_call(
         ).encode()
     ).hexdigest()[:10]
     for attempt in range(1, retries + 1):
+        actual_model = None
         try:
             r = client.chat.completions.create(
                 model=LLM_MODEL,
@@ -192,8 +215,42 @@ def safe_llm_call(
                 temperature=temp,
                 max_tokens=max_toks,
             )
-            raw_out = r.choices[0].message.content.strip()
-            actual_model = getattr(r, "model", None) or LLM_MODEL
+            parsed = extract_chat_completion(r, default_model=LLM_MODEL)
+            actual_model = parsed["actual_model"]
+            raw_out = parsed["text"]
+            st.session_state["last_llm_model"] = actual_model
+            if parsed["issue"]:
+                response_issue = parsed["issue"]
+                call_id = hashlib.sha256(
+                    (
+                        actual_model
+                        + prompt_hash
+                        + response_issue
+                        + str(attempt)
+                    ).encode()
+                ).hexdigest()[:12]
+                st.session_state.setdefault("llm_model_log", []).append({
+                    "call_id": call_id,
+                    "section": section,
+                    "attempt": attempt,
+                    "prompt_hash": prompt_hash,
+                    "router": LLM_MODEL,
+                    "actual_model": actual_model,
+                    "temperature": temp,
+                    "max_tokens": max_toks,
+                    "grounding_status": "empty_response",
+                    "grounding_issues": [response_issue],
+                    "finish_reason": parsed["finish_reason"],
+                    "has_reasoning_without_text": parsed["has_reasoning"],
+                    "draft": None,
+                })
+                st.session_state.setdefault("llm_rejection_log", []).append({
+                    "section": section,
+                    "attempt": attempt,
+                    "reasons": [response_issue],
+                    "model": actual_model,
+                })
+                continue
             out, issues = grounding_issues(
                 raw_out,
                 payload,
@@ -222,6 +279,8 @@ def safe_llm_call(
                 "max_tokens": max_toks,
                 "grounding_status": "accepted" if accepted else "rejected",
                 "grounding_issues": issues,
+                "finish_reason": parsed["finish_reason"],
+                "has_reasoning_without_text": False,
                 "draft": raw_out,
             })
             if accepted:
@@ -236,7 +295,8 @@ def safe_llm_call(
                 "model": actual_model,
             })
         except Exception as e:
-            st.session_state["last_llm_error"] = str(e)
+            error_details = _api_error_details(e)
+            st.session_state["last_llm_error"] = error_details
             st.session_state.setdefault("llm_model_log", []).append({
                 "call_id": hashlib.sha256(
                     f"{section}:{attempt}:{type(e).__name__}:{e}".encode()
@@ -245,11 +305,12 @@ def safe_llm_call(
                 "attempt": attempt,
                 "prompt_hash": prompt_hash,
                 "router": LLM_MODEL,
-                "actual_model": None,
+                "actual_model": actual_model,
                 "temperature": temp,
                 "max_tokens": max_toks,
                 "grounding_status": "api_error",
                 "grounding_issues": [type(e).__name__],
+                "api_error": error_details,
                 "draft": None,
             })
     st.session_state["llm_fallback_used"] = True
@@ -1152,10 +1213,22 @@ with tabs[1]:
                 rejected_sections = st.session_state.get(
                     "llm_fallback_sections", []
                 )
+                statuses = {
+                    call.get("grounding_status") for call in call_log
+                }
+                reasons = []
+                if "api_error" in statuses:
+                    reasons.append("API request failure")
+                if "empty_response" in statuses:
+                    reasons.append("empty or non-text model response")
+                if "rejected" in statuses:
+                    reasons.append("grounding-validator rejection")
                 st.warning(
                     "Deterministic fallback applied to: "
                     + ", ".join(rejected_sections or ["unspecified section"])
-                    + ". Inspect the grounding audit for the exact rejection reasons."
+                    + ". Reason type(s): "
+                    + ", ".join(reasons or ["unavailable optional renderer"])
+                    + "."
                 )
             st.markdown("### Core Processes Interpretation")
             st.write(inter["core"])
@@ -1354,6 +1427,10 @@ with tabs[2]:
                     ),
                     "api_errors": sum(
                         call.get("grounding_status") == "api_error"
+                        for call in llm_calls
+                    ),
+                    "empty_responses": sum(
+                        call.get("grounding_status") == "empty_response"
                         for call in llm_calls
                     ),
                 },

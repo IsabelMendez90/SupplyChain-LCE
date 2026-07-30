@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.2.2 OpenRouter transport hotfix — 2026-07-30
+
+- Fixed a response-parsing defect in which `content=None` raised
+  `AttributeError` before the routed model identifier was recorded.
+- Added safe parsing for plain text and text-part lists and retained model,
+  finish-reason, and reasoning-presence metadata for empty responses.
+- Separated genuine API failures, empty/non-text responses, and grounding
+  rejections in the interface and downloadable audit.
+- Added sanitized API diagnostics with error type, HTTP status, provider code,
+  and short message while redacting the configured key.
+- Aligned the optional attribution header with OpenRouter's current
+  `X-OpenRouter-Title` specification and removed the incorrect localhost
+  referer.
+- Disabled hidden SDK retries so the two declared application attempts are the
+  complete auditable retry policy.
+- Pinned Streamlit `1.60.0` and OpenAI Python `2.50.0` to eliminate deployment
+  drift.
+
 ## 2.2.1 grounding hotfix — 2026-07-28
 
 - Bound every required fuzzy score and dominant rule to the item-specific text

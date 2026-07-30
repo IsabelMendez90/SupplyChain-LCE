@@ -146,7 +146,7 @@ and industrial-validation claims. Temperature is zero. If the API key is
 missing or the call fails, the app renders the deterministic score-and-rule
 explanation.
 
-Before display, validator version `2.2` checks the draft against the exact
+Before display, validator version `2.3` checks the draft against the exact
 payload. It rejects: reasoning or prompt leakage; numbers or rule identifiers
 absent from the payload; incorrect item–score or item–rule associations;
 descending-order violations (while permitting exact ties); and unsupported
@@ -171,6 +171,12 @@ the actual model, call identifier, prompt hash, complete draft, validator
 outcome, and fallback status are archived for each attempt. The validator does
 not reject harmless stylistic variation, list numbering, word-count references,
 or the term `Industry 5.0`; it remains strict about scientific content.
+
+Transport and grounding failures are reported separately. A response containing
+no reader-facing text retains the actual routed-model identifier and is marked
+`empty_response`; it is not mislabeled as an API connection failure. Genuine
+API exceptions record a sanitized exception type, HTTP status, provider code,
+and short message without exposing the configured key.
 
 Exact prose is not a replication target. Fidelity is evaluated by numerical
 agreement, ordering agreement, rule-reference agreement, unsupported-claim

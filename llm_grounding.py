@@ -7,7 +7,7 @@ can be tested and reproduced without an API key.
 import re
 
 
-GROUNDING_VALIDATOR_VERSION = "2.2"
+GROUNDING_VALIDATOR_VERSION = "2.3"
 
 META_OUTPUT_PATTERNS = (
     r"\bwe need to\b",
@@ -65,6 +65,56 @@ def _clean_output(text):
             r"(?i)final (?:answer|response)\s*:", cleaned
         )[-1].strip()
     return cleaned
+
+
+def extract_chat_completion(response, default_model="unknown"):
+    """Safely extract text and model metadata from an OpenAI-style response."""
+    actual_model = getattr(response, "model", None) or default_model
+    choices = getattr(response, "choices", None) or []
+    if not choices:
+        return {
+            "actual_model": actual_model,
+            "text": "",
+            "finish_reason": None,
+            "has_reasoning": False,
+            "issue": "empty_choices",
+        }
+
+    choice = choices[0]
+    message = getattr(choice, "message", None)
+    finish_reason = getattr(choice, "finish_reason", None)
+    if message is None:
+        return {
+            "actual_model": actual_model,
+            "text": "",
+            "finish_reason": finish_reason,
+            "has_reasoning": False,
+            "issue": "missing_message",
+        }
+
+    content = getattr(message, "content", None)
+    text_parts = []
+    if isinstance(content, str):
+        text_parts.append(content)
+    elif isinstance(content, (list, tuple)):
+        for part in content:
+            if isinstance(part, dict):
+                part_text = part.get("text")
+            else:
+                part_text = getattr(part, "text", None)
+            if isinstance(part_text, str):
+                text_parts.append(part_text)
+
+    text = "\n".join(text_parts).strip()
+    reasoning = getattr(message, "reasoning", None)
+    has_reasoning = bool(reasoning)
+    return {
+        "actual_model": actual_model,
+        "text": text,
+        "finish_reason": finish_reason,
+        "has_reasoning": has_reasoning,
+        "issue": None if text else "empty_model_content",
+    }
 
 
 def _walk(value):
