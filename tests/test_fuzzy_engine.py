@@ -15,10 +15,13 @@ from decision_model import (
     scored_catalog_issues,
 )
 from fuzzy_engine import (
+    FUZZY_RULE_BASE_VERSION,
     FUZZY_MEMBERSHIP_PARAMETERS,
     SUGENO_CONSEQUENTS,
+    SUGENO_OUTPUT_BANDS,
     SUGENO_RULES,
     fuzzify_input,
+    qualitative_consequent_label,
     shifted_membership_parameters,
     sugeno_fuzzy_score,
     validate_engine,
@@ -31,6 +34,22 @@ from validation_engine import (
 
 
 class FuzzyEngineTests(unittest.TestCase):
+    def test_reader_facing_output_bands_match_manuscript(self):
+        self.assertEqual(FUZZY_RULE_BASE_VERSION, "2.3")
+        self.assertEqual(
+            SUGENO_OUTPUT_BANDS,
+            {
+                "Low": (0.0, 1.0),
+                "Medium": (1.0, 2.0),
+                "High": (2.0, 3.000001),
+            },
+        )
+        self.assertEqual(qualitative_consequent_label(0.999999), "Low")
+        self.assertEqual(qualitative_consequent_label(1.0), "Medium")
+        self.assertEqual(qualitative_consequent_label(1.95), "Medium")
+        self.assertEqual(qualitative_consequent_label(2.0), "High")
+        self.assertEqual(qualitative_consequent_label(3.0), "High")
+
     def test_rule_base_has_all_27_combinations(self):
         self.assertEqual(len(SUGENO_RULES), 27)
         self.assertEqual(len(SUGENO_CONSEQUENTS), 19)

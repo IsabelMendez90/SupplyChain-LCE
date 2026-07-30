@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.3 methodological consistency update — 2026-07-30
+
+- Unified every reader-facing score label with the manuscript's declared
+  Low `[0,1)`, Medium `[1,2)`, and High `[2,3]` bands.
+- Removed the contradictory five-band metadata that classified a score such
+  as `1.950` differently from the Streamlit matrices.
+- Frozen objective, resolved industry, and resolved role at `Analyze` time and
+  exported them with a separate context identifier.
+- Explicitly constrained objective, industry, and role to language rendering;
+  they do not enter deterministic fuzzy scoring or numerical validation.
+- Added a standard three-case ablation suite: remove 5S, remove lifecycle, and
+  remove both, with tie-aware Kendall and Jaccard reporting.
+- Exported epsilon, alpha-cut status, qualitative-band policy, LLM token limit,
+  and the prospective calibration status of the `0.50/0.30/0.20` rule-design
+  weights.
+- Increased the optional renderer token allowance to reduce empty responses
+  from free reasoning models; the grounding validator and deterministic
+  fallback remain unchanged.
+
 ## 2.2.2 OpenRouter transport hotfix — 2026-07-30
 
 - Fixed a response-parsing defect in which `content=None` raised

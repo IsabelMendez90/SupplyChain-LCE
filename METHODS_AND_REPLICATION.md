@@ -15,6 +15,11 @@ The five priorities are Social, Sustainable, Sensing, Smart, and Safe. They
 are independent priority intensities in `[0, 1]`; they are not compositional
 weights and therefore are not normalized to sum to one.
 
+Objective, industry, and role are interpretive metadata. The application
+freezes and exports them with the run so the optional language rendering can
+be audited, but they are excluded from the deterministic scoring function and
+from the numerical run identifier.
+
 Applicability is encoded separately from relevance. The engine supports
 `None` as a structural exclusion, which invokes a gate and bypasses inference.
 A numeric baseline of `0`, by contrast, means an applicable item with minimal
@@ -53,8 +58,9 @@ w_r = mu_baseline × mu_5S × mu_lifecycle
 The AND operator is the product t-norm. The 27 rules contain 19 unique numeric
 singletons spanning `0.00–3.00`; retaining the unrounded numeric consequences
 prevents lifecycle relevance from being erased by coarse output categories.
-Very Low through Very High are descriptive trace bands only and do not replace
-the numeric consequences used in defuzzification.
+Reader-facing labels use the manuscript's three declared bands: Low
+`[0,1)`, Medium `[1,2)`, and High `[2,3]`. These labels do not replace the
+numeric consequences used in defuzzification.
 Defuzzification is:
 
 ```text
@@ -120,6 +126,13 @@ Counterfactual 5S influence is measured directly. One Industry 5.0 priority at
 a time is set to `0` and `1`, with the other four priorities held at the
 selected values. The mean and maximum KPI score ranges and the affected-KPI
 count are reported for the selected supply-chain configuration.
+
+Component-weight ablation is reported in three separate cases: 5S contribution
+removed, lifecycle contribution removed, and both removed. In each case the
+remaining positive rule-design weights are renormalized before all fuzzy rules
+are reconstructed and recomputed. The app reports Kendall tau-b, its p-value,
+and tie-aware priority-set Jaccard as primary ranking diagnostics; Pearson
+correlation is retained only as a secondary score-vector diagnostic.
 
 ## 5. Benchmark comparison
 

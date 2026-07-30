@@ -26,7 +26,8 @@ from fuzzy_engine import (
     EPSILON, FUZZY_MEMBERSHIP_PARAMETERS, FUZZY_RULE_BASE_VERSION,
     FUZZY_RULE_PROVENANCE, RULE_DESIGN_WEIGHTS, SUGENO_CONSEQUENTS,
     SUGENO_OUTPUT_BANDS, SUGENO_RULE_CONFIDENCES, SUGENO_RULES,
-    shifted_membership_parameters, sugeno_fuzzy_score, validate_engine,
+    qualitative_consequent_label, shifted_membership_parameters,
+    sugeno_fuzzy_score, validate_engine,
 )
 from llm_grounding import (
     GROUNDING_VALIDATOR_VERSION,
@@ -108,6 +109,7 @@ OPENROUTER_HEADERS = {
 # OpenRouter's free-model router. The selected underlying model may vary by
 # request, so safe_llm_call() records the actual model returned by OpenRouter.
 LLM_MODEL = "openrouter/free"
+LLM_MAX_TOKENS = 800
 
 # The canonical vocabulary, baselines, and association matrices are imported
 # from decision_model.py so they have one auditable source of truth.
@@ -149,6 +151,42 @@ def compact_dict(d, max_items=10):
 def clean_numbers(text: str) -> str:
     return re.sub(r"\s*\(\d+(\.\d+)?\)", "", text)
 
+
+def score_label(score: float) -> str:
+    """Use the declared Sugeno output bands everywhere in the interface."""
+    return qualitative_consequent_label(float(score))
+
+
+def resolved_sidebar_context() -> dict:
+    """Resolve custom context once so an analyzed run cannot drift later."""
+    industry = str(st.session_state.get("industry", "")).strip()
+    if industry == "Other":
+        industry = str(
+            st.session_state.get("industry_other", "Other")
+        ).strip() or "Other"
+    role = str(st.session_state.get("user_role", "")).strip()
+    if role == "Other":
+        role = str(
+            st.session_state.get("user_role_other", "Other")
+        ).strip() or "Other"
+    return {
+        "objective": str(st.session_state.get("objective", "")).strip(),
+        "industry": industry,
+        "role": role,
+        "influence_scope": (
+            "Interpretive context only; it does not alter deterministic "
+            "fuzzy scores, ranks, rules, or validation metrics."
+        ),
+    }
+
+
+def context_hash(context: dict) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            context, sort_keys=True, default=_json_default
+        ).encode("utf-8")
+    ).hexdigest()[:10]
+
 GROUNDING_CONSTRAINTS = """
 You are a non-authoritative language renderer for a deterministic fuzzy DSS.
 Use only the supplied evidence. Never calculate or modify scores, rankings,
@@ -186,7 +224,7 @@ def safe_llm_call(
     prompt: str,
     payload: dict,
     temp=0.0,
-    max_toks=400,
+    max_toks=LLM_MAX_TOKENS,
     retries=2,
     fallback="",
     section="unspecified",
@@ -329,9 +367,7 @@ def qualitative_scores(scored_dict):
                 sys: (
                     "N/A"
                     if not is_applicable(category, name, sys)
-                    else "High" if val >= 2
-                    else "Medium" if val >= 1
-                    else "Low"
+                    else score_label(val)
                 )
                 for sys, val in sysvals.items()
             }
@@ -394,7 +430,7 @@ def build_canonical_evidence(results, system, stage):
             rows.append({
                 "item": item,
                 "score": round(score, 3),
-                "label": "High" if score >= 2 else "Medium" if score >= 1 else "Low",
+                "label": score_label(score),
                 "normalized_inputs": trace.get("inputs", {}),
                 "dominant_rule": dominant,
             })
@@ -403,6 +439,7 @@ def build_canonical_evidence(results, system, stage):
         "system": system,
         "lce_stage": stage,
         "weights_5s": results.get("weights_5s", {}),
+        "interpretive_context": results.get("context", {}),
         "categories": categories,
         "method": "zero-order Sugeno",
         "decision_model_version": DECISION_MODEL_VERSION,
@@ -532,6 +569,12 @@ with st.sidebar:
         st.session_state["explanation_mode"] = "Deterministic trace"
         st.info("No API key detected. Analyze will use the deterministic explanation fallback.")
 
+    st.caption(
+        "Objective, industry, and role tailor only the optional language "
+        "rendering. Deterministic fuzzy scores depend exclusively on the "
+        "selected system, LCE stage, and 5S priorities."
+    )
+
     # --- Transparency note ---
     st.caption("""
     Benchmarks represent industry-average KPI ranges compiled from sources 
@@ -577,7 +620,8 @@ if existing_results:
         st.session_state.pop("compare_analysis", None)
         st.session_state["stale_results_notice"] = (
             "A frozen run from an earlier model version was cleared. "
-            "Click Analyze to generate a compatible v2.2 run."
+            f"Click Analyze to generate a compatible rule-base "
+            f"{FUZZY_RULE_BASE_VERSION} run."
         )
 
 st.title("Supply-Chain Strategy Agent (LCE + 5S)")
@@ -589,11 +633,13 @@ st.caption(
 if st.session_state.pop("stale_results_notice", None):
     st.info(
         "A frozen run from an earlier model version was cleared. "
-        "Click **Analyze** to generate a compatible v2.2 run."
+        f"Click **Analyze** to generate a compatible rule-base "
+        f"{FUZZY_RULE_BASE_VERSION} run."
     )
 
 # Single analyze button: freeze state & trigger LLM on tabs 2–3
 if st.button("Analyze", use_container_width=True):
+    frozen_context = resolved_sidebar_context()
     st.session_state["results"] = {
         "scored": st.session_state["matrices_live"],
         "fuzzy_trace": st.session_state["fuzzy_trace_live"],
@@ -601,6 +647,8 @@ if st.button("Analyze", use_container_width=True):
         "system": st.session_state.get("selected_system", "Product Transfer"),
         "lce_stage": lce_stage,
         "stage_gain": stage_gain_live,
+        "context": frozen_context,
+        "context_id": context_hash(frozen_context),
         "explanation_mode": st.session_state.get("explanation_mode", "Deterministic trace"),
         "decision_model_version": DECISION_MODEL_VERSION,
         "rule_base_version": FUZZY_RULE_BASE_VERSION,
@@ -619,6 +667,7 @@ if st.button("Analyze", use_container_width=True):
     st.session_state.pop("breakpoint_sensitivity", None)
     st.session_state.pop("mc_robustness", None)
     st.session_state.pop("whatif_result", None)
+    st.session_state.pop("whatif_suite", None)
     st.session_state.pop("llm_whatif", None)
     st.session_state.pop("llm_whatif_cache_key", None)
 
@@ -668,9 +717,7 @@ def show_matrix(title, df_dict):
             df_label.loc[item, system_name] = (
                 "N/A"
                 if not is_applicable(matrix_name, item, system_name)
-                else "Low" if value < 1
-                else "Medium" if value < 2
-                else "High"
+                else score_label(value)
             )
 
     color_map = {
@@ -715,6 +762,94 @@ def compute_run_hash(weights_5s, lce_stage, system, stage_gain=0.8):
         sort_keys=True,
     )
     return hashlib.sha256(payload.encode()).hexdigest()[:10]
+
+
+def compute_ablation_result(results, disabled_components):
+    """Recompute one declared component-weight ablation deterministically."""
+    disabled = sorted(set(disabled_components))
+    valid_components = {"Lifecycle contribution", "5S contribution"}
+    if not disabled or not set(disabled).issubset(valid_components):
+        raise ValueError("Select Lifecycle contribution, 5S contribution, or both.")
+
+    ablated_weights = dict(RULE_DESIGN_WEIGHTS)
+    if "Lifecycle contribution" in disabled:
+        ablated_weights["lifecycle_relevance"] = 0.0
+    if "5S contribution" in disabled:
+        ablated_weights["5s_alignment"] = 0.0
+    total_weight = sum(ablated_weights.values())
+    normalized_ablated_weights = {
+        key: value / total_weight
+        for key, value in ablated_weights.items()
+    }
+
+    weights_5s = results["weights_5s"]
+    stage = results.get("lce_stage", "Operation")
+    frozen_system = results.get("system", "Product Transfer")
+    stage_gain = results.get("stage_gain", 0.8)
+    scored_new, traces_new = score_all(
+        weights_5s,
+        stage,
+        stage_gain=stage_gain,
+        return_trace=True,
+        rule_design_weights=ablated_weights,
+    )
+    applicable_kpis = [
+        item
+        for item in scored_new["kpis"]
+        if is_applicable("kpis", item, frozen_system)
+    ]
+    base_series = (
+        pd.DataFrame(results["scored"]["kpis"])
+        .T.loc[applicable_kpis, frozen_system]
+    )
+    new_series = (
+        pd.DataFrame(scored_new["kpis"])
+        .T.loc[applicable_kpis, frozen_system]
+    )
+    comparison = score_comparison_metrics(base_series, new_series)
+    priority_items = tie_aware_top_items(new_series)
+    parent_run_id = compute_run_hash(
+        weights_5s, stage, frozen_system, stage_gain
+    )
+    scenario_payload = {
+        "parent_run_id": parent_run_id,
+        "context": results.get("context", {}),
+        "context_id": results.get(
+            "context_id",
+            context_hash(results.get("context", {})),
+        ),
+        "context_influence_scope": (
+            "language rendering only; excluded from the ablation calculation"
+        ),
+        "system": frozen_system,
+        "lce_stage": stage,
+        "weights_5s": weights_5s,
+        "stage_gain": stage_gain,
+        "deactivated_components": disabled,
+        "original_rule_design_weights": RULE_DESIGN_WEIGHTS,
+        "ablated_rule_design_weights_raw": ablated_weights,
+        "ablated_rule_design_weights_normalized": normalized_ablated_weights,
+        "comparison": comparison,
+        "priority_items": priority_items,
+        "selected_system_scores": {
+            item: float(new_series[item]) for item in new_series.index
+        },
+    }
+    scenario_id = hashlib.sha256(
+        json.dumps(
+            scenario_payload,
+            sort_keys=True,
+            default=_json_default,
+        ).encode()
+    ).hexdigest()[:12]
+    return {
+        "scenario_id": scenario_id,
+        "decision_model_version": DECISION_MODEL_VERSION,
+        "rule_base_version": FUZZY_RULE_BASE_VERSION,
+        **scenario_payload,
+        "all_system_scores": scored_new,
+        "fuzzy_trace": traces_new,
+    }
 
 # -----------------------------------------------------
 # Simple dominance / monotonicity test
@@ -907,11 +1042,12 @@ def show_chat(tab_id: str):
             res = st.session_state["results"]
             interp = st.session_state.get("llm_interpretations", {})
             compare_expl = st.session_state.get("compare_analysis", "")
-            objective = st.session_state.get("objective", "")
-            lce_stage = st.session_state.get("lce_stage", "")
-            sel_sys = st.session_state.get("selected_system", "")
-            role = st.session_state.get("user_role", "")
-            industry = st.session_state.get("industry", "")
+            frozen_context = res.get("context", {})
+            objective = frozen_context.get("objective", "")
+            lce_stage = res.get("lce_stage", "")
+            sel_sys = res.get("system", "")
+            role = frozen_context.get("role", "")
+            industry = frozen_context.get("industry", "")
 
             ctx = {
                 "weights_5s": res.get("weights_5s", {}),
@@ -1021,9 +1157,10 @@ with tabs[1]:
                 st.info("Generating qualitative interpretations with the LLM...")
     
                 sel_sys = frozen_system
-                role = st.session_state.get("user_role", "")
-                industry = st.session_state.get("industry", "")
-                objective = st.session_state.get("objective", "")
+                frozen_context = res.get("context", {})
+                role = frozen_context.get("role", "")
+                industry = frozen_context.get("industry", "")
+                objective = frozen_context.get("objective", "")
                 lce_stage = frozen_stage
                 w5s = res["weights_5s"]
                 w5s_desc = describe_real_5s(w5s)
@@ -1040,11 +1177,12 @@ with tabs[1]:
                     for k, v in res["scored"]["core_processes"].items()
                     if k in core_priority_items
                 }
-                core_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in core_scores.items()}
+                core_labels = {k: score_label(v) for k, v in core_scores.items()}
                 core_topS = {k: item_contrib_5s(k, "core_processes", w5s) for k in core_labels}
                 core_stage = {k: item_contrib_lce(k, "core_processes", lce_stage) for k in core_labels}
     
                 core_payload = {
+                    "interpretive_context": frozen_context,
                     "canonical_evidence": core_priority,
                     "core_labels": core_labels,
                     "w5s_desc": w5s_desc,
@@ -1055,6 +1193,7 @@ with tabs[1]:
     
                 prompt_core = f"""
                 You are a supply-chain strategist advising a {role} in the {industry} industry.
+                The stated objective is: {objective}
                 The user's 5S priorities are: {json.dumps(w5s_desc)}.
                 Below is the tie-aware priority set for the {sel_sys} system:
                 {json.dumps(core_labels, indent=2)}.
@@ -1064,6 +1203,8 @@ with tabs[1]:
                 rule identifier. State its baseline, 5S alignment, and lifecycle
                 relevance without adding causal, risk, performance, or managerial
                 claims. Do not create actions or recommendations.
+                Use role, industry, and objective only to adjust terminology;
+                never present them as causes of any score or ordering.
                 Limit to 170 words.
                 """
                 core_expl = safe_llm_call(
@@ -1088,11 +1229,12 @@ with tabs[1]:
                     if is_applicable("kpis", k, sel_sys)
                     and k in kpi_priority_items
                 }
-                kpi_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in kpi_scores.items()}
+                kpi_labels = {k: score_label(v) for k, v in kpi_scores.items()}
                 kpi_topS = {k: item_contrib_5s(k, "kpis", w5s) for k in kpi_labels}
                 kpi_stage = {k: item_contrib_lce(k, "kpis", lce_stage) for k in kpi_labels}
     
                 kpi_payload = {
+                    "interpretive_context": frozen_context,
                     "canonical_evidence": kpi_priority,
                     "kpi_labels": kpi_labels,
                     "w5s_desc": w5s_desc,
@@ -1106,6 +1248,9 @@ with tabs[1]:
                 
                 CONTEXT
                 - System: {sel_sys}
+                - Role: {role}
+                - Industry: {industry}
+                - Objective: {objective}
                 - User 5S priorities: {json.dumps(w5s_desc)}
                 - KPI labels (High/Medium/Low): {json.dumps(kpi_labels, indent=2)}
                 
@@ -1117,6 +1262,8 @@ with tabs[1]:
                 - State baseline, 5S alignment, and lifecycle relevance without
                   inferring maturity, performance, causes, risks, actions, or targets.
                 - No bullet points. No lists. No questions. Declarative voice only.
+                - Use role, industry, and objective only to adjust terminology;
+                  do not use them to explain or change any score.
                 """
                 
                 kpi_expl = safe_llm_call(
@@ -1140,11 +1287,12 @@ with tabs[1]:
                     for k, v in res["scored"]["drivers"].items()
                     if k in driver_priority_items
                 }
-                driver_labels = {k: ("High" if v >= 2 else "Medium" if v >= 1 else "Low") for k, v in driver_scores.items()}
+                driver_labels = {k: score_label(v) for k, v in driver_scores.items()}
                 driver_topS = {k: item_contrib_5s(k, "drivers", w5s) for k in driver_labels}
                 driver_stage = {k: item_contrib_lce(k, "drivers", lce_stage) for k in driver_labels}
     
                 driver_payload = {
+                    "interpretive_context": frozen_context,
                     "canonical_evidence": driver_priority,
                     "driver_labels": driver_labels,
                     "w5s_desc": w5s_desc,
@@ -1155,6 +1303,7 @@ with tabs[1]:
     
                 prompt_drv = f"""
                 You are a resilience strategist advising a {role} in the {industry} industry.
+                The stated objective is: {objective}
                 The user's 5S priorities are: {json.dumps(w5s_desc)}.
                 Below is the qualitative status of each resilience driver for the {sel_sys} system:
                 {json.dumps(driver_labels, indent=2)}.
@@ -1166,6 +1315,8 @@ with tabs[1]:
                 driver creates stability, flexibility, vulnerability, advantage,
                 risk, or required action. Preserve ties and do not create
                 recommendations. Keep the explanation concise (≤170 words).
+                Use role, industry, and objective only to adjust terminology;
+                never present them as causes of any score or ordering.
                 """
                 driver_expl = safe_llm_call(
                     prompt_drv, driver_payload, temp=0.0,
@@ -1247,9 +1398,10 @@ with tabs[1]:
                 frozen_results = st.session_state["results"]
                 res = frozen_results["scored"]
                 sel_sys = frozen_results.get("system", "Product Transfer")
-                objective = st.session_state.get("objective", "")
-                role = st.session_state.get("user_role", "")
-                industry = st.session_state.get("industry", "")
+                frozen_context = frozen_results.get("context", {})
+                objective = frozen_context.get("objective", "")
+                role = frozen_context.get("role", "")
+                industry = frozen_context.get("industry", "")
     
                 other_systems = [s for s in SYSTEMS if s != sel_sys]
                 if len(other_systems) == 0:
@@ -1263,9 +1415,7 @@ with tabs[1]:
                         compare_payload = compact_dict({
                             "selected_system": sel_sys,
                             "other_systems": other_systems,
-                            "objective": objective,
-                            "role": role,
-                            "industry": industry,
+                            "interpretive_context": frozen_context,
                             "core": res["core_processes"],
                             "kpis": res["kpis"],
                             "drivers": res["drivers"],
@@ -1278,6 +1428,9 @@ with tabs[1]:
                         weaknesses, superiority, advantages, complementarities,
                         causes, risks, actions, or recommendations. Keep the
                         explanation factual and concise (≤180 words).
+                        The supplied role, industry, and objective are
+                        interpretive context only and must not be presented as
+                        determinants of the scores.
                         """
     
                         use_llm_compare = (
@@ -1389,6 +1542,14 @@ with tabs[2]:
                 "system": system,
                 "lce_stage": stage,
                 "weights_5s": weights_5s,
+                "context": results.get("context", {}),
+                "context_id": results.get(
+                    "context_id",
+                    context_hash(results.get("context", {})),
+                ),
+                "context_influence_scope": (
+                    "language rendering only; excluded from fuzzy scoring"
+                ),
                 "stage_gain": results.get("stage_gain", 0.8),
                 "scores": results["scored"],
                 "fuzzy_trace": results.get("fuzzy_trace", {}),
@@ -1396,7 +1557,17 @@ with tabs[2]:
                 "membership_parameters": FUZZY_MEMBERSHIP_PARAMETERS,
                 "sugeno_consequents": SUGENO_CONSEQUENTS,
                 "sugeno_output_bands": SUGENO_OUTPUT_BANDS,
+                "qualitative_output_policy": (
+                    "Low: 0<=score<1; Medium: 1<=score<2; "
+                    "High: 2<=score<=3"
+                ),
                 "rule_design_weights": RULE_DESIGN_WEIGHTS,
+                "rule_design_weight_status": (
+                    "author-designed and versioned; requires structured expert "
+                    "calibration and external case validation"
+                ),
+                "epsilon": EPSILON,
+                "alpha_cuts_used": False,
                 "rule_confidences": SUGENO_RULE_CONFIDENCES,
                 "rule_base_version": FUZZY_RULE_BASE_VERSION,
                 "decision_model_version": DECISION_MODEL_VERSION,
@@ -1408,6 +1579,7 @@ with tabs[2]:
                 "decision_authority": "deterministic fuzzy engine",
                 "llm_role": "optional non-authoritative language renderer",
                 "llm_router": LLM_MODEL,
+                "llm_max_tokens": LLM_MAX_TOKENS,
                 "llm_experiment_design": (
                     "dynamic multi-model routing; every returned model and "
                     "draft is audited independently"
@@ -1481,7 +1653,8 @@ with tabs[2]:
                     if upload_issues:
                         st.error(
                             "This run JSON is incompatible with the current "
-                            "scientific model. Generate a new run with v2.2. "
+                            "scientific model. Generate a new run with rule-base "
+                            f"{FUZZY_RULE_BASE_VERSION}. "
                             f"First issue: {upload_issues[0]}"
                         )
                     else:
@@ -1492,6 +1665,11 @@ with tabs[2]:
                             "system": loaded.get("system", "Product Transfer"),
                             "lce_stage": loaded.get("lce_stage", "Operation"),
                             "stage_gain": loaded.get("stage_gain", 0.8),
+                            "context": loaded.get("context", {}),
+                            "context_id": loaded.get(
+                                "context_id",
+                                context_hash(loaded.get("context", {})),
+                            ),
                             "explanation_mode": "Deterministic trace",
                             "decision_model_version": loaded[
                                 "decision_model_version"
@@ -1821,88 +1999,93 @@ with tabs[2]:
                 ),
             )
 
-            if st.button("Run What-If Scenario", use_container_width=True):
+            selected_col, suite_col = st.columns(2)
+            run_selected = selected_col.button(
+                "Run Selected Ablation", use_container_width=True
+            )
+            run_suite = suite_col.button(
+                "Run Standard Ablation Suite", use_container_width=True,
+                help=(
+                    "Runs three reviewer-ready cases: without 5S, without "
+                    "Lifecycle, and without both."
+                ),
+            )
+
+            if run_selected:
                 if not disabled:
                     st.warning("Select at least one contribution to deactivate.")
                 else:
-                    ablated_weights = dict(RULE_DESIGN_WEIGHTS)
-                    if "Lifecycle contribution" in disabled:
-                        ablated_weights["lifecycle_relevance"] = 0.0
-                    if "5S contribution" in disabled:
-                        ablated_weights["5s_alignment"] = 0.0
-                    total_weight = sum(ablated_weights.values())
-                    normalized_ablated_weights = {
-                        key: value / total_weight
-                        for key, value in ablated_weights.items()
-                    }
-                    scored_new, traces_new = score_all(
-                        weights_5s,
-                        stage,
-                        stage_gain=results.get("stage_gain", 0.8),
-                        return_trace=True,
-                        rule_design_weights=ablated_weights,
+                    st.session_state["whatif_result"] = (
+                        compute_ablation_result(results, disabled)
                     )
 
-                    frozen_system = results.get(
-                        "system", "Product Transfer"
-                    )
-                    applicable_kpis = [
-                        item
-                        for item in scored_new["kpis"]
-                        if is_applicable("kpis", item, frozen_system)
-                    ]
-                    base_series = (
-                        pd.DataFrame(results["scored"]["kpis"])
-                        .T.loc[applicable_kpis, frozen_system]
-                    )
-                    new_series = (
-                        pd.DataFrame(scored_new["kpis"])
-                        .T.loc[applicable_kpis, frozen_system]
-                    )
-                    comparison = score_comparison_metrics(
-                        base_series, new_series
-                    )
-                    priority_items = tie_aware_top_items(new_series)
-                    parent_run_id = compute_run_hash(
-                        weights_5s,
-                        stage,
-                        frozen_system,
-                        results.get("stage_gain", 0.8),
-                    )
-                    scenario_payload = {
-                        "parent_run_id": parent_run_id,
-                        "system": frozen_system,
-                        "lce_stage": stage,
-                        "weights_5s": weights_5s,
-                        "stage_gain": results.get("stage_gain", 0.8),
-                        "deactivated_components": sorted(disabled),
-                        "original_rule_design_weights": RULE_DESIGN_WEIGHTS,
-                        "ablated_rule_design_weights_raw": ablated_weights,
-                        "ablated_rule_design_weights_normalized": (
-                            normalized_ablated_weights
+            if run_suite:
+                standard_cases = [
+                    ["5S contribution"],
+                    ["Lifecycle contribution"],
+                    ["5S contribution", "Lifecycle contribution"],
+                ]
+                st.session_state["whatif_suite"] = [
+                    compute_ablation_result(results, case)
+                    for case in standard_cases
+                ]
+
+            whatif_suite = st.session_state.get("whatif_suite", [])
+            if whatif_suite:
+                suite_rows = []
+                for case in whatif_suite:
+                    metrics = case["comparison"]
+                    suite_rows.append({
+                        "Ablation": " + ".join(
+                            case["deactivated_components"]
                         ),
-                        "comparison": comparison,
-                        "priority_items": priority_items,
-                        "selected_system_scores": {
-                            item: float(new_series[item])
-                            for item in new_series.index
-                        },
-                    }
-                    scenario_id = hashlib.sha256(
-                        json.dumps(
-                            scenario_payload,
-                            sort_keys=True,
-                            default=_json_default,
-                        ).encode()
-                    ).hexdigest()[:12]
-                    st.session_state["whatif_result"] = {
-                        "scenario_id": scenario_id,
-                        "decision_model_version": DECISION_MODEL_VERSION,
-                        "rule_base_version": FUZZY_RULE_BASE_VERSION,
-                        **scenario_payload,
-                        "all_system_scores": scored_new,
-                        "fuzzy_trace": traces_new,
-                    }
+                        "Kendall τb": metrics["kendall_tau_b"],
+                        "p-value": metrics["kendall_p_value"],
+                        "Priority-set Jaccard": (
+                            metrics["priority_set_jaccard"]
+                        ),
+                        "Base priority count": len(
+                            metrics["base_priority_set"]
+                        ),
+                        "Ablated priority count": len(
+                            metrics["alternative_priority_set"]
+                        ),
+                    })
+                st.markdown("### Standard Ablation Suite")
+                st.dataframe(
+                    pd.DataFrame(suite_rows), use_container_width=True
+                )
+                st.caption(
+                    "The three rows isolate 5S contribution, Lifecycle "
+                    "contribution, and their joint effect. Pearson correlation "
+                    "is retained in the JSON as a secondary score diagnostic; "
+                    "Kendall τb and tie-aware Jaccard are the ranking measures."
+                )
+                suite_export = {
+                    "system": results.get("system"),
+                    "lce_stage": stage,
+                    "weights_5s": weights_5s,
+                    "context": results.get("context", {}),
+                    "decision_model_version": DECISION_MODEL_VERSION,
+                    "rule_base_version": FUZZY_RULE_BASE_VERSION,
+                    "cases": whatif_suite,
+                    "decision_authority": "deterministic fuzzy engine",
+                    "llm_required": False,
+                }
+                st.download_button(
+                    "📥 Download Standard Ablation Suite JSON",
+                    data=json.dumps(
+                        suite_export,
+                        indent=2,
+                        ensure_ascii=False,
+                        default=_json_default,
+                    ).encode("utf-8"),
+                    file_name=(
+                        "ablation_suite_"
+                        f"{results.get('system', 'system').replace(' ', '_')}.json"
+                    ),
+                    mime="application/json",
+                )
 
             whatif_result = st.session_state.get("whatif_result")
             frozen_system = results.get("system", "Product Transfer")

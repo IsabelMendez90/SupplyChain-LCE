@@ -1,0 +1,58 @@
+# v11.1 methodological update
+
+This release is based directly on the v11 `app.py` used for the reported
+Product Transfer, Technology Transfer, and Facility Design runs. It does not
+include the later experimental contextual-weight transformation.
+
+## Implemented changes
+
+1. **One qualitative-label policy**
+   - Low: `0 <= score < 1`
+   - Medium: `1 <= score < 2`
+   - High: `2 <= score <= 3`
+   - The interface, canonical evidence, rule traces, and exported model
+     configuration now call the same function.
+
+2. **Frozen interpretive context**
+   - Objective, resolved industry, and resolved role are frozen when
+     `Analyze` is clicked.
+   - Custom `Other` values are resolved before freezing.
+   - Context is exported with a separate identifier.
+   - Context is explicitly excluded from fuzzy scoring and numerical
+     validation.
+
+3. **Reviewer-ready ablation suite**
+   - 5S contribution removed.
+   - Lifecycle contribution removed.
+   - Both contributions removed.
+   - Each case reconstructs and recomputes the Sugeno rule consequents after
+     renormalizing the remaining positive design weights.
+   - Kendall tau-b, p-value, and tie-aware priority-set Jaccard are reported.
+
+4. **Expanded reproducibility metadata**
+   - Epsilon and alpha-cut status.
+   - Exact output-band policy.
+   - Rule-design-weight calibration status.
+   - LLM token limit, routed model, prompt hash, rejection reason, and
+     deterministic fallback.
+
+5. **LLM reliability**
+   - `model="openrouter/free"` remains unchanged.
+   - The response allowance was increased for free reasoning models.
+   - The strict grounding validator and deterministic fallback remain the
+     authority boundary.
+
+## Methodological boundary
+
+The rule-design weights `0.50/0.30/0.20` and internal `stage_gain=0.80` remain
+versioned author-designed parameters. Robustness testing can assess their
+effects, but expert elicitation or case-based calibration is still required
+before claiming empirical validity.
+
+## Verification
+
+- Python syntax/AST checks passed.
+- Command-line replication completed.
+- Fuzzy-engine output-band consistency passed.
+- Three-case ablation smoke tests passed.
+- All 44 automated tests passed.

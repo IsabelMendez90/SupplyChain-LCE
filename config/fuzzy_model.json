@@ -1,7 +1,7 @@
 {
   "method": "zero-order Sugeno",
   "decision_model_version": "2.2",
-  "rule_base_version": "2.2",
+  "rule_base_version": "2.3",
   "membership_functions": {
     "baseline": {
       "Low": {
@@ -110,24 +110,16 @@
     3.0
   ],
   "output_bands": {
-    "Very Low": [
-      0.0,
-      0.375
-    ],
     "Low": [
-      0.375,
-      1.125
+      0.0,
+      1.0
     ],
     "Medium": [
-      1.125,
-      1.875
+      1.0,
+      2.0
     ],
     "High": [
-      1.875,
-      2.625
-    ],
-    "Very High": [
-      2.625,
+      2.0,
       3.000001
     ]
   },
@@ -877,7 +869,7 @@
       "baseline": "Low",
       "5s_alignment": "Low",
       "lifecycle_relevance": "Low",
-      "output_label": "Very Low",
+      "output_label": "Low",
       "consequent": 0.0,
       "confidence": 1.0
     },
@@ -886,7 +878,7 @@
       "baseline": "Low",
       "5s_alignment": "Low",
       "lifecycle_relevance": "Medium",
-      "output_label": "Very Low",
+      "output_label": "Low",
       "consequent": 0.3,
       "confidence": 1.0
     },
@@ -922,7 +914,7 @@
       "baseline": "Low",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "High",
-      "output_label": "Low",
+      "output_label": "Medium",
       "consequent": 1.05,
       "confidence": 1.0
     },
@@ -967,7 +959,7 @@
       "baseline": "Medium",
       "5s_alignment": "Low",
       "lifecycle_relevance": "Medium",
-      "output_label": "Low",
+      "output_label": "Medium",
       "consequent": 1.05,
       "confidence": 1.0
     },
@@ -1021,7 +1013,7 @@
       "baseline": "Medium",
       "5s_alignment": "High",
       "lifecycle_relevance": "Medium",
-      "output_label": "High",
+      "output_label": "Medium",
       "consequent": 1.95,
       "confidence": 1.0
     },
@@ -1066,7 +1058,7 @@
       "baseline": "High",
       "5s_alignment": "Medium",
       "lifecycle_relevance": "Low",
-      "output_label": "High",
+      "output_label": "Medium",
       "consequent": 1.95,
       "confidence": 1.0
     },
@@ -1102,7 +1094,7 @@
       "baseline": "High",
       "5s_alignment": "High",
       "lifecycle_relevance": "Medium",
-      "output_label": "Very High",
+      "output_label": "High",
       "consequent": 2.7,
       "confidence": 1.0
     },
@@ -1111,7 +1103,7 @@
       "baseline": "High",
       "5s_alignment": "High",
       "lifecycle_relevance": "High",
-      "output_label": "Very High",
+      "output_label": "High",
       "consequent": 3.0,
       "confidence": 1.0
     }

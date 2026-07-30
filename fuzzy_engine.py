@@ -8,7 +8,7 @@ from itertools import product
 
 
 EPSILON = 1e-12
-FUZZY_RULE_BASE_VERSION = "2.2"
+FUZZY_RULE_BASE_VERSION = "2.3"
 LINGUISTIC_LEVELS = ("Low", "Medium", "High")
 
 # The three antecedents represent different constructs and therefore use
@@ -40,12 +40,13 @@ RULE_DESIGN_WEIGHTS = {
     "lifecycle_relevance": 0.20,
 }
 
+# Reader-facing output labels follow the three-level scale described in the
+# manuscript and used by the Streamlit matrices. Numeric singleton
+# consequents remain unrounded and continue to span [0, 3].
 SUGENO_OUTPUT_BANDS = {
-    "Very Low": (0.0, 0.375),
-    "Low": (0.375, 1.125),
-    "Medium": (1.125, 1.875),
-    "High": (1.875, 2.625),
-    "Very High": (2.625, 3.000001),
+    "Low": (0.0, 1.0),
+    "Medium": (1.0, 2.0),
+    "High": (2.0, 3.000001),
 }
 
 FUZZY_RULE_PROVENANCE = {
