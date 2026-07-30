@@ -8,7 +8,7 @@ from itertools import product
 
 
 EPSILON = 1e-12
-FUZZY_RULE_BASE_VERSION = "2.3"
+FUZZY_RULE_BASE_VERSION = "2.0"
 LINGUISTIC_LEVELS = ("Low", "Medium", "High")
 
 # The three antecedents represent different constructs and therefore use

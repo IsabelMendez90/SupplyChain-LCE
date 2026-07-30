@@ -7,7 +7,7 @@ can be tested and reproduced without an API key.
 import re
 
 
-GROUNDING_VALIDATOR_VERSION = "2.3"
+GROUNDING_VALIDATOR_VERSION = "2.0"
 
 META_OUTPUT_PATTERNS = (
     r"\bwe need to\b",

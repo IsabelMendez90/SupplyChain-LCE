@@ -217,13 +217,24 @@ class McdaRegressionTests(unittest.TestCase):
         source = Path(__file__).resolve().parents[1].joinpath("app.py").read_text(encoding="utf-8")
         self.assertNotIn('st.radio(\n        "Explanation mode"', source)
 
+    def test_header_exposes_only_scientific_versions(self):
+        source = (
+            Path(__file__).resolve().parents[1]
+            .joinpath("app.py")
+            .read_text(encoding="utf-8")
+        )
+        self.assertNotIn("Application release", source)
+        self.assertNotIn("APP_RELEASE", source)
+        self.assertIn("Decision model v{DECISION_MODEL_VERSION}", source)
+        self.assertIn("Fuzzy rule base v{FUZZY_RULE_BASE_VERSION}", source)
+
     def test_streamlit_results_are_invalidated_by_grounding_version(self):
         source = (
             Path(__file__).resolve().parents[1]
             .joinpath("app.py")
             .read_text(encoding="utf-8")
         )
-        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.3")
+        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.0")
         self.assertIn(
             'existing_results.get("grounding_validator_version")',
             source,

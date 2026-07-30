@@ -110,7 +110,6 @@ OPENROUTER_HEADERS = {
 # request, so safe_llm_call() records the actual model returned by OpenRouter.
 LLM_MODEL = "openrouter/free"
 LLM_MAX_TOKENS = 800
-APP_RELEASE = "11.2"
 
 # The canonical vocabulary, baselines, and association matrices are imported
 # from decision_model.py so they have one auditable source of truth.
@@ -627,7 +626,6 @@ if existing_results:
 
 st.title("Supply-Chain Strategy Agent (LCE + 5S)")
 st.caption(
-    f"Application release v{APP_RELEASE} · "
     f"Decision model v{DECISION_MODEL_VERSION} · "
     f"Fuzzy rule base v{FUZZY_RULE_BASE_VERSION}"
 )
@@ -709,6 +707,8 @@ def show_matrix(title, df_dict):
     if matrix_name == "kpis":
         st.caption(
             "All 30 manuscript KPIs are evaluated in every configuration. "
+            "High, Medium, and Low denote strategic priority—not measured "
+            "operational performance. "
             "Differences reflect gradual baseline relevance (0–3), 5S "
             "alignment, and lifecycle relevance; N/A is not used in the "
             "current versioned KPI matrix."
@@ -739,6 +739,34 @@ def show_matrix(title, df_dict):
     )
 
     st.dataframe(styled, use_container_width=True)
+    if matrix_name == "kpis" and not compare_all and selected in df.columns:
+        detail = pd.DataFrame(
+            {
+                "Score": df[selected].astype(float),
+                "Priority": [
+                    score_label(df.loc[item, selected])
+                    for item in df.index
+                ],
+                "KPI scope": [
+                    (
+                        "Primary for selected system"
+                        if KPI_PRIMARY_SYSTEM.get(item) == selected
+                        else "Cross-configuration"
+                    )
+                    for item in df.index
+                ],
+            },
+            index=df.index,
+        ).sort_values(
+            ["Score", "KPI scope"],
+            ascending=[False, False],
+            kind="mergesort",
+        )
+        detail["Score"] = detail["Score"].round(3)
+        with st.expander(
+            "Inspect numeric KPI priorities and configuration scope"
+        ):
+            st.dataframe(detail, use_container_width=True)
     return df_label
 
 # -----------------------------------------------------
@@ -1791,7 +1819,7 @@ with tabs[2]:
                 )
                 st.metric(
                     "KPI Pearson correlation (original vs perturbed)",
-                    f"{corr:.3f}",
+                    f"{corr:.4f}",
                 )
                 st.caption(
                     "This diagnostic compares score vectors. Ranking stability "
@@ -1919,7 +1947,7 @@ with tabs[2]:
                 if metric["kendall_tau_b"] is not None
             ]
             minimum_tau = min(valid_taus) if valid_taus else None
-            corr_val = f"{corr:.3f}" if corr is not None else "N/A"
+            corr_val = f"{corr:.4f}" if corr is not None else "N/A"
             tau_val = (
                 f"{minimum_tau:.3f}" if minimum_tau is not None else "N/A"
             )
