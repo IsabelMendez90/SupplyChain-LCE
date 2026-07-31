@@ -439,8 +439,15 @@ class McdaRegressionTests(unittest.TestCase):
         self.assertIn('"validator_issues": repair_issues', source)
         self.assertIn("Inspect supporting fuzzy evidence", source)
         self.assertIn("natural_language_only=True", source)
+        self.assertIn("issues.extend(natural_narrative_issues(out))", source)
+        self.assertNotIn(
+            "strict_claims=True,\n"
+            "                natural_language_only=natural_language_only",
+            source,
+        )
         self.assertNotIn("cite its exact score", source)
         self.assertNotIn("cite its exact score and dominant", source)
+        self.assertIn("Download complete analysis PDF", source)
 
     def test_streamlit_results_are_invalidated_by_grounding_version(self):
         source = (

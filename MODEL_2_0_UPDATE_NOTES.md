@@ -69,6 +69,18 @@ include the later experimental contextual-weight transformation.
    - The response allowance was increased for free reasoning models.
    - The strict grounding validator and deterministic fallback remain the
      authority boundary.
+   - The natural-language display policy is applied locally in `app.py`, so
+     an older cached validator module cannot raise an unsupported-keyword
+     error during a mixed-file deployment.
+
+6. **Complete PDF export**
+   - A single A4 landscape report contains frozen context, all matrices,
+     natural-language insights, supporting fuzzy evidence, validation and
+     robustness results, executed ablation scenarios, and benchmarks.
+   - Optional sensitivity or what-if tests that were not executed are marked
+     explicitly as not run.
+   - The PDF is generated directly from the frozen run state rather than from
+     screenshots.
 
 ## Methodological boundary
 
@@ -83,4 +95,6 @@ before claiming empirical validity.
 - Command-line replication completed.
 - Fuzzy-engine output-band consistency passed.
 - Three-case ablation smoke tests passed.
-- All 52 automated tests passed.
+- All 53 automated tests passed.
+- The generated PDF was rendered with Poppler and visually inspected for
+  table splitting, clipping, headers, footers, and page numbering.

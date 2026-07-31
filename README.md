@@ -24,6 +24,7 @@ alter fuzzy inputs, scores, ranks, activated rules, or validation metrics.
 ## Repository contents
 
 - `app.py`: Streamlit interface and optional OpenRouter narrative layer.
+- `pdf_report.py`: complete A4 landscape analysis-report generator.
 - `llm_grounding.py`: API-independent semantic grounding validator.
 - `validation_engine.py`: API-independent robustness, counterfactual, and
   convergent-MCDA utilities.
@@ -70,6 +71,12 @@ the app automatically displays the deterministic explanation. To enable
 OpenRouter locally, copy `.streamlit/secrets.toml.example` to
 `.streamlit/secrets.toml` and add the key. Never commit that file.
 
+After running `Analyze`, use **Download complete analysis PDF** in the sidebar
+to export the frozen inputs, all three decision matrices, strategic
+interpretations, fuzzy evidence, validation results, executed sensitivity and
+what-if scenarios, and benchmark references. Optional tests that have not been
+run are identified as such rather than silently omitted.
+
 ## Exact computational replication
 
 From the repository root, run:
@@ -115,6 +122,11 @@ language. Rejected sections are replaced by deterministic natural-language
 explanations. Exact technical evidence remains available in a collapsed audit
 table, and the run JSON records every attempt, actual routed model, rejection
 reason, and fallback section.
+
+The reader-facing natural-language policy is also enforced locally by
+`app.py`. This avoids a runtime failure if a hosting service temporarily loads
+an older cached validator module during a multi-file deployment; the complete
+repository should nevertheless always be deployed as one synchronized unit.
 
 ## Benchmark caution
 

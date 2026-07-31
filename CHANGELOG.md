@@ -34,6 +34,12 @@ process for the associated manuscript.
   replication.
 - Replaced the technical deterministic fallback with a plain-language fallback
   that preserves ordering and ties without exposing internal notation.
+- Decoupled the natural-language display policy from the validator function
+  signature, preventing mixed-deployment `unexpected keyword argument`
+  failures while retaining the same grounding checks.
+- Added a complete PDF export covering frozen configuration, matrices,
+  strategic insights, technical fuzzy evidence, validation, executed
+  sensitivity and what-if scenarios, LLM audit summary, and benchmarks.
 - Allowed up to three audited calls per section so an empty free-router
   response can be followed by a textual generation and a directed repair.
 - Increased the completion allowance to 2,400 tokens and added deterministic

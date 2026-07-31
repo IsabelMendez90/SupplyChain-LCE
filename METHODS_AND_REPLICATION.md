@@ -222,6 +222,17 @@ coverage, ordering agreement, tie preservation, unsupported-claim rate, and
 contradiction rate. Numerical agreement and rule-reference agreement are
 evaluated in the separate deterministic evidence trace.
 
+### Complete PDF report
+
+After a run is frozen, the application can generate one A4 landscape PDF
+directly from the same session-state evidence used by the interface. The report
+contains the input context, all three matrices, strategic interpretations,
+supporting fuzzy evidence, validation and convergent-method results, completed
+sensitivity and ablation scenarios, and benchmark ranges. Optional experiments
+that were not executed are labeled `Not run`; the exporter does not generate
+replacement values. The PDF is a presentation artifact, while the JSON export
+remains the machine-readable replication record.
+
 ## 7. Validation still required before strong empirical claims
 
 Software reproducibility does not validate the model's assumptions. A revised

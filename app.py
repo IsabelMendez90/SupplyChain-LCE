@@ -35,6 +35,7 @@ from llm_grounding import (
     grounding_issues,
     validate_grounded_output,
 )
+from pdf_report import build_analysis_pdf
 from validation_engine import (
     convergent_mcda_comparison,
     counterfactual_5s_amplitude,
@@ -203,6 +204,45 @@ wants", "I must", or "let's craft". Begin directly with the substantive answer.
 """.strip()
 
 
+def natural_narrative_issues(text):
+    """Apply the reader-facing trace policy without validator API coupling."""
+    normalized = str(text or "")
+    for character in ("\u2010", "\u2011", "\u2012", "\u2013", "\u2014"):
+        normalized = normalized.replace(character, "-")
+    number_scan = re.sub(
+        r"\bIndustry\s+5\.0\b",
+        "Industry Five",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+    issues = []
+    if re.search(
+        r"(?<![A-Za-z0-9])[-+]?(?:\d+(?:\.\d+)?|\.\d+)%?"
+        r"(?![A-Za-z0-9])",
+        number_scan,
+    ):
+        issues.append("technical_numbers_not_allowed_in_narrative")
+    if re.search(r"\bR\d{2,}\b", normalized, flags=re.IGNORECASE):
+        issues.append("technical_rule_ids_not_allowed_in_narrative")
+    technical_patterns = (
+        r"\b(?:fuzzy\s+)?scores?\b",
+        r"\bdominant\s+rule\b",
+        r"\brule\s+R\d{2,}\b",
+        r"\bbaseline\b",
+        r"\b5S\s+alignment\b",
+        r"\blifecycle\s+relevance\b",
+        r"\bfiring\s+strength\b",
+        r"\brule\s+confidence\b",
+        r"\bconsequent\b",
+    )
+    if any(
+        re.search(pattern, normalized, flags=re.IGNORECASE)
+        for pattern in technical_patterns
+    ):
+        issues.append("technical_trace_jargon_not_allowed_in_narrative")
+    return issues
+
+
 def validate_llm_output(text, payload=None, **kwargs):
     """Compatibility wrapper around the API-independent validator."""
     return validate_grounded_output(text, payload, **kwargs)
@@ -334,8 +374,10 @@ def safe_llm_call(
                 require_scores=require_scores,
                 require_all_items=require_all_items,
                 strict_claims=True,
-                natural_language_only=natural_language_only,
             )
+            if natural_language_only:
+                issues.extend(natural_narrative_issues(out))
+                issues = list(dict.fromkeys(issues))
             accepted = not issues
             call_id = hashlib.sha256(
                 (
@@ -1151,6 +1193,225 @@ def compare_matrices(base, new):
     base_df = pd.DataFrame(base).T.mean()
     new_df = pd.DataFrame(new).T.mean()
     return base_df.corr(new_df)
+
+
+@st.cache_data(show_spinner=False)
+def cached_analysis_pdf(payload_json):
+    """Generate PDF bytes once for each immutable report payload."""
+    return build_analysis_pdf(json.loads(payload_json))
+
+
+def complete_report_payload(results):
+    """Assemble every reader-facing and auditable section for PDF export."""
+    system = results.get("system", "Product Transfer")
+    stage = results.get("lce_stage", "Operation")
+    weights = results.get("weights_5s", {})
+    frozen_stage_gain = results.get("stage_gain", 0.8)
+    validation_stage_gain = float(
+        st.session_state.get("stage_gain", frozen_stage_gain)
+    )
+    run_id = compute_run_hash(
+        weights, stage, system, frozen_stage_gain
+    )
+
+    matrix_payload = {}
+    for matrix_name, items in results.get("scored", {}).items():
+        matrix_payload[matrix_name] = {}
+        for item, system_values in items.items():
+            matrix_payload[matrix_name][item] = {}
+            for system_name in SYSTEMS:
+                if not is_applicable(matrix_name, item, system_name):
+                    matrix_payload[matrix_name][item][system_name] = {
+                        "label": "N/A",
+                        "score": None,
+                    }
+                else:
+                    value = float(system_values.get(system_name, 0.0))
+                    matrix_payload[matrix_name][item][system_name] = {
+                        "label": score_label(value),
+                        "score": round(value, 3),
+                    }
+
+    deterministic_text, canonical = deterministic_interpretations(
+        results, system, stage
+    )
+    interpretations = dict(deterministic_text)
+    for key, value in st.session_state.get(
+        "llm_interpretations", {}
+    ).items():
+        if value:
+            interpretations[key] = value
+
+    technical_evidence = {}
+    for matrix_name in ("core_processes", "kpis", "drivers"):
+        technical_evidence[matrix_name] = []
+        for row in priority_evidence_rows(
+            canonical["categories"].get(matrix_name, [])
+        ):
+            inputs = row.get("normalized_inputs", {})
+            rule = row.get("dominant_rule", {})
+            technical_evidence[matrix_name].append({
+                "item": row["item"],
+                "label": row["label"],
+                "score": row["score"],
+                "rule": rule.get("rule_id"),
+                "baseline": inputs.get("baseline"),
+                "5s_alignment": inputs.get("5s_alignment"),
+                "lifecycle_relevance": inputs.get(
+                    "lifecycle_relevance"
+                ),
+            })
+
+    engine_checks = validate_engine()
+    consistency_failures = dominance_test(results.get("scored", {}))
+    _, rank_frame, mcda_metrics = convergent_mcda_comparison(
+        results["scored"]["kpis"],
+        weights,
+        stage,
+        system,
+        stage_gain=validation_stage_gain,
+    )
+    influence_5s = counterfactual_5s_amplitude(
+        weights,
+        stage,
+        system,
+        stage_gain=validation_stage_gain,
+    )
+    valid_taus = [
+        metric.get("kendall_tau_b")
+        for metric in mcda_metrics.values()
+        if metric.get("kendall_tau_b") is not None
+    ]
+
+    single_sensitivity = st.session_state.get(
+        "single_sensitivity", {}
+    )
+    saved_breakpoint = st.session_state.get(
+        "breakpoint_sensitivity", {}
+    )
+    monte_carlo = st.session_state.get("mc_robustness", {})
+    llm_calls = st.session_state.get("llm_model_log", [])
+    llm_models = sorted({
+        call.get("actual_model")
+        for call in llm_calls
+        if call.get("actual_model")
+    })
+
+    validation_payload = {
+        "internal_consistency": (
+            "Pass" if not consistency_failures else "Fail"
+        ),
+        "engine_validation": (
+            "Pass" if engine_checks.get("passed") else "Fail"
+        ),
+        "fuzzy_method": "zero-order Sugeno",
+        "grounding_validator_version": GROUNDING_VALIDATOR_VERSION,
+        "validation_stage_gain": validation_stage_gain,
+        "pearson": (
+            single_sensitivity.get("pearson_score_correlation")
+            if single_sensitivity.get("run_id") == run_id
+            else None
+        ),
+        "minimum_kendall": min(valid_taus) if valid_taus else None,
+        "membership_threshold_sensitivity": (
+            saved_breakpoint.get("results")
+            if saved_breakpoint.get("run_id") == run_id
+            else None
+        ),
+        "monte_carlo": (
+            monte_carlo.get("summary")
+            if monte_carlo.get("run_id") == run_id
+            else None
+        ),
+        "mcda_metrics": mcda_metrics,
+        "mcda_ranks": [
+            {"item": item, **row}
+            for item, row in rank_frame.to_dict(orient="index").items()
+        ],
+        "counterfactual_5s": influence_5s,
+        "llm_audit": {
+            "router": LLM_MODEL,
+            "models": llm_models,
+            "accepted": sum(
+                call.get("grounding_status") == "accepted"
+                for call in llm_calls
+            ),
+            "rejected": sum(
+                call.get("grounding_status") == "rejected"
+                for call in llm_calls
+            ),
+            "api_errors": sum(
+                call.get("grounding_status") == "api_error"
+                for call in llm_calls
+            ),
+            "empty_responses": sum(
+                call.get("grounding_status") == "empty_response"
+                for call in llm_calls
+            ),
+            "fallback_sections": st.session_state.get(
+                "llm_fallback_sections", []
+            ),
+        },
+    }
+
+    whatif_result = st.session_state.get("whatif_result")
+    if (
+        not whatif_result
+        or whatif_result.get("parent_run_id") != run_id
+    ):
+        whatif_result = None
+    whatif_suite = [
+        case
+        for case in st.session_state.get("whatif_suite", [])
+        if case.get("parent_run_id") == run_id
+    ]
+    selected_whatif = None
+    if whatif_result:
+        selected_whatif = {
+            "deactivated_components": whatif_result.get(
+                "deactivated_components", []
+            ),
+            "comparison": whatif_result.get("comparison", {}),
+            "priority_items": whatif_result.get("priority_items", []),
+            "selected_system_scores": whatif_result.get(
+                "selected_system_scores", {}
+            ),
+            "explanation": st.session_state.get("llm_whatif"),
+        }
+
+    benchmark_config = BENCHMARK_META.get(system, {})
+    benchmark_meta = benchmark_config.get("meta", {})
+    return {
+        "run_id": run_id,
+        "system": system,
+        "lce_stage": stage,
+        "weights_5s": weights,
+        "context": results.get("context", {}),
+        "decision_model_version": DECISION_MODEL_VERSION,
+        "rule_base_version": FUZZY_RULE_BASE_VERSION,
+        "matrices": matrix_payload,
+        "interpretations": interpretations,
+        "comparative": st.session_state.get("compare_analysis"),
+        "technical_evidence": technical_evidence,
+        "validation": validation_payload,
+        "whatif_suite": whatif_suite,
+        "whatif_selected": selected_whatif,
+        "benchmark_meta": {
+            "objective": benchmark_config.get("Objective"),
+            "source": benchmark_meta.get("source"),
+            "mapping_framework": benchmark_meta.get(
+                "mapping_framework"
+            ),
+            "note": benchmark_meta.get("note"),
+        },
+        "benchmarks": {
+            item: values
+            for item, values in BENCHMARKS.get(system, {}).items()
+            if isinstance(values, dict)
+            and any(key in values for key in ("High", "Medium", "Low"))
+        },
+    }
+
 
 if "chat" not in st.session_state:
     st.session_state["chat"] = []
@@ -2456,12 +2717,42 @@ with tabs[3]:
     else:
         st.warning("No benchmark data loaded for this system.")
 
-
-
-
-
-
-
-
+with st.sidebar:
+    st.divider()
+    st.header("Export Complete Analysis")
+    frozen_results = st.session_state.get("results")
+    if frozen_results:
+        try:
+            pdf_payload = complete_report_payload(frozen_results)
+            pdf_payload_json = json.dumps(
+                pdf_payload,
+                sort_keys=True,
+                ensure_ascii=False,
+                default=_json_default,
+            )
+            pdf_bytes = cached_analysis_pdf(pdf_payload_json)
+            report_system = pdf_payload["system"].replace(" ", "_")
+            st.download_button(
+                "📄 Download complete analysis PDF",
+                data=pdf_bytes,
+                file_name=(
+                    f"analysis_{pdf_payload['run_id']}_{report_system}.pdf"
+                ),
+                mime="application/pdf",
+                use_container_width=True,
+            )
+            st.caption(
+                "Includes matrices, strategic insights, validation, "
+                "executed sensitivity and what-if scenarios, fuzzy evidence, "
+                "and benchmarks. Optional tests not yet run are identified "
+                "explicitly in the report."
+            )
+        except Exception as error:
+            st.error(
+                "The PDF report could not be generated: "
+                f"{type(error).__name__}: {error}"
+            )
+    else:
+        st.info("Run Analyze to enable the complete PDF export.")
 
 
