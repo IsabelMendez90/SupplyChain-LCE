@@ -232,6 +232,7 @@ def safe_llm_call(
     require_rule_ids=False,
     require_scores=False,
     require_all_items=False,
+    natural_language_only=False,
 ):
     if client is None:
         return fallback
@@ -333,6 +334,7 @@ def safe_llm_call(
                 require_scores=require_scores,
                 require_all_items=require_all_items,
                 strict_claims=True,
+                natural_language_only=natural_language_only,
             )
             accepted = not issues
             call_id = hashlib.sha256(
@@ -496,30 +498,105 @@ def build_canonical_evidence(results, system, stage):
     }
 
 
+def _natural_condition_phrase(condition, dimension, stage):
+    """Translate one dominant fuzzy antecedent into reader-facing language."""
+    condition = str(condition or "Medium").lower()
+    phrases = {
+        "baseline": {
+            "low": "limited starting strategic importance",
+            "medium": "moderate starting strategic importance",
+            "high": "strong starting strategic importance",
+        },
+        "5s_alignment": {
+            "low": "limited fit with the selected 5S priorities",
+            "medium": "moderate fit with the selected 5S priorities",
+            "high": "strong fit with the selected 5S priorities",
+        },
+        "lifecycle_relevance": {
+            "low": f"little additional emphasis from the {stage} stage",
+            "medium": f"moderate support from the {stage} stage",
+            "high": f"strong support from the {stage} stage",
+        },
+    }
+    return phrases.get(dimension, {}).get(
+        condition,
+        f"moderate relevance to the {stage} stage",
+    )
+
+
+def _natural_basis(row, stage):
+    """Describe the dominant fuzzy conditions without exposing trace syntax."""
+    conditions = row.get("dominant_rule", {}).get("if", {})
+    return (
+        _natural_condition_phrase(
+            conditions.get("baseline"), "baseline", stage
+        )
+        + ", "
+        + _natural_condition_phrase(
+            conditions.get("5s_alignment"), "5s_alignment", stage
+        )
+        + ", and "
+        + _natural_condition_phrase(
+            conditions.get("lifecycle_relevance"),
+            "lifecycle_relevance",
+            stage,
+        )
+    )
+
+
+def _joined_names(rows):
+    names = [row["item"] for row in rows]
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return " and ".join(names)
+    return ", ".join(names[:-1]) + ", and " + names[-1]
+
+
+def _score_groups(rows):
+    groups = []
+    for row in rows:
+        if not groups or abs(row["score"] - groups[-1][0]["score"]) > 5e-4:
+            groups.append([row])
+        else:
+            groups[-1].append(row)
+    return groups
+
+
 def deterministic_category_explanation(evidence, matrix, title):
-    """Render a factual explanation without an API or generative model."""
+    """Render an auditable interpretation in natural managerial language."""
     rows = evidence.get("categories", {}).get(matrix, [])
     if not rows:
         return f"No {title.lower()} evidence is available for this run."
     selected_rows = priority_evidence_rows(rows)
-    details = []
-    for row in selected_rows:
-        inputs = row.get("normalized_inputs", {})
-        rule = row.get("dominant_rule", {})
-        rule_id = rule.get("rule_id", "no active rule")
-        details.append(
-            f"{row['item']} (score {row['score']:.3f}, {row['label']}; "
-            f"baseline {inputs.get('baseline', 0.0):.3f}, 5S alignment "
-            f"{inputs.get('5s_alignment', 0.0):.3f}, lifecycle relevance "
-            f"{inputs.get('lifecycle_relevance', 0.0):.3f}; dominant {rule_id})"
-        )
-    return (
-        f"For {evidence['system']} at the {evidence['lce_stage']} stage, the "
-        f"highest-priority {title.lower()} at or above the third-position "
-        f"cutoff are " + "; ".join(details) + ". "
-        "Items with identical scores are tied. "
-        "The ordering is generated exclusively by the deterministic fuzzy engine."
-    )
+    stage = evidence["lce_stage"]
+    sentences = [
+        f"For {evidence['system']} during {stage}, the model highlights the "
+        f"following {title.lower()}."
+    ]
+    for position, group in enumerate(_score_groups(selected_rows)):
+        names = _joined_names(group)
+        basis = _natural_basis(group[0], stage)
+        if len(group) > 1:
+            rank_phrase = (
+                "form the leading tied priority group"
+                if position == 0
+                else "form the next tied priority group"
+            )
+            sentences.append(
+                f"{names} {rank_phrase}. Their shared position reflects "
+                f"{basis}."
+            )
+        else:
+            rank_phrase = (
+                "is the leading priority"
+                if position == 0
+                else "follows in the reported ordering"
+            )
+            sentences.append(
+                f"{names} {rank_phrase}. Its position reflects {basis}."
+            )
+    return " ".join(sentences)
 
 
 def priority_evidence_rows(rows, cutoff=3):
@@ -549,11 +626,14 @@ def deterministic_comparison(results, selected_system):
         frame = pd.DataFrame(results["scored"][matrix]).T
         means = frame.mean(axis=0).sort_values(ascending=False)
         statements.append(
-            f"For {title}, the mean priority ordering is "
-            + " > ".join(f"{name} ({value:.3f})" for name, value in means.items())
+            f"For {title}, the aggregate priority ordering is "
+            + ", followed by ".join(means.index)
             + "."
         )
-    return " ".join(statements) + f" The selected view is {selected_system}; no LLM was used."
+    return (
+        " ".join(statements)
+        + f" The current detailed view focuses on {selected_system}."
+    )
 # =====================================================
 #                SIDEBAR CONFIGURATION
 # =====================================================
@@ -1285,15 +1365,16 @@ with tabs[1]:
                 prompt_core = f"""
                 You are a supply-chain strategist advising a {role} in the {industry} industry.
                 The stated objective is: {objective}
-                The user's 5S priorities are: {json.dumps(w5s_desc)}.
-                Below is the tie-aware priority set for the {sel_sys} system:
-                {json.dumps(core_labels, indent=2)}.
-                Mention every supplied priority process and describe the
-                reported ordering using only the supplied values.
-                For every process, cite its exact score and dominant
-                rule identifier. State its baseline, 5S alignment, and lifecycle
-                relevance without adding causal, risk, performance, or managerial
-                claims. Do not create actions or recommendations.
+                Write one concise, natural managerial interpretation of the
+                supplied priority processes for {sel_sys} during {lce_stage}.
+                Mention every supplied process, preserve the reported ordering
+                and ties, and explain the position of each process in plain
+                language. Translate technical inputs as starting strategic
+                importance, fit with the selected 5S priorities, and support
+                from the current lifecycle stage.
+                Do not display scores, numerical values, rule identifiers,
+                raw field names, formulas, or technical trace terminology.
+                Do not create actions, targets, performance claims, or risks.
                 Use role, industry, and objective only to adjust terminology;
                 never present them as causes of any score or ordering.
                 Limit to 170 words.
@@ -1302,9 +1383,8 @@ with tabs[1]:
                     prompt_core, core_payload, temp=0.0,
                     fallback=deterministic_text["core"],
                     section="Core Processes",
-                    require_rule_ids=True,
-                    require_scores=True,
                     require_all_items=True,
+                    natural_language_only=True,
                 )
     
                 # ---- KPIs ----
@@ -1335,35 +1415,28 @@ with tabs[1]:
                 }
                 
                 prompt_kpi = f"""
-                TASK: Write ONE factual paragraph (<=170 words). Do not ask questions.
-                
-                CONTEXT
-                - System: {sel_sys}
-                - Role: {role}
-                - Industry: {industry}
-                - Objective: {objective}
-                - User 5S priorities: {json.dumps(w5s_desc)}
-                - KPI labels (High/Medium/Low): {json.dumps(kpi_labels, indent=2)}
-                
-                OUTPUT REQUIREMENTS
-                - Mention every supplied priority KPI.
-                - Describe their reported ordering using canonical evidence only.
-                - For every KPI, cite its exact score and dominant rule identifier.
-                - Preserve ties; do not imply an ordering within equal scores.
-                - State baseline, 5S alignment, and lifecycle relevance without
-                  inferring maturity, performance, causes, risks, actions, or targets.
-                - No bullet points. No lists. No questions. Declarative voice only.
-                - Use role, industry, and objective only to adjust terminology;
-                  do not use them to explain or change any score.
+                You are explaining KPI priorities to a {role} in the {industry}
+                industry whose stated objective is: {objective}
+                Write one concise natural-language paragraph for {sel_sys}
+                during {lce_stage}. Mention every supplied priority KPI,
+                preserve ties, and organize the interpretation around the
+                business themes represented by the tied or ordered indicators.
+                Explain their position through starting strategic importance,
+                fit with the selected 5S priorities, and support from the
+                current lifecycle stage.
+                Do not display scores, numerical values, rule identifiers,
+                raw field names, formulas, or technical trace terminology.
+                Do not infer measured performance, maturity, causes, risks,
+                actions, recommendations, or targets. No bullet points or
+                questions. Limit to 170 words.
                 """
                 
                 kpi_expl = safe_llm_call(
                     prompt_kpi, kpi_payload, temp=0.0,
                     fallback=deterministic_text["kpi"],
                     section="KPIs",
-                    require_rule_ids=True,
-                    require_scores=True,
                     require_all_items=True,
+                    natural_language_only=True,
                 )
     
                 # ---- DRIVERS ----
@@ -1395,17 +1468,16 @@ with tabs[1]:
                 prompt_drv = f"""
                 You are a resilience strategist advising a {role} in the {industry} industry.
                 The stated objective is: {objective}
-                The user's 5S priorities are: {json.dumps(w5s_desc)}.
-                Below is the qualitative status of each resilience driver for the {sel_sys} system:
-                {json.dumps(driver_labels, indent=2)}.
-                Mention every supplied priority driver and describe their
-                reported ordering using only canonical evidence.
-                For every driver, cite its exact score and dominant rule
-                identifier. State baseline,
-                5S alignment, and lifecycle relevance without claiming that a
-                driver creates stability, flexibility, vulnerability, advantage,
-                risk, or required action. Preserve ties and do not create
-                recommendations. Keep the explanation concise (≤170 words).
+                Write one concise natural managerial interpretation of every
+                supplied resilience driver for {sel_sys} during {lce_stage}.
+                Preserve the reported ordering and ties. Explain each position
+                through starting strategic importance, fit with the selected
+                5S priorities, and support from the current lifecycle stage.
+                Do not display scores, numerical values, rule identifiers,
+                raw field names, formulas, or technical trace terminology.
+                Do not claim that a driver creates stability, flexibility,
+                vulnerability, advantage, risk, or required action. Do not
+                create recommendations. Limit to 170 words.
                 Use role, industry, and objective only to adjust terminology;
                 never present them as causes of any score or ordering.
                 """
@@ -1413,9 +1485,8 @@ with tabs[1]:
                     prompt_drv, driver_payload, temp=0.0,
                     fallback=deterministic_text["drivers"],
                     section="Resilience Drivers",
-                    require_rule_ids=True,
-                    require_scores=True,
                     require_all_items=True,
+                    natural_language_only=True,
                 )
     
                 # --- store ---
@@ -1478,6 +1549,41 @@ with tabs[1]:
             st.write(inter["kpi"])
             st.markdown("### Resilience Drivers Interpretation")
             st.write(inter["drivers"])
+            st.caption(
+                "The narrative translates the model into managerial language. "
+                "Exact scores and fuzzy-rule evidence remain available below "
+                "for audit and replication."
+            )
+            with st.expander("Inspect supporting fuzzy evidence"):
+                for matrix, title in (
+                    ("core_processes", "Core Processes"),
+                    ("kpis", "KPIs"),
+                    ("drivers", "Resilience Drivers"),
+                ):
+                    evidence_rows = priority_evidence_rows(
+                        canonical_evidence["categories"][matrix]
+                    )
+                    technical_rows = []
+                    for row in evidence_rows:
+                        inputs = row.get("normalized_inputs", {})
+                        rule = row.get("dominant_rule", {})
+                        technical_rows.append({
+                            "Item": row["item"],
+                            "Priority": row["label"],
+                            "Score": row["score"],
+                            "Rule": rule.get("rule_id", ""),
+                            "Starting importance": inputs.get("baseline"),
+                            "5S fit": inputs.get("5s_alignment"),
+                            "Lifecycle relevance": inputs.get(
+                                "lifecycle_relevance"
+                            ),
+                        })
+                    st.markdown(f"**{title}**")
+                    st.dataframe(
+                        pd.DataFrame(technical_rows),
+                        hide_index=True,
+                        use_container_width=True,
+                    )
         else:
             st.info("Run **Analyze** first to enable interpretations.")
         show_chat("interpret")
@@ -1513,9 +1619,12 @@ with tabs[1]:
                         })
                         compare_prompt = f"""
                         Compare {sel_sys} with {others_str} descriptively across
-                        Core Processes, KPIs, and Drivers. Report only differences
-                        present in the supplied fuzzy scores. Preserve values,
-                        ties, and ordering exactly. Do not infer strengths,
+                        Core Processes, KPIs, and Drivers. Translate only
+                        differences present in the supplied evidence into
+                        natural managerial language. Preserve ties and ordering.
+                        Do not display scores, numerical values, rule identifiers,
+                        raw field names, formulas, or technical trace terminology.
+                        Do not infer strengths,
                         weaknesses, superiority, advantages, complementarities,
                         causes, risks, actions, or recommendations. Keep the
                         explanation factual and concise (≤180 words).
@@ -1535,6 +1644,7 @@ with tabs[1]:
                                 temp=0.0, max_toks=450,
                                 fallback=deterministic_compare,
                                 section="Comparative Interpretation",
+                                natural_language_only=True,
                             )
                         else:
                             compare_expl = deterministic_compare

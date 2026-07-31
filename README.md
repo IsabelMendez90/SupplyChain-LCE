@@ -107,11 +107,14 @@ fixed model is necessary only when the research question requires
 single-model repeatability.
 
 Every optional narrative is checked against its supplied payload. The
-validator rejects reasoning leakage, unsupported numbers and rule identifiers,
-item–score or item–rule mismatches, ranking inversions, and unsupported
-normative, risk, causal, performance, or outcome claims. Rejected sections are
-replaced by deterministic trace explanations. The run JSON records every
-attempt, actual routed model, rejection reason, and fallback section.
+validator rejects reasoning leakage, ranking inversions, and unsupported
+normative, risk, causal, performance, or outcome claims. In the principal
+interpretation sections it also prevents technical scores, rule identifiers,
+normalized values, and trace jargon from leaking into the reader-facing
+language. Rejected sections are replaced by deterministic natural-language
+explanations. Exact technical evidence remains available in a collapsed audit
+table, and the run JSON records every attempt, actual routed model, rejection
+reason, and fallback section.
 
 ## Benchmark caution
 

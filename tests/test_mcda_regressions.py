@@ -378,6 +378,49 @@ class McdaRegressionTests(unittest.TestCase):
             any(issue.startswith("unsupported_numbers:") for issue in issues)
         )
 
+    def test_natural_language_mode_rejects_visible_trace_notation(self):
+        text = (
+            "Order Fulfillment has score 2.25 under dominant rule R24. "
+            "SRM follows with score 2.06 under dominant rule R23 in the "
+            "reported Product Transfer ordering."
+        )
+        _, issues = grounding_issues(
+            text,
+            self.canonical_payload(),
+            require_all_items=True,
+            natural_language_only=True,
+        )
+        self.assertIn(
+            "technical_numbers_not_allowed_in_narrative",
+            issues,
+        )
+        self.assertIn(
+            "technical_rule_ids_not_allowed_in_narrative",
+            issues,
+        )
+        self.assertIn(
+            "technical_trace_jargon_not_allowed_in_narrative",
+            issues,
+        )
+
+    def test_grounded_natural_language_interpretation_is_accepted(self):
+        text = (
+            "Order Fulfillment is the leading priority, reflecting strong "
+            "starting strategic importance, a moderate fit with the selected "
+            "5S priorities, and strong support from the Operation stage. SRM "
+            "follows in the reported ordering with moderate support from the "
+            "same lifecycle stage."
+        )
+        self.assertEqual(
+            validate_grounded_output(
+                text,
+                self.canonical_payload(),
+                require_all_items=True,
+                natural_language_only=True,
+            ),
+            text,
+        )
+
     def test_llm_mode_has_no_manual_selector(self):
         source = Path(__file__).resolve().parents[1].joinpath("app.py").read_text(encoding="utf-8")
         self.assertNotIn('st.radio(\n        "Explanation mode"', source)
@@ -394,6 +437,10 @@ class McdaRegressionTests(unittest.TestCase):
         self.assertIn("Fuzzy rule base v{FUZZY_RULE_BASE_VERSION}", source)
         self.assertIn("REPAIR MODE:", source)
         self.assertIn('"validator_issues": repair_issues', source)
+        self.assertIn("Inspect supporting fuzzy evidence", source)
+        self.assertIn("natural_language_only=True", source)
+        self.assertNotIn("cite its exact score", source)
+        self.assertNotIn("cite its exact score and dominant", source)
 
     def test_streamlit_results_are_invalidated_by_grounding_version(self):
         source = (
@@ -401,7 +448,7 @@ class McdaRegressionTests(unittest.TestCase):
             .joinpath("app.py")
             .read_text(encoding="utf-8")
         )
-        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.0.4")
+        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.0.5")
         self.assertIn(
             'existing_results.get("grounding_validator_version")',
             source,

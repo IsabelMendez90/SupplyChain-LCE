@@ -157,9 +157,11 @@ The LLM receives a frozen canonical evidence object. Its system instruction
 forbids recalculation, re-ranking, invented numbers, unsupported causal claims,
 and industrial-validation claims. Temperature is zero. If the API key is
 missing or the call fails, the app renders the deterministic score-and-rule
-explanation.
+evidence as a deterministic natural-language explanation. Exact scores,
+normalized inputs, and rule identifiers remain available in a separate,
+collapsed technical-evidence view for audit and replication.
 
-Before display, validator revision `2.0.4` checks the draft against the exact
+Before display, validator revision `2.0.5` checks the draft against the exact
 payload. It rejects: reasoning or prompt leakage; numbers or rule identifiers
 absent from the payload; incorrect item–score or item–rule associations;
 descending-order violations (while permitting exact ties); and unsupported
@@ -180,9 +182,15 @@ not the intended reader-facing length. Before validation, explicit
 `Final answer:`, `Final response:`, or quoted `Paragraph:` blocks are extracted
 from longer model output. The raw draft, extracted candidate, and displayed
 text are archived separately. Only the extracted candidate that passes the
-grounding validator is displayed.
+grounding validator is displayed. In the three principal interpretation
+sections, reader-facing natural-language mode additionally rejects visible
+scores, numerical traces, rule identifiers, and trace-oriented field names.
+The renderer must translate these fields into starting strategic importance,
+fit with the selected 5S priorities, and support from the current lifecycle
+stage.
 
-When exact scores or rule identifiers are required, validation is normally
+When exact scores or rule identifiers are requested in an audit-oriented task,
+validation is normally
 local to each mentioned item. Baseline, 5S, lifecycle, list-numbering, and
 neighboring-item values cannot satisfy this requirement. A tie-aware exception
 allows one shared score and rule statement only when every supplied item is
@@ -193,7 +201,8 @@ structure. For the three principal interpretation sections, the payload is first
 to the tie-aware priority set at or above the third-position score cutoff. The
 renderer must cover every item in this smaller supplied set, but remains free
 to vary sentence structure, vocabulary, and presentation order within exact
-ties.
+ties. The visible narrative does not reproduce scores or rule identifiers;
+those remain linked to the same run in the supporting fuzzy-evidence table.
 
 The OpenRouter free router may realize different models across calls. This is
 handled as a multi-model robustness condition rather than hidden variation:
@@ -208,9 +217,10 @@ no reader-facing text retains the actual routed-model identifier and is marked
 API exceptions record a sanitized exception type, HTTP status, provider code,
 and short message without exposing the configured key.
 
-Exact prose is not a replication target. Fidelity is evaluated by numerical
-agreement, ordering agreement, rule-reference agreement, unsupported-claim
-rate, and contradiction rate.
+Exact prose is not a replication target. Fidelity is evaluated by item
+coverage, ordering agreement, tie preservation, unsupported-claim rate, and
+contradiction rate. Numerical agreement and rule-reference agreement are
+evaluated in the separate deterministic evidence trace.
 
 ## 7. Validation still required before strong empirical claims
 

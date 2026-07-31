@@ -7,7 +7,7 @@ can be tested and reproduced without an API key.
 import re
 
 
-GROUNDING_VALIDATOR_VERSION = "2.0.4"
+GROUNDING_VALIDATOR_VERSION = "2.0.5"
 
 META_OUTPUT_PATTERNS = (
     r"\bwe need to\b",
@@ -39,6 +39,18 @@ UNSUPPORTED_CLAIM_PATTERNS = (
     r"\breinforce(?:s|d|ing)? stability\b",
     r"\benhance(?:s|d|ing)? flexibility\b",
     r"\b(?:must|need to) (?:improve|change|increase|decrease|prioriti[sz]e)\b",
+)
+
+TECHNICAL_TRACE_PATTERNS = (
+    r"\b(?:fuzzy\s+)?scores?\b",
+    r"\bdominant\s+rule\b",
+    r"\brule\s+R\d{2,}\b",
+    r"\bbaseline\b",
+    r"\b5S\s+alignment\b",
+    r"\blifecycle\s+relevance\b",
+    r"\bfiring\s+strength\b",
+    r"\brule\s+confidence\b",
+    r"\bconsequent\b",
 )
 
 NUMBER_PATTERN = re.compile(
@@ -279,6 +291,7 @@ def grounding_issues(
     require_scores=False,
     require_all_items=False,
     strict_claims=True,
+    natural_language_only=False,
 ):
     """Return a cleaned draft and machine-readable rejection reasons."""
     cleaned = _clean_output(text)
@@ -331,6 +344,24 @@ def grounding_issues(
     output_rules = {
         rule.upper() for rule in RULE_PATTERN.findall(validation_text)
     }
+    if natural_language_only:
+        # The reader-facing interpretation must translate the technical trace
+        # rather than recite it. Industry 5.0 is a domain name, not evidence.
+        number_scan_text = re.sub(
+            r"\bIndustry\s+5\.0\b",
+            "Industry Five",
+            validation_text,
+            flags=re.IGNORECASE,
+        )
+        if NUMBER_PATTERN.search(number_scan_text):
+            issues.append("technical_numbers_not_allowed_in_narrative")
+        if output_rules:
+            issues.append("technical_rule_ids_not_allowed_in_narrative")
+        if any(
+            re.search(pattern, validation_text, flags=re.IGNORECASE)
+            for pattern in TECHNICAL_TRACE_PATTERNS
+        ):
+            issues.append("technical_trace_jargon_not_allowed_in_narrative")
     unsupported_rules = sorted(output_rules - allowed_rules)
     if unsupported_rules:
         issues.append("unsupported_rule_ids:" + ",".join(unsupported_rules))
