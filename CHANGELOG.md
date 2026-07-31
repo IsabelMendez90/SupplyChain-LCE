@@ -23,8 +23,11 @@ process for the associated manuscript.
   sequence using machine-readable rejection reasons.
 - Added a tie-aware grounding exception for grouped prose only when all
   mentioned items have the same canonical score and dominant rule.
-- Marked the revised grounding pipeline as internal validator revision 2.0.3
+- Marked the revised grounding pipeline as internal validator revision 2.0.4
   so Streamlit invalidates cached pre-repair narratives after deployment.
+- Normalized Unicode hyphens and presentation-only Markdown before grounding
+  checks, preventing false rejections of canonical item names and shared
+  score/rule statements while preserving the original displayed narrative.
 - Allowed up to three audited calls per section so an empty free-router
   response can be followed by a textual generation and a directed repair.
 - Increased the completion allowance to 2,400 tokens and added deterministic

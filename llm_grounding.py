@@ -7,7 +7,7 @@ can be tested and reproduced without an API key.
 import re
 
 
-GROUNDING_VALIDATOR_VERSION = "2.0.3"
+GROUNDING_VALIDATOR_VERSION = "2.0.4"
 
 META_OUTPUT_PATTERNS = (
     r"\bwe need to\b",
@@ -52,6 +52,30 @@ SCIENTIFIC_NUMBER_PATTERN = re.compile(
     r"([-+]?(?:\d+(?:\.\d+)?|\.\d+)%?)",
     flags=re.IGNORECASE,
 )
+
+VALIDATION_CHARACTER_TRANSLATION = str.maketrans(
+    {
+        # OpenRouter models frequently use typographic hyphens in KPI names.
+        # Canonical evidence intentionally keeps stable ASCII identifiers.
+        "\u2010": "-",
+        "\u2011": "-",
+        "\u2012": "-",
+        "\u2013": "-",
+        "\u2014": "-",
+        "\u2212": "-",
+        "\u00a0": " ",
+        # Replace Markdown emphasis with spaces of equal length. This preserves
+        # character offsets while allowing patterns such as score **1.95**.
+        "*": " ",
+        "_": " ",
+        "`": " ",
+    }
+)
+
+
+def _normalize_validation_text(text):
+    """Normalize presentation-only characters without changing displayed text."""
+    return str(text).translate(VALIDATION_CHARACTER_TRANSLATION)
 
 
 def _clean_output(text):
@@ -193,7 +217,8 @@ def _mentioned_row_segments(rows, text, max_length=360):
     """Return non-overlapping text segments anchored to mentioned items."""
     mentioned = []
     for row in rows:
-        match = re.search(re.escape(row["item"]), text, flags=re.IGNORECASE)
+        normalized_item = _normalize_validation_text(row["item"])
+        match = re.search(re.escape(normalized_item), text, flags=re.IGNORECASE)
         if match:
             mentioned.append(
                 {
@@ -227,7 +252,7 @@ def _associated_score(segment, item):
         return float(keyword_match.group(1))
     parenthetical_match = re.search(
         r"^"
-        + re.escape(item)
+        + re.escape(_normalize_validation_text(item))
         + r"\s*\(\s*(?:score\s*)?"
         + number
         + r"(?=\s*[,;)])",
@@ -260,11 +285,12 @@ def grounding_issues(
     issues = []
     if not cleaned:
         return "", ["empty_output"]
+    validation_text = _normalize_validation_text(cleaned)
     if len(cleaned.split()) < 20:
         issues.append("truncated_or_too_short")
 
     if any(
-        re.search(pattern, cleaned, flags=re.IGNORECASE)
+        re.search(pattern, validation_text, flags=re.IGNORECASE)
         for pattern in META_OUTPUT_PATTERNS
     ):
         issues.append("reasoning_or_prompt_leakage")
@@ -273,7 +299,7 @@ def grounding_issues(
         matched_claims = [
             pattern
             for pattern in UNSUPPORTED_CLAIM_PATTERNS
-            if re.search(pattern, cleaned, flags=re.IGNORECASE)
+            if re.search(pattern, validation_text, flags=re.IGNORECASE)
         ]
         if matched_claims:
             issues.append("unsupported_normative_or_outcome_claim")
@@ -287,7 +313,7 @@ def grounding_issues(
     # Item-associated parenthetical scores are added below.
     output_numbers = [
         float(token.rstrip("%"))
-        for token in SCIENTIFIC_NUMBER_PATTERN.findall(cleaned)
+        for token in SCIENTIFIC_NUMBER_PATTERN.findall(validation_text)
     ]
     unsupported_numbers = sorted(
         {
@@ -303,7 +329,7 @@ def grounding_issues(
 
     allowed_rules = _rule_tokens(payload)
     output_rules = {
-        rule.upper() for rule in RULE_PATTERN.findall(cleaned)
+        rule.upper() for rule in RULE_PATTERN.findall(validation_text)
     }
     unsupported_rules = sorted(output_rules - allowed_rules)
     if unsupported_rules:
@@ -314,7 +340,7 @@ def grounding_issues(
     rows = _canonical_rows(payload)
     # Bind evidence locally: an auxiliary 5S value, baseline value, or another
     # item's score cannot satisfy the score requirement for this item.
-    mentioned = _mentioned_row_segments(rows, cleaned)
+    mentioned = _mentioned_row_segments(rows, validation_text)
     mentioned_items = {
         entry["row"]["item"] for entry in mentioned
     }
@@ -324,7 +350,7 @@ def grounding_issues(
     tie_cue_present = bool(
         re.search(
             r"\b(?:all|each|identical|same|tied|equally)\b",
-            cleaned,
+            validation_text,
             flags=re.IGNORECASE,
         )
     )

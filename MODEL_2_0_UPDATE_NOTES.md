@@ -21,9 +21,11 @@ include the later experimental contextual-weight transformation.
      deterministic fallback.
    - Up to three calls are allowed per section so an empty response can be
      followed by a textual generation and then a directed repair.
-   - Internal validator revision `2.0.3` invalidates cached pre-repair
+   - Internal validator revision `2.0.4` invalidates cached pre-repair
      narratives while the public decision model and fuzzy rule base remain
      version `2.0`.
+   - Unicode hyphens and Markdown emphasis are normalized only for evidence
+     matching, so valid grouped ties are not rejected because of typography.
    - The completion allowance is 2,400 tokens. Explicit final-answer and
      quoted-paragraph blocks are extracted before validation; raw and
      displayed text remain separately auditable.
@@ -77,4 +79,4 @@ before claiming empirical validity.
 - Command-line replication completed.
 - Fuzzy-engine output-band consistency passed.
 - Three-case ablation smoke tests passed.
-- All 44 automated tests passed.
+- All 50 automated tests passed.

@@ -159,7 +159,7 @@ and industrial-validation claims. Temperature is zero. If the API key is
 missing or the call fails, the app renders the deterministic score-and-rule
 explanation.
 
-Before display, validator revision `2.0.3` checks the draft against the exact
+Before display, validator revision `2.0.4` checks the draft against the exact
 payload. It rejects: reasoning or prompt leakage; numbers or rule identifiers
 absent from the payload; incorrect item–score or item–rule associations;
 descending-order violations (while permitting exact ties); and unsupported

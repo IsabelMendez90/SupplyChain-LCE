@@ -203,6 +203,80 @@ class McdaRegressionTests(unittest.TestCase):
             text,
         )
 
+    def test_exact_tie_accepts_typographic_hyphens_in_item_names(self):
+        items = (
+            "Customer fill rate",
+            "Customer fulfillment cycle time",
+            "Logistics lead time",
+            "OTIF",
+            "Supplier on-time delivery",
+            "Supplier on-time receipts",
+            "Supplier quality defect rate",
+            "Supplier quality pass",
+        )
+        payload = {
+            "canonical_evidence": [
+                {
+                    "item": item,
+                    "score": 2.55,
+                    "label": "High",
+                    "dominant_rule": {"rule_id": "R24"},
+                }
+                for item in items
+            ]
+        }
+        text = (
+            "All priority KPIs—Customer fill rate, Customer fulfillment cycle "
+            "time, Logistics lead time, OTIF, Supplier on‑time delivery, "
+            "Supplier on‑time receipts, Supplier quality defect rate, and "
+            "Supplier quality pass—receive a High label, a score of 2.55, and "
+            "are governed by dominant rule R24; each remains tied in the "
+            "canonical Product Transfer evidence."
+        )
+        self.assertEqual(
+            validate_grounded_output(
+                text,
+                payload,
+                require_rule_ids=True,
+                require_scores=True,
+                require_all_items=True,
+            ),
+            text,
+        )
+
+    def test_exact_tie_accepts_markdown_formatted_score_and_rule(self):
+        payload = {
+            "canonical_evidence": [
+                {
+                    "item": item,
+                    "score": 1.95,
+                    "label": "Medium",
+                    "dominant_rule": {"rule_id": "R22"},
+                }
+                for item in (
+                    "Network Diversification",
+                    "Multisourcing",
+                    "Ecosystem Partnerships",
+                )
+            ]
+        }
+        text = (
+            "**Network Diversification**, **Multisourcing**, and **Ecosystem "
+            "Partnerships** are all labeled **Medium** with a score of "
+            "**1.95**, tied under dominant rule **R22** in the canonical "
+            "Product Transfer evidence."
+        )
+        self.assertEqual(
+            validate_grounded_output(
+                text,
+                payload,
+                require_rule_ids=True,
+                require_scores=True,
+                require_all_items=True,
+            ),
+            text,
+        )
+
     def test_quoted_final_paragraph_is_extracted_before_validation(self):
         payload = {
             "canonical_evidence": [
@@ -327,7 +401,7 @@ class McdaRegressionTests(unittest.TestCase):
             .joinpath("app.py")
             .read_text(encoding="utf-8")
         )
-        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.0.3")
+        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.0.4")
         self.assertIn(
             'existing_results.get("grounding_validator_version")',
             source,
