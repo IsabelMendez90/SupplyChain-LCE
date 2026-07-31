@@ -159,17 +159,28 @@ and industrial-validation claims. Temperature is zero. If the API key is
 missing or the call fails, the app renders the deterministic score-and-rule
 explanation.
 
-Before display, validator revision `2.0.1` checks the draft against the exact
+Before display, validator revision `2.0.3` checks the draft against the exact
 payload. It rejects: reasoning or prompt leakage; numbers or rule identifiers
 absent from the payload; incorrect item–score or item–rule associations;
 descending-order violations (while permitting exact ties); and unsupported
 normative, causal, risk, performance, advantage, or outcome claims. The first
-call generates a draft. If validation fails and a textual draft exists, the
-second call receives that draft, the machine-readable rejection reasons, and
-the same canonical evidence as a directed repair task. The repaired text is
-validated again. Sections that still fail after the declared limit are
-replaced by deterministic explanations. Every generation and repair records
-the routed model, parent call, prompt hash, and rejection reasons.
+call generates a draft. If a call returns no text, the next call performs a
+fresh generation. If validation fails and a textual draft exists, the next
+available call receives that draft, the machine-readable rejection reasons,
+and the same canonical evidence as a directed repair task. The repaired text
+is validated again. A maximum of three calls is allowed per section,
+permitting the sequence empty generation → textual generation → repair.
+Sections that still fail after the declared limit are replaced by
+deterministic explanations. Every generation and repair records the routed
+model, parent call, prompt hash, and rejection reasons.
+
+The OpenRouter completion allowance is 2,400 tokens. This is a transport
+allowance for routed reasoning models, not a scientific model parameter and
+not the intended reader-facing length. Before validation, explicit
+`Final answer:`, `Final response:`, or quoted `Paragraph:` blocks are extracted
+from longer model output. The raw draft, extracted candidate, and displayed
+text are archived separately. Only the extracted candidate that passes the
+grounding validator is displayed.
 
 When exact scores or rule identifiers are required, validation is normally
 local to each mentioned item. Baseline, 5S, lifecycle, list-numbering, and

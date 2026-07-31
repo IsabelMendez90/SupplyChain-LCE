@@ -7,7 +7,7 @@ can be tested and reproduced without an API key.
 import re
 
 
-GROUNDING_VALIDATOR_VERSION = "2.0.1"
+GROUNDING_VALIDATOR_VERSION = "2.0.3"
 
 META_OUTPUT_PATTERNS = (
     r"\bwe need to\b",
@@ -64,6 +64,16 @@ def _clean_output(text):
         cleaned = re.split(
             r"(?i)final (?:answer|response)\s*:", cleaned
         )[-1].strip()
+    # Some routed reasoning models place the intended reader-facing paragraph
+    # inside quotes and then continue with scratch work or word counting.
+    # Extract that explicit final candidate before applying grounding checks.
+    paragraph_match = re.search(
+        r"(?is)\b(?:final\s+)?paragraph\s*:\s*[\"“](.*?)[\"”]"
+        r"(?=\s*(?:\n|$))",
+        cleaned,
+    )
+    if paragraph_match:
+        cleaned = paragraph_match.group(1).strip()
     return cleaned
 
 

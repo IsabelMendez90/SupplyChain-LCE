@@ -23,8 +23,14 @@ process for the associated manuscript.
   sequence using machine-readable rejection reasons.
 - Added a tie-aware grounding exception for grouped prose only when all
   mentioned items have the same canonical score and dominant rule.
-- Marked the revised grounding pipeline as internal validator revision 2.0.1
+- Marked the revised grounding pipeline as internal validator revision 2.0.3
   so Streamlit invalidates cached pre-repair narratives after deployment.
+- Allowed up to three audited calls per section so an empty free-router
+  response can be followed by a textual generation and a directed repair.
+- Increased the completion allowance to 2,400 tokens and added deterministic
+  extraction of explicit final-answer or quoted-paragraph blocks before
+  grounding validation.
+- Archived the raw draft, extracted candidate, and displayed text separately.
 - Frozen objective, industry, and role with each analyzed run while excluding
   them explicitly from fuzzy scoring and numerical validation.
 - Clarified that KPI classes represent strategic priority rather than measured

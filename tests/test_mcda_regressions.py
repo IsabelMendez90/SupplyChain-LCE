@@ -203,6 +203,43 @@ class McdaRegressionTests(unittest.TestCase):
             text,
         )
 
+    def test_quoted_final_paragraph_is_extracted_before_validation(self):
+        payload = {
+            "canonical_evidence": [
+                {
+                    "item": item,
+                    "score": 2.55,
+                    "label": "High",
+                    "dominant_rule": {"rule_id": "R24"},
+                }
+                for item in (
+                    "Customer fill rate",
+                    "Logistics lead time",
+                    "OTIF",
+                )
+            ]
+        }
+        candidate = (
+            "All three tied KPIs—Customer fill rate, Logistics lead time, "
+            "and OTIF—have score 2.55 and dominant rule R24 in the canonical "
+            "Product Transfer evidence. Each retains the reported High label "
+            "at the Operation stage."
+        )
+        raw = (
+            "We need to produce a factual paragraph and count the words. "
+            f'Paragraph: "{candidate}"\n\nCheck word count: one, two, three.'
+        )
+        self.assertEqual(
+            validate_grounded_output(
+                raw,
+                payload,
+                require_rule_ids=True,
+                require_scores=True,
+                require_all_items=True,
+            ),
+            candidate,
+        )
+
     def test_non_tied_items_cannot_share_one_score_and_rule(self):
         text = (
             "Both Order Fulfillment and SRM have score 2.25 and dominant "
@@ -290,7 +327,7 @@ class McdaRegressionTests(unittest.TestCase):
             .joinpath("app.py")
             .read_text(encoding="utf-8")
         )
-        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.0.1")
+        self.assertEqual(GROUNDING_VALIDATOR_VERSION, "2.0.3")
         self.assertIn(
             'existing_results.get("grounding_validator_version")',
             source,
@@ -299,6 +336,11 @@ class McdaRegressionTests(unittest.TestCase):
             "LLM rendering pipeline: Generate → Validate → Repair →",
             source,
         )
+        self.assertIn("LLM_MAX_ATTEMPTS = 3", source)
+        self.assertIn("retries=LLM_MAX_ATTEMPTS", source)
+        self.assertIn("LLM_MAX_TOKENS = 2400", source)
+        self.assertIn('"candidate_text": out', source)
+        self.assertIn('"displayed_text": out if accepted else None', source)
 
     def test_empty_model_content_preserves_actual_model(self):
         response = SimpleNamespace(

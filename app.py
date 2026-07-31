@@ -109,7 +109,8 @@ OPENROUTER_HEADERS = {
 # OpenRouter's free-model router. The selected underlying model may vary by
 # request, so safe_llm_call() records the actual model returned by OpenRouter.
 LLM_MODEL = "openrouter/free"
-LLM_MAX_TOKENS = 1200
+LLM_MAX_TOKENS = 2400
+LLM_MAX_ATTEMPTS = 3
 
 # The canonical vocabulary, baselines, and association matrices are imported
 # from decision_model.py so they have one auditable source of truth.
@@ -225,7 +226,7 @@ def safe_llm_call(
     payload: dict,
     temp=0.0,
     max_toks=LLM_MAX_TOKENS,
-    retries=2,
+    retries=LLM_MAX_ATTEMPTS,
     fallback="",
     section="unspecified",
     require_rule_ids=False,
@@ -359,6 +360,8 @@ def safe_llm_call(
                 "finish_reason": parsed["finish_reason"],
                 "has_reasoning_without_text": False,
                 "draft": raw_out,
+                "candidate_text": out,
+                "displayed_text": out if accepted else None,
             })
             if accepted:
                 # openrouter/free may select a different free model per request.
@@ -1237,7 +1240,8 @@ with tabs[1]:
             if use_llm:
                 st.caption(
                     "LLM rendering pipeline: Generate → Validate → Repair → "
-                    "Revalidate → Deterministic fallback."
+                    "Revalidate → Deterministic fallback (maximum 3 calls per "
+                    "section)."
                 )
     
             if not st.session_state.get("llm_done", False):
@@ -1667,6 +1671,7 @@ with tabs[2]:
                 "llm_role": "optional non-authoritative language renderer",
                 "llm_router": LLM_MODEL,
                 "llm_max_tokens": LLM_MAX_TOKENS,
+                "llm_max_attempts_per_section": LLM_MAX_ATTEMPTS,
                 "llm_experiment_design": (
                     "dynamic multi-model routing; every returned model and "
                     "draft is audited independently"

@@ -19,9 +19,14 @@ include the later experimental contextual-weight transformation.
      scores, and dominant rules match the canonical evidence.
    - Empty responses, reasoning leakage, and failed repairs still trigger the
      deterministic fallback.
-   - Internal validator revision `2.0.1` invalidates cached pre-repair
+   - Up to three calls are allowed per section so an empty response can be
+     followed by a textual generation and then a directed repair.
+   - Internal validator revision `2.0.3` invalidates cached pre-repair
      narratives while the public decision model and fuzzy rule base remain
      version `2.0`.
+   - The completion allowance is 2,400 tokens. Explicit final-answer and
+     quoted-paragraph blocks are extracted before validation; raw and
+     displayed text remain separately auditable.
 
 1. **One qualitative-label policy**
    - Low: `0 <= score < 1`
